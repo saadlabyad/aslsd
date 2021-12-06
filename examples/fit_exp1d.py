@@ -2,8 +2,8 @@
 =========================================
 Fit Gauss1D
 =========================================
-In this example, we simulate a unimensional (ground truth) MHP with exponential
-kernel.
+In this example, we simulate a unidimensional (ground truth) MHP with
+exponential kernel.
 We estimate the parameters of this MHP using ASLSD.
 """
 import os

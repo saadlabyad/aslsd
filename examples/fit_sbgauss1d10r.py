@@ -2,7 +2,7 @@
 =========================================
 Fit Gauss1D
 =========================================
-In this example, we simulate a unimensional (ground truth) MHP with a
+In this example, we simulate a unidimensional (ground truth) MHP with a
 multimodal Gaussian kernel with three modes.
 We estimate the parameters of this MHP using ASLSD, with a SBF Gaussian model
 with 10 modes.
