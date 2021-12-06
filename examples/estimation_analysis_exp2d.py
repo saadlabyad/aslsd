@@ -10,6 +10,12 @@ for exponential MHP.
 """
 
 import itertools
+import os
+import sys
+# add the path of packages to system path
+nb_dir = os.path.split(os.getcwd())[0]
+if nb_dir not in sys.path:
+    sys.path.append(nb_dir)
 
 import matplotlib.pyplot as plt
 import numpy as np

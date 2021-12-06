@@ -10,7 +10,7 @@ from aslsd.estimators.adaptive_stratified_estimator import AdaptiveStratified
 from aslsd.estimators.estimator import Estimator
 from aslsd.evaluation import goodness_of_fit as gof
 from aslsd.events.process_path import ProcessPath
-from aslsd.logging.logger import Logger
+from aslsd.optim_logging.optim_logger import OptimLogger
 from aslsd.plots import graphic_tools as gt
 from aslsd.solvers.adam import ADAM
 from aslsd.solvers.solver import Solver
@@ -330,7 +330,7 @@ class MHP:
                 solvers = [copy.deepcopy(solvers) for k in range(d)]
 
         # Initialize logger
-        logger = Logger(d, n_iter, **kwargs)
+        logger = OptimLogger(d, n_iter, **kwargs)
 
         # Scheme
         x = [None]*d

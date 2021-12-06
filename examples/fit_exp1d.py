@@ -6,9 +6,15 @@ In this example, we simulate a unimensional (ground truth) MHP with exponential
 kernel.
 We estimate the parameters of this MHP using ASLSD.
 """
+import os
+import sys
+# add the path of packages to system path
+nb_dir = os.path.split(os.getcwd())[0]
+if nb_dir not in sys.path:
+    sys.path.append(nb_dir)
+
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
 from aslsd.basis_kernels.basis_kernel_exponential import ExponentialKernel
 from aslsd.kernels.kernel import KernelModel
