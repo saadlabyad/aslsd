@@ -2,8 +2,8 @@
 =========================================
 Fit Gauss1D
 =========================================
-In this example, we simulate a unidimensional (ground truth) MHP with Gaussian
-kernel.
+In this example, we simulate a unidimensional (ground truth) MHP with a truncated 
+Gaussian kernel.
 We estimate the parameters of this MHP using ASLSD.
 """
 import os
