@@ -1,6 +1,6 @@
 """
 =========================================
-Fit Gauss1D
+Fit Exp1D
 =========================================
 In this example, we simulate a unidimensional (ground truth) MHP with
 exponential kernel.
