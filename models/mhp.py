@@ -28,18 +28,39 @@ class MHP:
     \\sum_{\\left\\{m: t_{m}^{j}<t\right\\}} \\phi_{ij}\\left(t-t_{m}^{j}\\right)
 
     where
-    * :math:`\\forall i,j \\in[d],  \\phi_{i j}:[0,+\\infty) \\to [0,+\\infty)`
-    is in $L_{1}$.
+    * :math:`\\forall i,j \\in [d],  \\phi_{ij}:[0,+\\infty) \\to [0,+\\infty)`
+    is in $L_{1}$. We write :math:`\\boldsymbol{\\phi}=(\\phi_{ij})_{ij\\in [d]}`
     The functions :math:`\\phi_{i j}` are called the kernels of the MHP;
     * :math:`\\forall i \\in[d], \\mu_{i}>0 `. The floats :math:`\\mu_{i}`
     are called baseline intensities.
-    We refer to such a process as a $(\boldsymbol{\\mu}, \\Phi)$-MHP
+
+    For all :math:`\\forall i,j \\in [d]`, and for all :math:`t \\geq 0`, define
+    .. math::
+    \\psi_{ij}(t):=\\int_0^t \\phi_{ij}(u)\\mathrm{d}u.
+    We write :math:`\\boldsymbol{\\psi}=(\\psi_{ij})_{ij\\in [d]}`
+
+    For all :math:`\\forall i,j,k \\in [d]`, and for all :math:`t,s \\geq 0`,
+    define
+    .. math::
+    \\Upsilon_{ijk}(t,s):=\\int_0^t \\phi_{ki}(u)\\phi_{kj}(u+s)\\mathrm{d}u.
+    We write :math:`\\boldsymbol{\\Upsilon}=(\\Upsilon_{ijk})_{ijk\\in [d]}`
+
+    In our implementation, the class attributes
+    * `phi` denotes the matrix of kernel functions :math:`\\boldsymbol{\\phi},
+    such that `phi[i][j]` is the kernel function :math:`\\phi_{ij}`;
+    * `psi` denotes the matrix of primitive functions :math:`\\boldsymbol{\\psi},
+    such that `psi[i][j]` is the primitive function :math:`\\psi_{ij}`;
+    * `upsilon` denotes the tensor of correlation functions
+    :math:`\\boldsymbol{\\Upsilon}, such that `upsilon[i][j][k]` is the
+    correlation function :math:`\\Upsilon_{ijk}`.
 
     Parameters
     ----------
-    _kernel_matrix : `list` of `list` of `KernelModel`
-        Array of events of basis kernels.
-        If `BasisKernel`then broadcasted to a unidimensional list.
+    kernel_matrix : `list` of `list` of `KernelModel`
+        Matrix of kernel models.
+
+    Attributes
+    ----------
 
     """
 
