@@ -54,13 +54,13 @@ class MHP:
     :math:`\\boldsymbol{\\Upsilon}, such that `upsilon[i][j][k]` is the
     correlation function :math:`\\Upsilon_{ijk}`.
 
-    Parameters
-    ----------
-    kernel_matrix : `list` of `list` of `KernelModel`
-        Matrix of kernel models.
-
     Attributes
     ----------
+    d : `int`
+        Dimension of the MHP.
+
+    kernel_matrix : `list` of `list` of `KernelModel`
+        Matrix of kernel models.
 
     """
 
@@ -72,7 +72,15 @@ class MHP:
                  diff_cross_upsilon=None, is_fitted=False,
                  fitted_mu=None, fitted_ker_param=None,
                  fit_residuals=None, fitted_adjacency=None, fit_log=None):
+        """
+        Constructor of objects of class MHP.
 
+        Parameters
+        ----------
+        _kernel_matrix : `list` of `list` of `KernelModel`
+            Matrix of kernel models.
+
+        """
         self.kernel_matrix = _kernel_matrix
 
     # Kernel matrix
@@ -106,6 +114,15 @@ class MHP:
 
     # N params
     def get_n_param(self):
+        """
+        Get the matrix of number of parameters per kernel model.
+
+        Returns
+        -------
+        mat_n_param : `list` of `list` of `int`
+            DESCRIPTION.
+
+        """
         d = self.d
         mat_n_param = [[self._kernel_matrix[i][j].n_param for i in range(d)]
                        for j in range(d)]
