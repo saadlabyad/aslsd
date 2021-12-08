@@ -1,0 +1,4 @@
+# Hidden files
+*.pyc
+*__pycache__*
+
