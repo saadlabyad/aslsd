@@ -124,8 +124,8 @@ class MHP:
 
         """
         d = self.d
-        mat_n_param = [[self._kernel_matrix[i][j].n_param for i in range(d)]
-                       for j in range(d)]
+        mat_n_param = [[self._kernel_matrix[i][j].n_param for j in range(d)]
+                       for i in range(d)]
         return mat_n_param
 
     # Parameters map
@@ -160,9 +160,9 @@ class MHP:
         d = self.d
         mu = np.array([tensor_param[i][0] for i in range(d)])
         kernel_param = np.array([[tensor_param[i][self.interval_map[i][j][0]:
-                                                   self.interval_map[i][j][1]]
-                                   for j in range(d)]
-                                  for i in range(d)], dtype=object)
+                                                  self.interval_map[i][j][1]]
+                                  for j in range(d)] for i in range(d)],
+                                dtype=object)
         return mu, kernel_param
 
     def matrix2tensor_params(self, mu, kernel_param):
@@ -513,12 +513,7 @@ class MHP:
             else:
                 raise ValueError("Both mu and kernel_param must be specified.")
         d = self.d
-        compiled_psi = [[None for j in range(d)] for i in range(d)]
-        for i, j in itertools.product(range(d), range(d)):
-            def psi_ij(t):
-                return self.psi[i][j](t, kernel_param[i][j])
-            compiled_psi[i][j] = psi_ij
-        residuals = gof.get_residuals(self.process_path, compiled_psi, mu,
+        residuals = gof.get_residuals(self.process_path, self.psi, mu,
                                       kernel_param, sampling=sampling,
                                       sample_size=sample_size, seed=seed,
                                       verbose=verbose)
@@ -641,24 +636,25 @@ class MHP:
         return res
     
     # Plots
-    def plot_kernels(self, mu=None, kernel_param=None, t_min=0., t_max=10.,
+    def plot_kernels(self, kernel_param=None, t_min=0., t_max=10.,
                      n_samples=1000, index_from_one=False, log_scale=False,
                      dpi=300, axs=None, save=False, filename='image.png',
                      show=False, **kwargs):
-        if mu is None or kernel_param is None:
+        if kernel_param is None:
             if self.is_fitted:
-                mu = self.fitted_mu
                 kernel_param = self.fitted_ker_param
             else:
-                raise ValueError("Both mu and kernel_param must be specified.")
+                raise ValueError("kernel_param must be specified.")
         d = self.d
         compiled_phi = [[None for j in range(d)] for i in range(d)]
         for i, j in itertools.product(range(d), range(d)):
-            def phi_ij(t):
-                return self.phi[i][j](t, kernel_param[i][j])
-            compiled_phi[i][j] = phi_ij
-        return gt.plot_kernels(compiled_phi, t_min=t_min, t_max=t_max,
-                               n_samples=n_samples,
+            def make_phi_ij():
+                def func(t):
+                    return self.phi[i][j](t, kernel_param[i][j])+10**i
+                return func
+            compiled_phi[i][j] = copy.deepcopy(make_phi_ij())
+        return gt.plot_kernels(self.phi, kernel_param, t_min=t_min,
+                               t_max=t_max, n_samples=n_samples,
                                index_from_one=index_from_one,
                                log_scale=log_scale, dpi=dpi, axs=axs,
                                save=save, filename=filename, show=show,

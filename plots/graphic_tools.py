@@ -351,7 +351,7 @@ def plot_solver_path_contour(x_updates, y_updates, loss_function, scale=1.,
     return fig
 
 
-def plot_kernels(matrix_phi, t_min=0., t_max=10., n_samples=10**3,
+def plot_kernels(phi, kernel_param, t_min=0., t_max=10., n_samples=10**3,
                  index_from_one=False, log_scale=False, dpi=300, axs=None,
                  save=False, filename='image.png', show=False, **kwargs):
     """
@@ -362,7 +362,7 @@ def plot_kernels(matrix_phi, t_min=0., t_max=10., n_samples=10**3,
 
     """
 
-    d = len(matrix_phi)
+    d = len(phi)
     if axs is None:
         fig, axs = plt.subplots(d, d, sharex=True, sharey=False, dpi=dpi,
                                 **kwargs)
@@ -370,7 +370,7 @@ def plot_kernels(matrix_phi, t_min=0., t_max=10., n_samples=10**3,
 
     if d > 1:
         for i, j in itertools.product(range(d), range(d)):
-            y_phi = matrix_phi[i][j](x_phi)
+            y_phi = phi[i][j](x_phi, kernel_param[i][j])
             axs[i, j].plot(x_phi, y_phi, color='steelblue')
             axs[i, j].set(ylabel=r'$\phi_{'+str(i+int(index_from_one))+','
                                  + str(j + int(index_from_one)) + '}(t)$')
@@ -378,7 +378,7 @@ def plot_kernels(matrix_phi, t_min=0., t_max=10., n_samples=10**3,
         axs[d-1, 1].set(xlabel=r'$t$')
 
     else:
-        y_phi = matrix_phi[0][0](x_phi)
+        y_phi = phi[0][0](x_phi, kernel_param[0][0])
         axs.plot(x_phi, y_phi, color='steelblue')
         axs.set(ylabel=r'$\phi(t)$')
         axs.set(xlabel=r'$t$')

@@ -78,15 +78,16 @@ def get_residuals_k(k, process_path, psi, mu, kernel_param,
                 if t_ind_first < t_m_1:
                     loc_times_1 = t_m_1-list_times[i][np.arange(ind_first,
                                                                 ind_last+1)]
-                    residuals_k[active_ind] += np.sum(psi[k][i](loc_times_1))
+                    residuals_k[active_ind] += np.sum(psi[k][i](loc_times_1,
+                                                                kernel_param[k][i]))
 
             # Events of type i happening strictly before [t^k_m,t^k_{m+1}]
             if ind_prev >= 0:
                 loc_times_2 = list_times[i][np.arange(ind_prev+1)]
-                residuals_k[active_ind] += (np.sum(psi[k][i](t_m_1
-                                                             - loc_times_2))
-                                            - np.sum(psi[k][i](t_m
-                                                               - loc_times_2)))
+                residuals_k[active_ind] += (np.sum(psi[k][i](t_m_1-loc_times_2,
+                                                             kernel_param[k][i]))
+                                            - np.sum(psi[k][i](t_m-loc_times_2,
+                                                               kernel_param[k][i])))
         active_ind += 1
     return residuals_k
 

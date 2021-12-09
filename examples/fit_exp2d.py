@@ -59,7 +59,7 @@ kernel_matrix = [[KernelModel([ExponentialKernel()]) for j in range(d)]
 mhp = MHP(kernel_matrix)
 kwargs = {'is_log_param': True, 'is_log_grad': True,
           'learning_rate_type': 'exponential'}
-mhp.fit(list_times, T_f, n_iter=1000, seed=1234, verbose=True, **kwargs)
+mhp.fit(list_times, T_f, n_iter=2000, seed=1234, verbose=True, **kwargs)
 fit_log = mhp.fit_log
 
 # Visualize results
