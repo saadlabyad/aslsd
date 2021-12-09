@@ -16,6 +16,7 @@ nb_dir = os.path.split(os.getcwd())[0]
 if nb_dir not in sys.path:
     sys.path.append(nb_dir)
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from aslsd.basis_kernels.basis_kernel_exponential import ExponentialKernel
@@ -64,5 +65,14 @@ fit_log = mhp.fit_log
 
 # Visualize results
 mhp.plot_solver_path(true_mu=true_mu, true_ker_param=true_ker_param)
-mhp.plot_kernels()
 mhp.plot_adjacency_matrix()
+
+t_min = 0.
+t_max = 10.
+n_samples = 10**3
+fig, axs = plt.subplots(d, d, sharex=True, sharey=False, dpi=300)
+x_phi = np.linspace(t_min, t_max, n_samples)
+for i, j in itertools.product(range(d), range(d)):
+    y_phi = true_mhp.phi[i][j](x_phi, true_ker_param[i][j])
+    axs[i, j].plot(x_phi, y_phi, color='darkorange')
+axs = mhp.plot_kernels(t_min=0., t_max=10., n_samples=10**3, axs=axs)
