@@ -69,8 +69,11 @@ def sample_double_ix_stratum(i, j, h_inf, h_sup, n_samples, kappa, varpi,
         for h in counted_h_vals.keys():
             n_samples_h = counted_h_vals[h]
             varpi_ijh = varpi[i][j][h]
-            list_m = varpi_ijh+rng.choice(n_events[i]-varpi_ijh,
-                                          n_samples_h, replace=False)
+            n_h = n_events[i]-varpi_ijh
+            if n_samples_h <= n_h:
+                list_m = varpi_ijh+rng.choice(n_h, n_samples_h, replace=False)
+            else:
+                list_m = varpi_ijh+rng.choice(n_h, n_samples_h, replace=True)
             samples_m[k] = list_m
             list_n = kappa[j][i][list_m]-h+1
             samples_n[k] = list_n
