@@ -645,14 +645,6 @@ class MHP:
                 kernel_param = self.fitted_ker_param
             else:
                 raise ValueError("kernel_param must be specified.")
-        d = self.d
-        compiled_phi = [[None for j in range(d)] for i in range(d)]
-        for i, j in itertools.product(range(d), range(d)):
-            def make_phi_ij():
-                def func(t):
-                    return self.phi[i][j](t, kernel_param[i][j])+10**i
-                return func
-            compiled_phi[i][j] = copy.deepcopy(make_phi_ij())
         return gt.plot_kernels(self.phi, kernel_param, t_min=t_min,
                                t_max=t_max, n_samples=n_samples,
                                index_from_one=index_from_one,

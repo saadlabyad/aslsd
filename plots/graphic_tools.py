@@ -367,7 +367,6 @@ def plot_kernels(phi, kernel_param, t_min=0., t_max=10., n_samples=10**3,
         fig, axs = plt.subplots(d, d, sharex=True, sharey=False, dpi=dpi,
                                 **kwargs)
     x_phi = np.linspace(t_min, t_max, n_samples)
-
     if d > 1:
         for i, j in itertools.product(range(d), range(d)):
             y_phi = phi[i][j](x_phi, kernel_param[i][j])
