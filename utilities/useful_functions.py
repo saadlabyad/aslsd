@@ -1,7 +1,41 @@
 # License: BSD 3 clause
+import string
 
 import numpy as np
 import scipy.special
+
+# Delete ambiguous variable names 'l' and 'o' following pycodestyle E741
+lower_case_varnames = (list(string.ascii_lowercase)[:11]
+                       + list(string.ascii_lowercase)[12:14]
+                       + list(string.ascii_lowercase)[15:])
+
+
+def get_alphabet_range(n):
+    """
+    Get the list of the first n letters of the alphabet, excluding the letters
+    'l' and 'o' following pycodestyle E741.
+
+    Parameters
+    ----------
+    n : `int`
+        Number of letters to generate.
+
+    Raises
+    ------
+    ValueError
+        If the number of letters to generate is higher than the number of
+        letters in the alphabet after discarding the two letters 'l' and 'o'.
+
+    Returns
+    -------
+    `list`
+        List of the first n letters of the alphabet
+
+    """
+    if n > 24:
+        raise ValueError("Alphabet range larger than 24.")
+    else:
+        return lower_case_varnames[:n]
 
 
 def prod_ratio(x, y):

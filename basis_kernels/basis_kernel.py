@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
+import aslsd.utilities.useful_functions as uf
+
 
 class BasisKernel(ABC):
     """
@@ -35,10 +37,10 @@ class BasisKernel(ABC):
 
     Returns
     -------
-    kappa : `list` of `list` of np.ndarray
+    kappa : `list` of `list` of `numpy.ndarray`
         Description.
 
-    varpi : `list` of `list` of np.ndarray
+    varpi : `list` of `list` of `numpy.ndarray`
         Description.
 
     Notes
@@ -57,7 +59,14 @@ class BasisKernel(ABC):
         .. math::
             f_{\\vartheta} = \\omega g
 
-        where :math:`g` is some function and :math:`\\vartheta=\\omega`.
+        where :math:`g` is some function and :math:`\\vartheta=(\\omega)`.
+        Users can fix arbitrary values for some of the components of the
+        vector of parameters :math:`\\vartheta` of the basis kernel. When
+        fitting an MHP, fixed parameters will not be optimized. To avoid
+        confusion, we refer to the vector of all parameters
+        (wether fixed or not) as the variables of the basis kernel, and by
+        abuse we refer to the vector of non-fixed parameters as parameters.
+
     """
 
     def __init__(self, fixed_indices=None, fixed_vars=None, n_fixed_vars=0,
@@ -107,10 +116,52 @@ class BasisKernel(ABC):
         pass
 
     def get_n_param(self):
+        """
+        Get the number of parameters of the basis kernel.
+
+        Returns
+        -------
+        `int`
+            Number of parameters.
+
+        Notes
+        ------
+            By parameters, we mean the non-fixed paramters.
+
+        """
         return self.get_n_vars()-self.n_fixed_vars
 
     # Omega
     def has_omega_param(self):
+        """
+        Check if this instance of basis kernel has an :math:`\\omega`
+        parameter, that is, if the basis kernel function :math:`f`
+        satisfies a structure like
+
+        .. math::
+            f_{\\vartheta} = \\omega g_{\\varphi}
+
+        where :math:`g_{\\varphi}` is some function parametrized
+        by :math:`\\varphi` and :math:`\\omega` is a positive parameter.
+        In this case, the parameters of the basis kernel are
+
+        .. math::
+        \\vartheta^\\intercal=(\\omega, \\varphi^\\intercal).
+
+        We allow for the vector of parameters :math:`\\varphi^\\intercal` to
+        be empty in this definition.
+
+        Returns
+        -------
+        `bool`
+            True if the basis kernel has an omega type parameter, False
+            otherwise.
+
+        Notes
+        ------
+            By parameters, we mean the non-fixed paramters.
+
+        """
         return (0 != self.fixed_indices[0])
 
     # Bounds
@@ -119,29 +170,64 @@ class BasisKernel(ABC):
         pass
 
     def get_param_bounds(self):
+        """
+        Get the list of lower bounds of the domain of each parameter of the
+        basis kernel.
+
+        We assume that the :math:`r`-th parameter of the basis kernel,
+        :math:`\\vartheta_r`, there exists a real :math:`b_r` such that the
+        domain of :math:`\\vartheta_r` is the half open interval
+        :math:`[b_r, + \\infty)`. This method returns the vector
+        :math:`(b_1, b_2, \\dots, b_r, \\dots)`.
+
+        Returns
+        -------
+        `list`
+            List of lower bounds of the domain of each parameter of the
+            basis kernel.
+
+        Notes
+        ------
+            By parameters, we mean the non-fixed paramters.
+
+        """
         bnds = self.get_var_bounds()
         n_vars = len(bnds)
         return [bnds[i] for i in range(n_vars) if i not in self.fixed_indices]
 
-    # Param names
+    # Parameter names
     @abstractmethod
     def get_var_names(self):
         pass
 
     def get_param_names(self):
         """
-        Get the list of names of the parameters of the basis kernel after
-        fixing those we wanted to fix.
+        Get the list of names of the parameters of the basis kernel.
 
         Returns
         -------
         `list`
+            List of names of the parameters of the basis kernel.
+
+        Notes
+        ------
+            By parameters, we mean the non-fixed paramters.
 
         """
         var_names = self.get_var_names()
-        n_vars = len(var_names)
-        return [var_names[i] for i in range(n_vars)
-                if i not in self.fixed_indices]
+        if var_names is not None:
+            n_vars = len(var_names)
+            return [var_names[i] for i in range(n_vars)
+                    if i not in self.fixed_indices]
+        # If the method get_var_names is not properly implemented in a child
+        # class, that is, if the method is set to return `None`, we generate
+        # parameter names as letters of the alphabet, except letters 'l' and
+        # 'o' following pycodestyle E741.
+        # In the unlikely case where the basis kernel has more than 24
+        # parameters in the basis kernel, this will raise a ValueError.
+        else:
+            n_param = self.get_n_param()
+            return uf.get_alphabet_range(n_param)
 
     # Availabe interactions
     @abstractmethod
@@ -149,6 +235,15 @@ class BasisKernel(ABC):
         pass
 
     def make_dict_interactions(self):
+        """
+        
+
+        Returns
+        -------
+        dict_interactions : `dict`
+            DESCRIPTION.
+
+        """
         dict_interactions = {'dir': {}, 'rev': {}}
         list_inter_dir = self.get_interactions(is_reverse=False)
         for x in list_inter_dir:
@@ -159,6 +254,23 @@ class BasisKernel(ABC):
         return dict_interactions
 
     def is_compatible(self, basis_kern_2, is_reverse=False):
+        """
+        
+
+        Parameters
+        ----------
+        basis_kern_2 : BasisKernel
+            DESCRIPTION.
+        is_reverse : `bool`, optional
+            Check if . The default is False.
+
+        Returns
+        -------
+        bool
+            True if the basis kernel is compatible with `basis_kern_2`, False
+            otherwise.
+
+        """
         ker_type = str(type(basis_kern_2))
         ker_type = ker_type.split('.')[-1][:-2]
         if ker_type in self.get_interactions(is_reverse=is_reverse):
@@ -178,7 +290,8 @@ class BasisKernel(ABC):
         Returns
         -------
         variables : `numpy.ndarray`
-            Array of all parameters (i.e. fixed and non-fixed) of the kernel.
+            Array of variables (i.e. fixed and non-fixed parameters) of the
+            basis kernel.
 
         """
 
@@ -205,6 +318,15 @@ class BasisKernel(ABC):
                 return variables
 
     def make_ix_map(self):
+        """
+        
+
+        Returns
+        -------
+        ix_map : `list`
+            DESCRIPTION.
+
+        """
         n_vars = self.get_n_vars()
         ix_map = []
         for i in range(n_vars):

@@ -487,7 +487,7 @@ class MHP:
                                       size=1)[0]
                     kernel_param[i][j].append(val)
 
-        #   Rescaling
+        # Rescaling
         branching_ratio = self.get_branching_ratio(kernel_param)
         if branching_ratio > 0.:
             scaling = target_bratio/branching_ratio
@@ -497,15 +497,16 @@ class MHP:
                 vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
                 kernel_param[i][j][vec_ix_omega] = (scaling*kernel_param[i][j][vec_ix_omega])
 
-        #   Flatten
+        # Flatten
         if flatten:
             return self.matrix2tensor_params(mu, kernel_param)
         else:
             return mu, kernel_param
 
     # Residuals
-    def get_residuals(self, mu=None, kernel_param=None, sampling=False,
-                      sample_size=10**3, seed=1234, verbose=False):
+    def get_residuals(self, process_path, mu=None, kernel_param=None,
+                      sampling=False, sample_size=10**3, seed=1234,
+                      verbose=False):
         if mu is None or kernel_param is None:
             if self.is_fitted:
                 mu = self.fitted_mu
@@ -513,12 +514,38 @@ class MHP:
             else:
                 raise ValueError("Both mu and kernel_param must be specified.")
         d = self.d
-        residuals = gof.get_residuals(self.process_path, self.psi, mu,
+        residuals = gof.get_residuals(process_path, self.psi, mu,
                                       kernel_param, sampling=sampling,
                                       sample_size=sample_size, seed=seed,
                                       verbose=verbose)
         if self.is_fitted:
             self.fit_residuals = residuals
+        return residuals
+
+    def ks_test_residuals(self, residuals=None):
+        if residuals is None:
+            if self.fit_residuals is not None:
+                residuals = self.fit_residuals
+            else:
+                raise ValueError("residuals must be specified.")
+        return gof.ks_test_residuals(residuals)
+
+    def qq_plot(self, i, residuals=None, labels=None, style='exponential',
+                substract_yx=False, normalize=False, max_points=None,
+                display_line45=True, log_scale=False, list_colors=None,
+                ax=None, save=False, filename='image.png', show=False,
+                **kwargs):
+        if residuals is None:
+            if self.fit_residuals is not None:
+                residuals = self.fit_residuals
+            else:
+                raise ValueError("residuals must be specified.")
+        return gof.qq_plot(residuals[i], n_models=1, labels=labels,
+                           style=style, substract_yx=substract_yx,
+                           normalize=normalize, max_points=max_points,
+                           display_line45=display_line45, log_scale=log_scale,
+                           list_colors=list_colors, ax=ax, save=save,
+                           filename=filename, show=show, **kwargs)
 
     # Simulation
     def simulate(self, T_f, mu=None, kernel_param=None, seed=1234,

@@ -104,65 +104,63 @@ def ks_test_residuals(residuals):
     return [stats.kstest(res, 'expon') for res in residuals]
 
 
-def qq_plot(list_residuals, n_models=1, labels=None, style='exponential',
+def qq_plot(residuals, n_models=1, labels=None, style='exponential',
             substract_yx=False, normalize=False, max_points=None,
             display_line45=True, log_scale=False, list_colors=None, ax=None,
             save=False, filename='image.png', show=False, **kwargs):
     #   Draw Q-Q plot of the residuals of each model.
     if ax is None:
         fig, ax = plt.subplots(1, 1, figsize=(6, 4), dpi=300)
-    if labels is not None:
-        labelling = False
-    else:
-        labelling = True
+    # if labels is not None:
+    #     labelling = False
+    # else:
+    #     labels = [' ']*n_models
+    #     labelling = True
 
-    for i in range(n_models):
-        if style == 'exponential':
-            (osm, osr) = stats.probplot(list_residuals[i], dist="expon",
-                                        plot=None, fit=False)
-            renorm_factor = np.sqrt(len(osr))
-            if max_points is not None:
-                max_points = min(max_points, len(osm))
-                margin = 0.01
-                indices_subsample = np.concatenate(([m for m in range(int(margin*len(osm)))], np.linspace(int(margin*len(osm)), int((1-margin)*len(osm)), max_points), [m for m in range(int((1-margin)*len(osm)), len(osm))]))
-                indices_subsample = [int(x) for x in indices_subsample]
-                osm = osm[indices_subsample]
-                osr = osr[indices_subsample]
-            if substract_yx:
-                ax.plot(osm, osr-osm, marker="o", linestyle="None",
-                        label=labels[i], **kwargs)
+    if style == 'exponential':
+        (osm, osr) = stats.probplot(residuals, dist="expon",
+                                    plot=None, fit=False)
+        renorm_factor = np.sqrt(len(osr))
+        if max_points is not None:
+            max_points = min(max_points, len(osm))
+            margin = 0.01
+            indices_subsample = np.concatenate(([m for m in range(int(margin*len(osm)))], np.linspace(int(margin*len(osm)), int((1-margin)*len(osm)), max_points), [m for m in range(int((1-margin)*len(osm)), len(osm))]))
+            indices_subsample = [int(x) for x in indices_subsample]
+            osm = osm[indices_subsample]
+            osr = osr[indices_subsample]
+        if substract_yx:
+            ax.plot(osm, osr-osm, marker="o", linestyle="None", **kwargs)
+        else:
+            ax.plot(osm, osr, marker="o", linestyle="None", **kwargs)
+            x_45 = np.linspace(*ax.get_xlim())
+            ax.plot(x_45, x_45, c='black')
+    elif style == 'uniform':
+        (osm, osr) = stats.probplot(1-np.exp(-residuals),
+                                    dist=stats.uniform, plot=None,
+                                    fit=False)
+        renorm_factor = np.sqrt(len(osr))
+        if max_points is not None:
+            max_points = min(max_points, len(osm))
+            margin = 0.01
+            indices_subsample = np.concatenate(([m for m in range(int(margin*len(osm)))], np.linspace(int(margin*len(osm)), int((1-margin)*len(osm)), max_points), [m for m in range(int((1-margin)*len(osm)), len(osm))]))
+            indices_subsample = [int(x) for x in indices_subsample]
+            osm = osm[indices_subsample]
+            osr = osr[indices_subsample]
+        if substract_yx:
+            if normalize:
+                ax.plot(osm, renorm_factor*(osr-osm), **kwargs)
             else:
-                ax.plot(osm, osr, marker="o", linestyle="None",
-                        label=labels[i], **kwargs)
-                x_45 = np.linspace(*ax.get_xlim())
-                ax.plot(x_45, x_45, c='black')
-        elif style == 'uniform':
-            (osm, osr) = stats.probplot(1-np.exp(-list_residuals[i]),
-                                        dist=stats.uniform, plot=None,
-                                        fit=False)
-            renorm_factor = np.sqrt(len(osr))
-            if max_points is not None:
-                max_points = min(max_points, len(osm))
-                margin = 0.01
-                indices_subsample = np.concatenate(([m for m in range(int(margin*len(osm)))], np.linspace(int(margin*len(osm)), int((1-margin)*len(osm)), max_points), [m for m in range(int((1-margin)*len(osm)), len(osm))]))
-                indices_subsample = [int(x) for x in indices_subsample]
-                osm = osm[indices_subsample]
-                osr = osr[indices_subsample]
-            if substract_yx:
-                if normalize:
-                    ax.plot(osm, renorm_factor*(osr-osm), label=labels[i],
-                            **kwargs)
-                else:
-                    ax.plot(osm, osr-osm, label=labels[i], **kwargs)
-            else:
-                ax.plot(osm, osr, label=labels[i], **kwargs)
-    if labelling:
-        ax.legend()
+                ax.plot(osm, osr-osm, **kwargs)
+            ax.axhline(y=0., linestyle='dashed', color='grey')
+        else:
+            ax.plot(osm, osr, **kwargs)
+    # if labelling:
+    #     ax.legend()
     if log_scale:
         ax.set_xscale('log')
         ax.set_yscale('log')
     if save:
         plt.savefig(filename)
     if show:
-        ax.show()
+        plt.show()
     return ax
