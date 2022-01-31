@@ -558,6 +558,7 @@ class MHP:
             kernel_param = self.fitted_ker_param
             if kernel_param is None:
                 raise ValueError("Missing value for Kernel parameters")
+        mu = np.array(mu)
         d = self.d
         offset_gens = [[None for j in range(d)] for i in range(d)]
         for i, j in itertools.product(range(d), range(d)):

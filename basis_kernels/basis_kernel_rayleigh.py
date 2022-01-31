@@ -6,27 +6,34 @@ from aslsd.basis_kernels.basis_kernel import BasisKernel
 from aslsd.utilities import useful_functions as uf
 
 
-class NullKernel(BasisKernel):
+class RayleighKernel(BasisKernel):
 
     # Number of parameters
     def get_n_vars(self):
-        pass
+        return 2
 
     # Bounds
     def get_var_bounds(self):
-        pass
+        return np.array([10**-10, 10**-10])
 
     # Param names
     def get_var_names(self):
-        pass
+        omega = '$\u03C9$'
+        beta = '$\u03B2$'
+        return [omega, beta]
 
     # Availabe interactions
     def get_interactions(self, is_reverse=False):
-        pass
+        if is_reverse:
+            return []
+        else:
+            return ['NullKernel', 'RayleighKernel']
 
     # Kernel functionals
     def make_phi(self, t, vars_):
-        pass
+        omega = vars_[0]
+        beta = vars_[1]
+        return omega*(t/beta**2)*np.exp(-0.5*(t/beta)**2)
 
     def make_diff_phi(self, t, ix_diff, vars_):
         pass
@@ -56,14 +63,19 @@ class NullKernel(BasisKernel):
 
     # Simulatiom
     def make_simu_func(self, rng, vars_, size=1):
-        pass
+        return rng.rayleigh(scale=vars_[1], size=size)
 
     # Metrics
     def make_l1_norm(self, vars_):
-        pass
+        return vars_[0]
 
     def make_diff_l1_norm(self, ix_diff, vars_):
-        pass
+        # Differential wrt Omega
+        if ix_diff == 0:
+            return 1.
+        # Differential wrt Beta
+        elif ix_diff == 1:
+            return 0.
 
     def make_l2_norm(self, vars_):
         pass
@@ -72,6 +84,9 @@ class NullKernel(BasisKernel):
         pass
 
     def make_l2_dot(self, basis_kern_2, vars_1, vars_2):
+        pass
+
+    def make_diff_l2_dot(self, basis_kern_2, ix_func, ix_diff, vars_1, vars_2):
         pass
 
     # KL divergence

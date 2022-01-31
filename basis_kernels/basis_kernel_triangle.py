@@ -10,11 +10,11 @@ class TriangularKernel(BasisKernel):
 
     # Number of parameters
     def get_n_vars(self):
-        pass
+        return 4
 
     # Bounds
     def get_var_bounds(self):
-        pass
+        return np.array([10**-10 for i in range(4)])
 
     # Param names
     def get_var_names(self):
@@ -26,7 +26,10 @@ class TriangularKernel(BasisKernel):
 
     # Availabe interactions
     def get_interactions(self, is_reverse=False):
-        pass
+        if is_reverse:
+            return []
+        else:
+            return ['NullKernel', 'TriangularKernel']
 
     # Kernel functionals
     def make_phi(self, t, vars_):
@@ -74,7 +77,10 @@ class TriangularKernel(BasisKernel):
 
     # Metrics
     def make_l1_norm(self, vars_):
-        pass
+        omega = vars_[0]
+        beta = vars_[2]
+        delta = vars_[3]
+        return 0.5*omega*(beta+delta)
 
     def make_diff_l1_norm(self, ix_diff, vars_):
         pass
@@ -86,6 +92,9 @@ class TriangularKernel(BasisKernel):
         pass
 
     def make_l2_dot(self, basis_kern_2, vars_1, vars_2):
+        pass
+
+    def make_diff_l2_dot(self, basis_kern_2, ix_func, ix_diff, vars_1, vars_2):
         pass
 
     # KL divergence
