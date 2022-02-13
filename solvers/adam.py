@@ -8,21 +8,35 @@ from aslsd.solvers.solver import Solver
 class ADAM(Solver):
     """
     Class for ADAM optimizer.
-    .. math::
-        \\theta_{k}^{(t+1)}=\\mathrm{proj}_{\\Theta_{k}}\\left(\\theta_{k}^{(t)}+\\Delta \\theta_{k}^{(t+1)}\\right)
 
-    where
-    * :math:`g_{1}^{(t)} =\\frac{a_{\\mathrm{M} 1} \\cdot g_{1}^{(t-1)}+\\left(1-a_{\\mathrm{M} 1}\\right) \\cdot \\mathcal{G}_{\\boldsymbol{T}}^{(\\boldsymbol{k})}\\left(\\theta_{k}^{(t)}\\right)}{1-a_{\\mathrm{M} 1}^{t}}`;
-    * :math:`g_{2}^{(t)} =\\frac{a_{\\mathrm{M} 2} \\cdot g_{2}^{(t-1)}+\\left(1-a_{\\mathrm{M} 2}\\right) \\cdot \\mathcal{G}_{\\boldsymbol{T}}^{(\\boldsymbol{k})} \\odot \\mathcal{G}_{\\boldsymbol{T}}^{(\\boldsymbol{k})}\\left(\\theta_{k}^{(t)}\\right)}{1-a_{\\mathrm{M} 2}^{t}}`;
-    * :math:`\\Delta \\theta_{k}^{(t)} =-a_{\\mathrm{rate}} \\cdot \\frac{g_{1}^{(t)}}{\\sqrt{g_{2}^{(t)}}+a_{\\mathrm{E}}}`.
+    This solver performs parameter updates of the form
+
+    .. math::
+        \\theta_{k}^{(t+1)}=\\mathrm{proj}_{\\Theta_{k}}\\left(\\theta_{k}^{(t)}+\\Delta \\theta_{k}^{(t+1)}\\right),
+
+    with
+
+    .. math::
+        g_{1}^{(t)} & =\\frac{a_{\\mathrm{M} 1} \\cdot g_{1}^{(t-1)}+\\left(1-a_{\\mathrm{M} 1}\\right) \\cdot \\mathcal{G}_{\\boldsymbol{T}}^{(\\boldsymbol{k})}\\left(\\theta_{k}^{(t)}\\right)}{1-a_{\\mathrm{M} 1}^{t}}; \\\\
+        g_{2}^{(t)} & =\\frac{a_{\\mathrm{M} 2} \\cdot g_{2}^{(t-1)}+\\left(1-a_{\\mathrm{M} 2}\\right) \\cdot \\mathcal{G}_{\\boldsymbol{T}}^{(\\boldsymbol{k})} \\odot \\mathcal{G}_{\\boldsymbol{T}}^{(\\boldsymbol{k})}\\left(\\theta_{k}^{(t)}\\right)}{1-a_{\\mathrm{M} 2}^{t}}; \\\\
+        \\Delta \\theta_{k}^{(t)} & =-a_{\\mathrm{rate}}(t) \\cdot \\frac{g_{1}^{(t)}}{\\sqrt{g_{2}^{(t)}}+a_{\\mathrm{E}}}.
+
+    The operator :math:`\\mathrm{proj}_{\\Theta_{k}}` denotes the projection
+    operator on the set of parameters :math:`\\Theta_{k}`. The hyper-parameters
+    of this solver are
+
+    * :math:`a_{\\mathrm{M} 1}` is the gradient momentum term;
+    * :math:`a_{\\mathrm{M} 2}` is the squared gradient momentum term;
+    * :math:`a_{\\mathrm{E}}` is a very small hyper-parameter to avoid division by zero;
+    * :math:`a_{\\mathrm{rate}}` is the time-dependent learning rate.
 
     Parameters
     ----------
 
     Notes
     ------
-        Diederik P Kingma and Jimmy Ba. Adam: A method for stochastic
-        optimization. In International Conference on Learning Representations,
+        Diederik P Kingma and Jimmy Ba. 'Adam: A method for stochastic
+        optimization'. In International Conference on Learning Representations,
         2015.
     """
 

@@ -20,7 +20,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="aslsd.utilities package" href="aslsd.utilities.html" />
-    <link rel="prev" title="aslsd.simulation package" href="aslsd.simulation.html" /> 
+    <link rel="prev" title="aslsd.plots package" href="aslsd.plots.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -55,7 +55,6 @@
 <li class="toctree-l4"><a class="reference internal" href="aslsd.models.html">aslsd.models package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="aslsd.optim_logging.html">aslsd.optim_logging package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="aslsd.plots.html">aslsd.plots package</a></li>
-<li class="toctree-l4"><a class="reference internal" href="aslsd.simulation.html">aslsd.simulation package</a></li>
 <li class="toctree-l4 current"><a class="current reference internal" href="#">aslsd.solvers package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="aslsd.utilities.html">aslsd.utilities package</a></li>
 </ul>
@@ -104,18 +103,27 @@
 <dt class="sig sig-object py" id="aslsd.solvers.adam.ADAM">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">aslsd.solvers.adam.</span></span><span class="sig-name descname"><span class="pre">ADAM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.solvers.adam.ADAM" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#aslsd.solvers.solver.Solver" title="aslsd.solvers.solver.Solver"><code class="xref py py-class docutils literal notranslate"><span class="pre">aslsd.solvers.solver.Solver</span></code></a></p>
-<p>Class for ADAM optimizer.
-.. math:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>\<span class="n">theta_</span><span class="p">{</span><span class="n">k</span><span class="p">}</span><span class="o">^</span><span class="p">{(</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">)}</span><span class="o">=</span>\<span class="n">mathrm</span><span class="p">{</span><span class="n">proj</span><span class="p">}</span><span class="n">_</span><span class="p">{</span>\<span class="n">Theta_</span><span class="p">{</span><span class="n">k</span><span class="p">}}</span>\<span class="n">left</span><span class="p">(</span>\<span class="n">theta_</span><span class="p">{</span><span class="n">k</span><span class="p">}</span><span class="o">^</span><span class="p">{(</span><span class="n">t</span><span class="p">)}</span><span class="o">+</span>\<span class="n">Delta</span> \<span class="n">theta_</span><span class="p">{</span><span class="n">k</span><span class="p">}</span><span class="o">^</span><span class="p">{(</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">)}</span>\<span class="n">right</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>where
-* <span class="math notranslate nohighlight">\(g_{1}^{(t)} =\frac{a_{\mathrm{M} 1} \cdot g_{1}^{(t-1)}+\left(1-a_{\mathrm{M} 1}\right) \cdot \mathcal{G}_{\boldsymbol{T}}^{(\boldsymbol{k})}\left(\theta_{k}^{(t)}\right)}{1-a_{\mathrm{M} 1}^{t}}\)</span>;
-* <span class="math notranslate nohighlight">\(g_{2}^{(t)} =\frac{a_{\mathrm{M} 2} \cdot g_{2}^{(t-1)}+\left(1-a_{\mathrm{M} 2}\right) \cdot \mathcal{G}_{\boldsymbol{T}}^{(\boldsymbol{k})} \odot \mathcal{G}_{\boldsymbol{T}}^{(\boldsymbol{k})}\left(\theta_{k}^{(t)}\right)}{1-a_{\mathrm{M} 2}^{t}}\)</span>;
-* <span class="math notranslate nohighlight">\(\Delta \theta_{k}^{(t)} =-a_{\mathrm{rate}} \cdot \frac{g_{1}^{(t)}}{\sqrt{g_{2}^{(t)}}+a_{\mathrm{E}}}\)</span>.</p>
+<p>Class for ADAM optimizer.</p>
+<p>This solver performs parameter updates of the form</p>
+<div class="math notranslate nohighlight">
+\[\theta_{k}^{(t+1)}=\mathrm{proj}_{\Theta_{k}}\left(\theta_{k}^{(t)}+\Delta \theta_{k}^{(t+1)}\right),\]</div>
+<p>with</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}g_{1}^{(t)} &amp; =\frac{a_{\mathrm{M} 1} \cdot g_{1}^{(t-1)}+\left(1-a_{\mathrm{M} 1}\right) \cdot \mathcal{G}_{\boldsymbol{T}}^{(\boldsymbol{k})}\left(\theta_{k}^{(t)}\right)}{1-a_{\mathrm{M} 1}^{t}}; \\
+g_{2}^{(t)} &amp; =\frac{a_{\mathrm{M} 2} \cdot g_{2}^{(t-1)}+\left(1-a_{\mathrm{M} 2}\right) \cdot \mathcal{G}_{\boldsymbol{T}}^{(\boldsymbol{k})} \odot \mathcal{G}_{\boldsymbol{T}}^{(\boldsymbol{k})}\left(\theta_{k}^{(t)}\right)}{1-a_{\mathrm{M} 2}^{t}}; \\
+\Delta \theta_{k}^{(t)} &amp; =-a_{\mathrm{rate}}(t) \cdot \frac{g_{1}^{(t)}}{\sqrt{g_{2}^{(t)}}+a_{\mathrm{E}}}.\end{split}\]</div>
+<p>The operator <span class="math notranslate nohighlight">\(\mathrm{proj}_{\Theta_{k}}\)</span> denotes the projection
+operator on the set of parameters <span class="math notranslate nohighlight">\(\Theta_{k}\)</span>. The hyper-parameters
+of this solver are</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(a_{\mathrm{M} 1}\)</span> is the gradient momentum term;</p></li>
+<li><p><span class="math notranslate nohighlight">\(a_{\mathrm{M} 2}\)</span> is the squared gradient momentum term;</p></li>
+<li><p><span class="math notranslate nohighlight">\(a_{\mathrm{E}}\)</span> is a very small hyper-parameter to avoid division by zero;</p></li>
+<li><p><span class="math notranslate nohighlight">\(a_{\mathrm{rate}}\)</span> is the time-dependent learning rate.</p></li>
+</ul>
 <p class="rubric">Notes</p>
-<p>Diederik P Kingma and Jimmy Ba. Adam: A method for stochastic
-optimization. In International Conference on Learning Representations,
+<p>Diederik P Kingma and Jimmy Ba. ‘Adam: A method for stochastic
+optimization’. In International Conference on Learning Representations,
 2015.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="aslsd.solvers.adam.ADAM.iterate">
@@ -132,9 +140,22 @@ optimization. In International Conference on Learning Representations,
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">aslsd.solvers.momentum.</span></span><span class="sig-name descname"><span class="pre">Momentum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.solvers.momentum.Momentum" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#aslsd.solvers.solver.Solver" title="aslsd.solvers.solver.Solver"><code class="xref py py-class docutils literal notranslate"><span class="pre">aslsd.solvers.solver.Solver</span></code></a></p>
 <p>Class for a momentum SGD optimizer.</p>
+<p>This solver performs parameter updates of the form</p>
+<div class="math notranslate nohighlight">
+\[\theta_{k}^{(t+1)}=\mathrm{proj}_{\Theta_{k}}\left(\theta_{k}^{(t)}+\Delta \theta_{k}^{(t+1)}\right),\]</div>
+<p>with</p>
+<div class="math notranslate nohighlight">
+\[\Delta \theta_{k}^{(t)} =-a_{\mathrm{rate}}(t) \cdot \mathcal{G}_{\boldsymbol{T}}^{(\boldsymbol{k})}\left(\theta_{k}^{(t)}\right)+a_{\mathrm{M}} \cdot \Delta \theta_{k}^{(t-1)} .\]</div>
+<p>The operator <span class="math notranslate nohighlight">\(\mathrm{proj}_{\Theta_{k}}\)</span> denotes the projection
+operator on the set of parameters <span class="math notranslate nohighlight">\(\Theta_{k}\)</span>. The hyper-parameters
+of this solver are</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(a_{\mathrm{M}}\)</span> is the gradient momentum term;</p></li>
+<li><p><span class="math notranslate nohighlight">\(a_{\mathrm{rate}}\)</span> is the time-dependent learning rate.</p></li>
+</ul>
 <p class="rubric">Notes</p>
-<p>Qian, Ning. “On the momentum term in gradient descent learning
-algorithms.” Neural networks 12.1 (1999): 145-151.</p>
+<p>Qian, Ning. ‘On the momentum term in gradient descent learning
+algorithms’. Neural networks 12.1 (1999): 145-151.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="aslsd.solvers.momentum.Momentum.iterate">
 <span class="sig-name descname"><span class="pre">iterate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.solvers.momentum.Momentum.iterate" title="Permalink to this definition"></a></dt>
@@ -172,7 +193,7 @@ algorithms.” Neural networks 12.1 (1999): 145-151.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="aslsd.simulation.html" class="btn btn-neutral float-left" title="aslsd.simulation package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="aslsd.plots.html" class="btn btn-neutral float-left" title="aslsd.plots package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="aslsd.utilities.html" class="btn btn-neutral float-right" title="aslsd.utilities package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
