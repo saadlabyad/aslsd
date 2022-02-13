@@ -106,7 +106,29 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="aslsd.utilities.useful_functions.discretize_space">
 <span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_functions.</span></span><span class="sig-name descname"><span class="pre">discretize_space</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">res</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disc_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_functions.discretize_space" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Return evenly spaced values in an interval or on a log scale.</p>
+<p>Let <span class="math notranslate nohighlight">\(x_{\textrm{min}},x_{\textrm{max}} \in \mathbb{R}\)</span>. If a
+linear discretization is chosen, return <cite>res</cite> evenly spaced numbers in
+<span class="math notranslate nohighlight">\([x_{\textrm{min}},x_{\textrm{max}}]\)</span>. If a logarithmic
+discretization is chosen, return <cite>res</cite> evenly spaced numbers in
+<span class="math notranslate nohighlight">\([10^{x_{\textrm{min}}},10^{x_{\textrm{max}}}]\)</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_min</strong> (<cite>float</cite>) – Start value or logarithm of the start value.</p></li>
+<li><p><strong>x_max</strong> (<cite>float</cite>) – End value or logarithm of the end value.</p></li>
+<li><p><strong>res</strong> (<cite>int</cite>) – Number of elements to return.</p></li>
+<li><p><strong>disc_type</strong> (<cite>str</cite>) – Discretization type.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Discretized set.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><cite>numpy.ndarray</cite></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="aslsd.utilities.useful_functions.double_sum_exp_1D">
@@ -127,7 +149,7 @@ the cumulative sum</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>beta</strong> (<cite>float</cite>) – Decay rate.</p></li>
-<li><p><strong>times</strong> (<cite>numpy.ndarray</cite>) – List of times.</p></li>
+<li><p><strong>times</strong> (<cite>numpy.ndarray</cite>) – Array of times.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -157,8 +179,8 @@ the cumulative sum</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>beta</strong> (<cite>float</cite>) – DESCRIPTION.</p></li>
-<li><p><strong>times</strong> (<cite>numpy.ndarray</cite>) – DESCRIPTION.</p></li>
+<li><p><strong>beta</strong> (<cite>float</cite>) – Decay rate.</p></li>
+<li><p><strong>times</strong> (<cite>numpy.ndarray</cite>) – Array of times.</p></li>
 <li><p><strong>T_f</strong> (<cite>float</cite>) – Terminal time.</p></li>
 </ul>
 </dd>

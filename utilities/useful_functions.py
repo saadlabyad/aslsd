@@ -384,7 +384,7 @@ def double_sum_exp_1D(beta, times):
     beta : `float`
         Decay rate.
     times : `numpy.ndarray`
-        List of times.
+        Array of times.
 
     Returns
     -------
@@ -424,9 +424,9 @@ def double_sum_exp_1D_midpoint(beta, times, T_f):
     Parameters
     ----------
     beta : `float`
-        DESCRIPTION.
+        Decay rate.
     times : `numpy.ndarray`
-        DESCRIPTION.
+        Array of times.
     T_f : `float`
         Terminal time.
 
@@ -449,6 +449,32 @@ def double_sum_exp_1D_midpoint(beta, times, T_f):
 # List operations
 # =============================================================================
 def discretize_space(x_min, x_max, res, disc_type):
+    """
+    Return evenly spaced values in an interval or on a log scale.
+
+    Let :math:`x_{\\textrm{min}},x_{\\textrm{max}} \\in \\mathbb{R}`. If a
+    linear discretization is chosen, return `res` evenly spaced numbers in
+    :math:`[x_{\\textrm{min}},x_{\\textrm{max}}]`. If a logarithmic
+    discretization is chosen, return `res` evenly spaced numbers in
+    :math:`[10^{x_{\\textrm{min}}},10^{x_{\\textrm{max}}}]`.
+
+    Parameters
+    ----------
+    x_min : `float`
+        Start value or logarithm of the start value.
+    x_max : `float`
+        End value or logarithm of the end value.
+    res : `int`
+        Number of elements to return.
+    disc_type : `str`
+        Discretization type.
+
+    Returns
+    -------
+    `numpy.ndarray`
+        Discretized set.
+
+    """
     if disc_type == 'log':
         return np.logspace(x_min, x_max, res)
     elif disc_type == 'linear':
@@ -478,8 +504,8 @@ def finite_diff(func, x, epsilon=10**-3, diff_type='central difference',
 
     Let :math:`f` be a function that is differentiable at :math:`x \\in \\mathbb{R}`.
     Let :math:`\\epsilon >0`. Define finite differences estimates of :math:`f^\\prime(x)`.
-    
-    The central difference estimate is define as 
+
+    The central difference estimate is define as
 
     .. math::
         \\frac{f(x+\\epsilon /2)-f(x-\\epsilon /2)}{\\epsilon}.
