@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>aslsd.plots package &mdash; aslsd 0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="aslsd.simulation package" href="aslsd.simulation.html" />
+    <link rel="prev" title="aslsd.optim_logging package" href="aslsd.optim_logging.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> aslsd
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme.html">aslsd</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">aslsd</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="aslsd.html">aslsd package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="aslsd.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="aslsd.applications.html">aslsd.applications package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.basis_kernels.html">aslsd.basis_kernels package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.estimators.html">aslsd.estimators package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.evaluation.html">aslsd.evaluation package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.events.html">aslsd.events package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.exponential_mhp.html">aslsd.exponential_mhp package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.homogeneous_poisson.html">aslsd.homogeneous_poisson package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.kernels.html">aslsd.kernels package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.models.html">aslsd.models package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.optim_logging.html">aslsd.optim_logging package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">aslsd.plots package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.simulation.html">aslsd.simulation package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.solvers.html">aslsd.solvers package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.utilities.html">aslsd.utilities package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="aslsd.html#module-aslsd">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">aslsd</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules.html">aslsd</a> &raquo;</li>
+          <li><a href="aslsd.html">aslsd package</a> &raquo;</li>
+      <li>aslsd.plots package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/aslsd.plots.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="aslsd-plots-package">
+<h1>aslsd.plots package<a class="headerlink" href="#aslsd-plots-package" title="Permalink to this headline"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline"></a></h2>
+</section>
+<section id="module-aslsd.plots.graphic_tools">
+<span id="aslsd-plots-graphic-tools-module"></span><h2>aslsd.plots.graphic_tools module<a class="headerlink" href="#module-aslsd.plots.graphic_tools" title="Permalink to this headline"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.plots.graphic_tools.animate_plot_sequence">
+<span class="sig-prename descclassname"><span class="pre">aslsd.plots.graphic_tools.</span></span><span class="sig-name descname"><span class="pre">animate_plot_sequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref_x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_y_ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'video'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.plots.graphic_tools.animate_plot_sequence" title="Permalink to this definition"></a></dt>
+<dd><p>Generic function to construct an animation for a sequence of functions.
+Based on
+<a class="reference external" href="https://jakevdp.github.io/blog/2012/08/18/matplotlib-animation-tutorial/">https://jakevdp.github.io/blog/2012/08/18/matplotlib-animation-tutorial/</a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.plots.graphic_tools.annotate_heatmap">
+<span class="sig-prename descclassname"><span class="pre">aslsd.plots.graphic_tools.</span></span><span class="sig-name descname"><span class="pre">annotate_heatmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">im</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valfmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'{x:.2f}'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">textcolors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['black',</span> <span class="pre">'white']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">textkw</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.plots.graphic_tools.annotate_heatmap" title="Permalink to this definition"></a></dt>
+<dd><p>A function to annotate a heatmap.
+Based on
+<a class="reference external" href="https://matplotlib.org/stable/gallery/images_contours_and_fields/image_annotated_heatmap.html">https://matplotlib.org/stable/gallery/images_contours_and_fields/image_annotated_heatmap.html</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>im</strong> – The AxesImage to be labeled.</p></li>
+<li><p><strong>data</strong> – Data used to annotate.  If None, the image’s data is used.  Optional.</p></li>
+<li><p><strong>valfmt</strong> – The format of the annotations inside the heatmap.  This should either
+use the string format method, e.g. “$ {x:.2f}”, or be a
+<cite>matplotlib.ticker.Formatter</cite>.  Optional.</p></li>
+<li><p><strong>textcolors</strong> – A list or array of two color specifications.  The first is used for
+values below a threshold, the second for those above.  Optional.</p></li>
+<li><p><strong>threshold</strong> – Value in data units according to which the colors from textcolors are
+applied.  If None (the default) uses the middle of the colormap as
+separation.  Optional.</p></li>
+<li><p><strong>**kwargs</strong> – All other arguments are forwarded to each call to <cite>text</cite> used to create
+the text labels.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.plots.graphic_tools.get_horizontal_range_brace">
+<span class="sig-prename descclassname"><span class="pre">aslsd.plots.graphic_tools.</span></span><span class="sig-name descname"><span class="pre">get_horizontal_range_brace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.75</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_divisions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">11</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolution_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.plots.graphic_tools.get_horizontal_range_brace" title="Permalink to this definition"></a></dt>
+<dd><p>Generic function to construct a horizontal brace.
+Based on <a class="reference external" href="https://www.py4u.net/discuss/194566">https://www.py4u.net/discuss/194566</a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.plots.graphic_tools.get_vertical_range_brace">
+<span class="sig-prename descclassname"><span class="pre">aslsd.plots.graphic_tools.</span></span><span class="sig-name descname"><span class="pre">get_vertical_range_brace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.75</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_divisions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">11</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolution_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.plots.graphic_tools.get_vertical_range_brace" title="Permalink to this definition"></a></dt>
+<dd><p>Generic function to construct a vertical brace.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.plots.graphic_tools.make_heatmap">
+<span class="sig-prename descclassname"><span class="pre">aslsd.plots.graphic_tools.</span></span><span class="sig-name descname"><span class="pre">make_heatmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cbar_kw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cbarlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.plots.graphic_tools.make_heatmap" title="Permalink to this definition"></a></dt>
+<dd><p>Create a heatmap from a numpy array and two lists of labels.
+Based on
+<a class="reference external" href="https://matplotlib.org/stable/gallery/images_contours_and_fields/image_annotated_heatmap.html">https://matplotlib.org/stable/gallery/images_contours_and_fields/image_annotated_heatmap.html</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – A 2D numpy array of shape (N, M).</p></li>
+<li><p><strong>row_labels</strong> – A list or array of length N with the labels for the rows.</p></li>
+<li><p><strong>col_labels</strong> – A list or array of length M with the labels for the columns.</p></li>
+<li><p><strong>ax</strong> – A <cite>matplotlib.axes.Axes</cite> instance to which the heatmap is plotted.  If
+not provided, use current axes or create a new one.  Optional.</p></li>
+<li><p><strong>cbar_kw</strong> – A dictionary with arguments to <cite>matplotlib.Figure.colorbar</cite>.  Optional.</p></li>
+<li><p><strong>cbarlabel</strong> – The label for the colorbar.  Optional.</p></li>
+<li><p><strong>**kwargs</strong> – All other arguments are forwarded to <cite>imshow</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.plots.graphic_tools.plot_adjacency_matrix">
+<span class="sig-prename descclassname"><span class="pre">aslsd.plots.graphic_tools.</span></span><span class="sig-name descname"><span class="pre">plot_adjacency_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adjacency_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">event_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_from_one</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">annotate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Blues'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'image.png'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.plots.graphic_tools.plot_adjacency_matrix" title="Permalink to this definition"></a></dt>
+<dd><p>Generic function to plot an adjacency matrix.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.plots.graphic_tools.plot_function_shaded_error">
+<span class="sig-prename descclassname"><span class="pre">aslsd.plots.graphic_tools.</span></span><span class="sig-name descname"><span class="pre">plot_function_shaded_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_vals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_y_vals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_y_std</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_colors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['steelblue',</span> <span class="pre">'darkorange',</span> <span class="pre">'limegreen',</span> <span class="pre">'firebrick',</span> <span class="pre">'mediumorchid']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labeling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'lin'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.plots.graphic_tools.plot_function_shaded_error" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.plots.graphic_tools.plot_kernels">
+<span class="sig-prename descclassname"><span class="pre">aslsd.plots.graphic_tools.</span></span><span class="sig-name descname"><span class="pre">plot_kernels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_param</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_from_one</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'image.png'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.plots.graphic_tools.plot_kernels" title="Permalink to this definition"></a></dt>
+<dd><p>Generic function to plot the matrix of kernels of an MHP.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.plots.graphic_tools.plot_solver_path">
+<span class="sig-prename descclassname"><span class="pre">aslsd.plots.graphic_tools.</span></span><span class="sig-name descname"><span class="pre">plot_solver_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit_log</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matrix_n_param</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ker_param_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_ker_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_ker_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_derivatives</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">derivatives_zero</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(10,</span> <span class="pre">10)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'image.png'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.plots.graphic_tools.plot_solver_path" title="Permalink to this definition"></a></dt>
+<dd><p>Generic function to plot solver paths for each estimated MHP parameter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>param_updates</strong> (<cite>list</cite> of <cite>float</cite>, shape=(d,d, )) – Names of kernel parameters to label the y axis.</p></li>
+<li><p><strong>mu_names</strong> (<cite>list</cite> of <cite>str</cite>, shape=(d, ), default=`None`) – Names of background rates to label the y axis.</p></li>
+<li><p><strong>ker_param_names</strong> (<cite>list</cite> of <cite>str</cite>, shape=(d,d, ), default=`None`) – Names of kernel parameters to label the y axis.</p></li>
+<li><p><strong>true_mu</strong> (<cite>list</cite> of <cite>float</cite>, shape=(d, ), default=`None`) – True vector of background rates.</p></li>
+<li><p><strong>true_ker_param</strong> (<cite>list</cite> of <cite>float</cite>, shape=(d,d, ), default=`None`) – True tensor of kernel parameters.
+This only makes sense if the fitted MHP model belongs to the same
+parametric class as the ground truth MHP.</p></li>
+<li><p><strong>min_mu</strong> (<cite>list</cite> of <cite>float</cite>, shape=(d, ), default=`None`) – The vector of background rates which minimizes the LSE.</p></li>
+<li><p><strong>min_ker_param</strong> (<cite>list</cite> of <cite>float</cite>, shape=(d,d, ), default=`None`) – The tensor of kernel parameters which minimizes the LSE.
+This only makes sense if the fitted MHP model belongs to the same
+parametric class as the ground truth MHP.</p></li>
+<li><p><strong>plot_derivatives</strong> (<cite>bool</cite>, default=`False`) – if <cite>True</cite>, plot the updates of estimates of the LSE derivative with
+respect to parameters.</p></li>
+<li><p><strong>grad_updates</strong> (<cite>list</cite> of <cite>float</cite>, shape=(d,d, ), default=`None`) – Names of kernel parameters to label the y axis.</p></li>
+<li><p><strong>derivatives_zero</strong> (<cite>bool</cite>, default=`False`) – if <cite>True</cite>, display the y=0 line for derivative plots.</p></li>
+<li><p><strong>show</strong> (<cite>bool</cite>, default=`False`) – if <cite>True</cite>, show the plot.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>true_mu and true_ker_param make sense in the context of data
+simulated from a known ground truth MHP.
+min_mu and min_ker_param are useful in cases where the minimizer
+of the LSE can be known exactly. For example, in the case of a
+1-dimensional MHP with exponential kernel, the minimizer of the LSE is
+known in closed form.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.plots.graphic_tools.plot_solver_path_contour">
+<span class="sig-prename descclassname"><span class="pre">aslsd.plots.graphic_tools.</span></span><span class="sig-name descname"><span class="pre">plot_solver_path_contour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_updates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_updates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_function</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis_resolution</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'$μ$'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'$ω$'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contour_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'magma'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'whitesmoke'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_param_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'aquamarine'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_param_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'deepskyblue'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'image.png'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.plots.graphic_tools.plot_solver_path_contour" title="Permalink to this definition"></a></dt>
+<dd><p>Generic function to plot a contour map of the LSE and the solver path of
+a fitted MHP model. This function applies only when the fitted model and
+the ground truth belong to the same parametric space, and when that
+parametric space is the space of 1-dimensional MHP with only one kernel
+parameter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_updates</strong> (<cite>list</cite> of <cite>str</cite>, shape=(d,d, )) – Names of kernel parameters to label the y axis.</p></li>
+<li><p><strong>y_updates</strong> (<cite>list</cite> of <cite>str</cite>, shape=(d, )) – Names of background rates to label the y axis.</p></li>
+<li><p><strong>loss_function</strong> (<cite>list</cite> of <cite>str</cite>, shape=(d,d, )) – Names of kernel parameters to label the y axis.</p></li>
+<li><p><strong>scale</strong> (<cite>list</cite> of <cite>float</cite>, shape=(d, ), default=`None`) – True vector of background rates.</p></li>
+<li><p><strong>axis_resolution</strong> (<cite>list</cite> of <cite>float</cite>, shape=(d,d, ), default=100) – True tensor of kernel parameters.
+This only makes sense if the fitted MHP model belongs to the same
+parametric class as the ground truth MHP.</p></li>
+<li><p><strong>x_name</strong> (<cite>list</cite> of <cite>float</cite>, shape=(d, ), default=`None`) – The vector of background rates which minimizes the LSE.</p></li>
+<li><p><strong>y_name</strong> (<cite>list</cite> of <cite>float</cite>, shape=(d,d, ), default=`None`) – The tensor of kernel parameters which minimizes the LSE.
+This only makes sense if the fitted MHP model belongs to the same
+parametric class as the ground truth MHP.</p></li>
+<li><p><strong>true_x</strong> (<cite>float</cite>, default=None) – True value of the x component of the ground truth MHP.</p></li>
+<li><p><strong>true_y</strong> (<cite>float</cite>, default=None) – True value of the y component of the ground truth MHP.</p></li>
+<li><p><strong>min_x</strong> (<cite>float</cite>, default=None) – Value of the x component the minimizer of loss_function.</p></li>
+<li><p><strong>min_y</strong> (<cite>float</cite>, default=None) – Value of the y component the minimizer of loss_function.</p></li>
+<li><p><strong>dpi</strong> (<cite>int</cite>, default=300) – </p></li>
+<li><p><strong>contour_color</strong> (<cite>str</cite>, default=’black’) – </p></li>
+<li><p><strong>cmap</strong> (<cite>str</cite>, default=’magma’) – </p></li>
+<li><p><strong>path_color</strong> (<cite>str</cite>, default=’whitesmoke’) – </p></li>
+<li><p><strong>true_param_color</strong> (<cite>str</cite>, default=’aquamarine’) – </p></li>
+<li><p><strong>min_param_color</strong> (<cite>str</cite>, default=’deepskyblue’) – </p></li>
+<li><p><strong>save</strong> (<cite>bool</cite>, default=`False`) – if <cite>True</cite>, save the plot.</p></li>
+<li><p><strong>filename</strong> (<cite>str</cite>, default=`’image.png’`) – </p></li>
+<li><p><strong>show</strong> (<cite>bool</cite>, default=`False`) – if <cite>True</cite>, show the plot.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-aslsd.plots">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-aslsd.plots" title="Permalink to this headline"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="aslsd.optim_logging.html" class="btn btn-neutral float-left" title="aslsd.optim_logging package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="aslsd.simulation.html" class="btn btn-neutral float-right" title="aslsd.simulation package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Alvaro Cartea, Samuel N. Cohen, and Saad Labyad.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

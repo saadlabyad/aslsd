@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>aslsd.utilities package &mdash; aslsd 0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="aslsd.solvers package" href="aslsd.solvers.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> aslsd
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme.html">aslsd</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">aslsd</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="aslsd.html">aslsd package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="aslsd.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="aslsd.applications.html">aslsd.applications package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.basis_kernels.html">aslsd.basis_kernels package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.estimators.html">aslsd.estimators package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.evaluation.html">aslsd.evaluation package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.events.html">aslsd.events package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.exponential_mhp.html">aslsd.exponential_mhp package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.homogeneous_poisson.html">aslsd.homogeneous_poisson package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.kernels.html">aslsd.kernels package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.models.html">aslsd.models package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.optim_logging.html">aslsd.optim_logging package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.plots.html">aslsd.plots package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.solvers.html">aslsd.solvers package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">aslsd.utilities package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="aslsd.html#module-aslsd">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">aslsd</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules.html">aslsd</a> &raquo;</li>
+          <li><a href="aslsd.html">aslsd package</a> &raquo;</li>
+      <li>aslsd.utilities package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/aslsd.utilities.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="aslsd-utilities-package">
+<h1>aslsd.utilities package<a class="headerlink" href="#aslsd-utilities-package" title="Permalink to this headline"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline"></a></h2>
+</section>
+<section id="module-aslsd.utilities.useful_functions">
+<span id="aslsd-utilities-useful-functions-module"></span><h2>aslsd.utilities.useful_functions module<a class="headerlink" href="#module-aslsd.utilities.useful_functions" title="Permalink to this headline"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_functions.concatenate_linspace">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_functions.</span></span><span class="sig-name descname"><span class="pre">concatenate_linspace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec_T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vec_n_res</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_functions.concatenate_linspace" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_functions.discretize_space">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_functions.</span></span><span class="sig-name descname"><span class="pre">discretize_space</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">res</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disc_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_functions.discretize_space" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_functions.double_sum_exp_1D">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_functions.</span></span><span class="sig-name descname"><span class="pre">double_sum_exp_1D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">times</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_functions.double_sum_exp_1D" title="Permalink to this definition"></a></dt>
+<dd><p>Inductive computation of double sums of exponential decays.</p>
+<p>Consider a sequence <span class="math notranslate nohighlight">\((t_1 &lt; t_2 &lt; \dots &lt; t_N)\)</span>. Let
+<span class="math notranslate nohighlight">\(\beta \in \mathbb{R}\)</span>. For all integers <span class="math notranslate nohighlight">\(m \geq 2\)</span>, define
+the cumulative sum</p>
+<div class="math notranslate nohighlight">
+\[S_{m} := \sum_{k=1}^{m-1} \exp\Big(-\beta(t_m-t_k)\Big).\]</div>
+<p>For all integers <span class="math notranslate nohighlight">\(N \geq 2\)</span>, define the double sum</p>
+<div class="math notranslate nohighlight">
+\[Z_{N} := \sum_{m=2}^{N} S_{m}.\]</div>
+<p>This function computes <span class="math notranslate nohighlight">\(Z_n\)</span> in linear time using the induction formula</p>
+<div class="math notranslate nohighlight">
+\[S_{m+1} = \exp\Big(-\beta(t_{m+1}-t_m)\Big)(1+S_m).\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>beta</strong> (<cite>float</cite>) – Decay rate.</p></li>
+<li><p><strong>times</strong> (<cite>numpy.ndarray</cite>) – List of times.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>res</strong> – Double sum of exponential decays.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><cite>float</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_functions.double_sum_exp_1D_midpoint">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_functions.</span></span><span class="sig-name descname"><span class="pre">double_sum_exp_1D_midpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">times</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_f</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_functions.double_sum_exp_1D_midpoint" title="Permalink to this definition"></a></dt>
+<dd><p>Inductive computation of double sums of exponential decays with midpoint dependence.</p>
+<p>Consider a sequence <span class="math notranslate nohighlight">\((t_1 &lt; t_2 &lt; \dots &lt; t_N &lt; T_f)\)</span>. Let
+<span class="math notranslate nohighlight">\(\beta \in \mathbb{R}\)</span>. For all integers <span class="math notranslate nohighlight">\(m \geq 2\)</span>, define
+the cumulative sum</p>
+<div class="math notranslate nohighlight">
+\[S_{m} := \sum_{n=1}^{m-1}\exp\Big(-2\beta\big(T_f-(t_m +t_n)/2\big)\Big).\]</div>
+<p>For all integers <span class="math notranslate nohighlight">\(N \geq 2\)</span>, define the double sum</p>
+<div class="math notranslate nohighlight">
+\[Z_{N} := \sum_{m=2}^{N}S_m.\]</div>
+<p>This function computes <span class="math notranslate nohighlight">\(Z_n\)</span> in linear time using the induction formula</p>
+<div class="math notranslate nohighlight">
+\[S_{m+1} = \exp\Big(-2\beta\big(T_f-(t_{m+1} +t_m)/2\big)\Big)+\exp\Big(\beta(t_{m+1}-t_m)\Big)S_m.\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>beta</strong> (<cite>float</cite>) – DESCRIPTION.</p></li>
+<li><p><strong>times</strong> (<cite>numpy.ndarray</cite>) – DESCRIPTION.</p></li>
+<li><p><strong>T_f</strong> (<cite>float</cite>) – Terminal time.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>res</strong> – Double sum of exponential decays.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><cite>float</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_functions.finite_diff">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_functions.</span></span><span class="sig-name descname"><span class="pre">finite_diff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'central</span> <span class="pre">difference'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_functions.finite_diff" title="Permalink to this definition"></a></dt>
+<dd><p>Finite differences estimate of the derivative of <cite>func</cite> at <cite>x</cite>.</p>
+<p>Let <span class="math notranslate nohighlight">\(f\)</span> be a function that is differentiable at <span class="math notranslate nohighlight">\(x \in \mathbb{R}\)</span>.
+Let <span class="math notranslate nohighlight">\(\epsilon &gt;0\)</span>. Define finite differences estimates of <span class="math notranslate nohighlight">\(f^\prime(x)\)</span>.</p>
+<p>The central difference estimate is define as</p>
+<div class="math notranslate nohighlight">
+\[\frac{f(x+\epsilon /2)-f(x-\epsilon /2)}{\epsilon}.\]</div>
+<p>The forward difference estimate is define as</p>
+<div class="math notranslate nohighlight">
+\[\frac{f(x+\epsilon)-f(x)}{\epsilon}.\]</div>
+<p>The backward difference estimate is define as</p>
+<div class="math notranslate nohighlight">
+\[\frac{f(x)-f(x-\epsilon )}{\epsilon}.\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>func</strong> (<cite>function</cite>) – Function to differentiate.</p></li>
+<li><p><strong>x</strong> (<cite>float</cite> or <cite>numpy.ndarray</cite>) – Value at which to estimate the derivative.</p></li>
+<li><p><strong>epsilon</strong> (<cite>float</cite>, optional) – Step parameter of the approximation. The default is 10**-3.</p></li>
+<li><p><strong>diff_type</strong> (<cite>str</cite>, optional) – Type of finite differences estimator. The default is ‘central difference’.</p></li>
+<li><p><strong>diff_index</strong> (<cite>int</cite>, optional) – Index of the derivation variable. The default is 0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Finite differences estimate of the derivative.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><cite>float</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_functions.gammaf">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_functions.</span></span><span class="sig-name descname"><span class="pre">gammaf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_functions.gammaf" title="Permalink to this definition"></a></dt>
+<dd><p>Gamma function.</p>
+<div class="line-block">
+<div class="line">The Gamma function is defined for all <span class="math notranslate nohighlight">\(\alpha \in \mathbb{C}\)</span> with positive real part by</div>
+</div>
+<div class="math notranslate nohighlight">
+\[\Gamma(\alpha) := \int_{[0, +\infty)} t^{\alpha-1}\exp^{-t} dt.\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>alpha</strong> (<cite>float</cite> or <cite>numpy.ndarray</cite>) – Float or vector of floats at which to evaluate the Gamma function.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Value or vector of values taken by the Gamma function.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><cite>float</cite> or <cite>numpy.ndarray</cite></p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>In the current version of the aslsd package, we use the implementation
+of this function in scipy, before potentially moving to our own
+implementation.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_functions.gaussian_int">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_functions.</span></span><span class="sig-name descname"><span class="pre">gaussian_int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_functions.gaussian_int" title="Permalink to this definition"></a></dt>
+<dd><p>Integral <span class="math notranslate nohighlight">\(I\)</span> of the normal pdf on an interval <span class="math notranslate nohighlight">\([t_0, t_1]\)</span>.</p>
+<div class="line-block">
+<div class="line">The integral <span class="math notranslate nohighlight">\(I\)</span> of a normal pdf is defined for all <span class="math notranslate nohighlight">\(t_0, t_1 \in \mathbb{R}\)</span> by</div>
+</div>
+<div class="math notranslate nohighlight">
+\[I(t_0,t_1) := \frac{1}{\sqrt{2\pi}}\int_{[t_0, t_1]}\exp\bigg(-\frac{u^2}{2}\bigg) du.\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>start</strong> (<cite>float</cite> or <cite>numpy.ndarray</cite>) – Lower bound or vector of lower bounds of the integration interval.</p></li>
+<li><p><strong>end</strong> (<cite>float</cite> or <cite>numpy.ndarray</cite>) – Upper bound or vector of lower bounds of the integration interval.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Value or vector of values taken by the integral.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><cite>float</cite> or <cite>numpy.ndarray</cite></p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>In the current version of the aslsd package, we use the implementation
+of this function in scipy, before potentially moving to our own
+implementation.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_functions.gaussian_pdf">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_functions.</span></span><span class="sig-name descname"><span class="pre">gaussian_pdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_functions.gaussian_pdf" title="Permalink to this definition"></a></dt>
+<dd><p>Probability density function (pdf) of a Gaussian random variable.</p>
+<div class="line-block">
+<div class="line">The pdf <span class="math notranslate nohighlight">\(f_{\mathcal{N}}\)</span> of a Gaussian random variable with mean <span class="math notranslate nohighlight">\(\delta\)</span> and variance <span class="math notranslate nohighlight">\(\beta^2\)</span> is defined for all <span class="math notranslate nohighlight">\(t \in \mathbb{R}\)</span> by</div>
+</div>
+<div class="math notranslate nohighlight">
+\[f_{\mathcal{N}}(t) := \frac{1}{\beta\sqrt{2\pi}}\exp\bigg(-\frac{(t-\delta)^2}{2\beta^2}\bigg).\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t</strong> (<cite>float</cite> or <cite>numpy.ndarray</cite>) – Float or vector of floats at which to evaluate the Gaussian pdf.</p></li>
+<li><p><strong>mean</strong> (<cite>float</cite>, optional) – Mean of the Gaussian. The default is <cite>0.</cite>.</p></li>
+<li><p><strong>std</strong> (<cite>float</cite>, optional) – Standard deviation of the Gaussian. The default is <cite>1.</cite>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Value or vector of values taken by the pdf.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><cite>float</cite> or <cite>numpy.ndarray</cite></p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>In the current version of the aslsd package, we use the implementation
+of this function in numpy, before potentially moving to our own
+implementation.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_functions.get_alphabet_range">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_functions.</span></span><span class="sig-name descname"><span class="pre">get_alphabet_range</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_functions.get_alphabet_range" title="Permalink to this definition"></a></dt>
+<dd><p>Get the list of the first n letters of the Roman alphabet, excluding the
+letters ‘l’ and ‘o’ following pycodestyle E741.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>n</strong> (<cite>int</cite>) – Number of letters to generate.</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the number of letters to generate is higher than the number of
+    letters in the alphabet after discarding the two letters ‘l’ and ‘o’.</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>List of the first n letters of the alphabet</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><cite>list</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_functions.linc_gammaf">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_functions.</span></span><span class="sig-name descname"><span class="pre">linc_gammaf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_functions.linc_gammaf" title="Permalink to this definition"></a></dt>
+<dd><p>Lower incomplete Gamma function.</p>
+<div class="line-block">
+<div class="line">The lower incomplete Gamma function is defined for all <span class="math notranslate nohighlight">\(\alpha \in \mathbb{C}\)</span> with positive real part and for all <span class="math notranslate nohighlight">\(\alpha \in \mathbb{C}\)</span> by</div>
+</div>
+<div class="math notranslate nohighlight">
+\[\gamma(\alpha, x) := \int_{[0, x]} t^{\alpha-1}\exp^{-t} dt.\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>alpha</strong> (<cite>float</cite> or <cite>numpy.ndarray</cite>) – Float or vector of floats at which to evaluate the function.</p></li>
+<li><p><strong>x</strong> (<cite>float</cite> or <cite>numpy.ndarray</cite>) – Upper bound or vector of upper bounds at which to evaluate the integral.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Value or vector of values taken by the Gamma function.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><cite>float</cite> or <cite>numpy.ndarray</cite></p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>In the current version of the aslsd package, we use the implementation
+of this function in scipy, before potentially moving to our own
+implementation.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_functions.normal_cdf">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_functions.</span></span><span class="sig-name descname"><span class="pre">normal_cdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_functions.normal_cdf" title="Permalink to this definition"></a></dt>
+<dd><p>Cumulative distribution function (cdf) of a normal random variable.</p>
+<div class="line-block">
+<div class="line">The cdf <span class="math notranslate nohighlight">\(F_{\mathcal{N}}\)</span> of a normal random variable is defined for all <span class="math notranslate nohighlight">\(t \in \mathbb{R}\)</span> by</div>
+</div>
+<div class="math notranslate nohighlight">
+\[F_{\mathcal{N}}(t) := \frac{1}{\sqrt{2\pi}}\int_{(-\infty, t]}\exp\bigg(-\frac{u^2}{2}\bigg) du.\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>t</strong> (<cite>float</cite> or <cite>numpy.ndarray</cite>) – Float or vector of floats at which to evaluate the cdf.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Value or vector of values taken by the cdf.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><cite>float</cite> or <cite>numpy.ndarray</cite></p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>In the current version of the aslsd package, we use the implementation
+of this function in scipy, before potentially moving to our own
+implementation.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_functions.prod_ratio">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_functions.</span></span><span class="sig-name descname"><span class="pre">prod_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_functions.prod_ratio" title="Permalink to this definition"></a></dt>
+<dd><p>Given floats <span class="math notranslate nohighlight">\(x, y \in \mathbb{R}\)</span>, return the quantity</p>
+<div class="math notranslate nohighlight">
+\[\frac{xy}{x+y}.\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<cite>float</cite>) – </p></li>
+<li><p><strong>y</strong> (<cite>float</cite>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><cite>float</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_functions.share_ratio">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_functions.</span></span><span class="sig-name descname"><span class="pre">share_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_functions.share_ratio" title="Permalink to this definition"></a></dt>
+<dd><p>Given floats <span class="math notranslate nohighlight">\(x, y \in \mathbb{R}\)</span>, return the quantity</p>
+<div class="math notranslate nohighlight">
+\[\frac{x}{x+y}.\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<cite>float</cite>) – </p></li>
+<li><p><strong>y</strong> (<cite>float</cite>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><cite>float</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_functions.std_gamma_cdf">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_functions.</span></span><span class="sig-name descname"><span class="pre">std_gamma_cdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_functions.std_gamma_cdf" title="Permalink to this definition"></a></dt>
+<dd><p>Cumulative distribution function (cdf) of a standard Gamma random variable.</p>
+<div class="line-block">
+<div class="line">The cdf <span class="math notranslate nohighlight">\(F_{\Gamma}\)</span> of a Gamma random variable with shape parameter <span class="math notranslate nohighlight">\(\alpha \in \mathbb{C}\)</span> with positive real part is defined for all <span class="math notranslate nohighlight">\(t \in \mathbb{R}\)</span> by</div>
+</div>
+<div class="math notranslate nohighlight">
+\[F_{\Gamma}(t) := \frac{1}{\Gamma(\alpha)}\gamma(\alpha, t).\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>alpha</strong> (<cite>float</cite> or <cite>numpy.ndarray</cite>) – Shape parameter or vector of shape parameters.</p></li>
+<li><p><strong>t</strong> (<cite>float</cite> or <cite>numpy.ndarray</cite>) – Float or vector of floats at which to evaluate the cdf.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Value or vector of values taken by the cdf.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><cite>float</cite> or <cite>numpy.ndarray</cite></p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>In the current version of the aslsd package, we use the implementation
+of this function in scipy, before potentially moving to our own
+implementation.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_functions.tri">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_functions.</span></span><span class="sig-name descname"><span class="pre">tri</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_functions.tri" title="Permalink to this definition"></a></dt>
+<dd><p>Standard triangle function.</p>
+<p>This function corresponds to a triangle with left corner
+<span class="math notranslate nohighlight">\(\alpha \geq 0\)</span>, with distance to the altitude foot
+<span class="math notranslate nohighlight">\(\beta \geq 0\)</span>, and with distance between the
+altitude foot and the right corner of the triangle <span class="math notranslate nohighlight">\(\delta \geq 0\)</span>.
+By standard triangle, we mean that the altitude of this triangle has <cite>y</cite>
+coordinate <cite>1</cite>.</p>
+<p>Formally, this function is defined for all <span class="math notranslate nohighlight">\(t \in \mathbb{R}\)</span> by</p>
+<div class="math notranslate nohighlight">
+\[f(t) := \left(\frac{t-\alpha}{\beta} \mathbb{1}_{\left\{0 \leq t-\alpha \leq \beta\right\}}-\frac{t-\alpha-\beta-\delta}{\delta} \mathbb{1}_{\left\{0 \leq t-\alpha-\beta \leq \delta\right\}}\right).\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t</strong> (<cite>float</cite> or <cite>numpy.ndarray</cite>) – Float or vector of floats at which to evaluate the triangle function.</p></li>
+<li><p><strong>alpha</strong> (<cite>float</cite>) – Left corner of the triangle.</p></li>
+<li><p><strong>beta</strong> (<cite>float</cite>) – Distance to the altitude foot.</p></li>
+<li><p><strong>delta</strong> (<cite>float</cite>) – Distance between the altitude foot and the right corner of the triangle.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Value or vector of values taken by the triangle function.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><cite>float</cite> or <cite>numpy.ndarray</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_functions.update_sum_exp_1D">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_functions.</span></span><span class="sig-name descname"><span class="pre">update_sum_exp_1D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">S_n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_functions.update_sum_exp_1D" title="Permalink to this definition"></a></dt>
+<dd><p>Induction step for the computation of sums of expontential decays.</p>
+<p>Consider a sequence <span class="math notranslate nohighlight">\((t_1 &lt; t_2 &lt; \dots &lt; t_n &lt; \dots)\)</span>. Let
+<span class="math notranslate nohighlight">\(\beta \in \mathbb{R}\)</span>. For all integers <span class="math notranslate nohighlight">\(n \geq 2\)</span>, define
+the cumulative sum</p>
+<div class="math notranslate nohighlight">
+\[S_{n} := \sum_{k=1}^{n-1} \exp\Big(-\beta(t_n-t_k)\Big).\]</div>
+<p>It is clear that for all <span class="math notranslate nohighlight">\(n\)</span>, we have the induction formula</p>
+<div class="math notranslate nohighlight">
+\[S_{n+1} = \exp\Big(-\beta(t_{n+1}-t_n)\Big)(1+S_n).\]</div>
+<p>This function performs this induction step by returning the quantity</p>
+<div class="math notranslate nohighlight">
+\[\exp\big(-\beta s\big)(1+S_n).\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>beta</strong> (<cite>float</cite>) – Decay rate.</p></li>
+<li><p><strong>S_n</strong> (<cite>float</cite>) – Previous value of the cumulative sum.</p></li>
+<li><p><strong>s</strong> (<cite>float</cite>) – Inter-arrival time.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Updated value of the cumulative sum.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><cite>float</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-aslsd.utilities.useful_statistics">
+<span id="aslsd-utilities-useful-statistics-module"></span><h2>aslsd.utilities.useful_statistics module<a class="headerlink" href="#module-aslsd.utilities.useful_statistics" title="Permalink to this headline"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_statistics.batch_mean">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_statistics.</span></span><span class="sig-name descname"><span class="pre">batch_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mean_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_statistics.batch_mean" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_statistics.batch_std">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_statistics.</span></span><span class="sig-name descname"><span class="pre">batch_std</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">std_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replacement</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">style</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'unbiased'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_statistics.batch_std" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_statistics.estimate_mean">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_statistics.</span></span><span class="sig-name descname"><span class="pre">estimate_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_samples</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_statistics.estimate_mean" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_statistics.estimate_std_wor_unbiased">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_statistics.</span></span><span class="sig-name descname"><span class="pre">estimate_std_wor_unbiased</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_statistics.estimate_std_wor_unbiased" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_statistics.get_ks_alpha">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_statistics.</span></span><span class="sig-name descname"><span class="pre">get_ks_alpha</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">c</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N_r</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_statistics.get_ks_alpha" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_statistics.random">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_statistics.</span></span><span class="sig-name descname"><span class="pre">random</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">x</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">interval</span> <span class="pre">[0,</span> <span class="pre">1).</span></span></span><a class="headerlink" href="#aslsd.utilities.useful_statistics.random" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_statistics.sample_double_ix_stratified">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_statistics.</span></span><span class="sig-name descname"><span class="pre">sample_double_ix_stratified</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">varpi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_events</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1234</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_statistics.sample_double_ix_stratified" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_statistics.sample_double_ix_stratum">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_statistics.</span></span><span class="sig-name descname"><span class="pre">sample_double_ix_stratum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h_inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h_sup</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">varpi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_events</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1234</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_statistics.sample_double_ix_stratum" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_statistics.sample_single_ix_stratified">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_statistics.</span></span><span class="sig-name descname"><span class="pre">sample_single_ix_stratified</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_statistics.sample_single_ix_stratified" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_statistics.sample_single_ix_stratum">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_statistics.</span></span><span class="sig-name descname"><span class="pre">sample_single_ix_stratum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m_inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_sup</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1234</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_statistics.sample_single_ix_stratum" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_statistics.stratified_double_ixs2phi_times">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_statistics.</span></span><span class="sig-name descname"><span class="pre">stratified_double_ixs2phi_times</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_times</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_statistics.stratified_double_ixs2phi_times" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_statistics.stratified_double_ixs2upsilon_times">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_statistics.</span></span><span class="sig-name descname"><span class="pre">stratified_double_ixs2upsilon_times</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_times</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_times2end</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_statistics.stratified_double_ixs2upsilon_times" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.utilities.useful_statistics.stratified_single_ixs2times">
+<span class="sig-prename descclassname"><span class="pre">aslsd.utilities.useful_statistics.</span></span><span class="sig-name descname"><span class="pre">stratified_single_ixs2times</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_times2end</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.utilities.useful_statistics.stratified_single_ixs2times" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-aslsd.utilities">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-aslsd.utilities" title="Permalink to this headline"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="aslsd.solvers.html" class="btn btn-neutral float-left" title="aslsd.solvers package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Alvaro Cartea, Samuel N. Cohen, and Saad Labyad.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

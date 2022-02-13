@@ -6,6 +6,23 @@ from aslsd.basis_kernels.basis_kernel import BasisKernel
 
 
 class NullKernel(BasisKernel):
+    """
+    Class for null kernels. The associated basis function
+    is defined for all :math:`t \\geq 0` by
+
+    .. math::
+        f_{\\vartheta}(t) := 0.
+
+    Notes
+    ------
+        The closed form expressions for the derivatives of the functions
+        :math:`\\Phi`, :math:`\\Psi`, and :math:`\\Upsilon` are available in
+        Cartea, Á., Cohen, S. N., and Labyad, S., (November 22, 2021)
+        'Gradient-based estimation of linear Hawkes processes with general
+        kernels'.
+        `Available at SSRN. <https://ssrn.com/abstract=3969208>`_
+
+    """
 
     # Number of parameters
     def get_n_vars(self):

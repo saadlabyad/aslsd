@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>aslsd.models package &mdash; aslsd 0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="aslsd.optim_logging package" href="aslsd.optim_logging.html" />
+    <link rel="prev" title="aslsd.kernels package" href="aslsd.kernels.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> aslsd
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme.html">aslsd</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">aslsd</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="aslsd.html">aslsd package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="aslsd.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="aslsd.applications.html">aslsd.applications package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.basis_kernels.html">aslsd.basis_kernels package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.estimators.html">aslsd.estimators package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.evaluation.html">aslsd.evaluation package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.events.html">aslsd.events package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.exponential_mhp.html">aslsd.exponential_mhp package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.homogeneous_poisson.html">aslsd.homogeneous_poisson package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.kernels.html">aslsd.kernels package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">aslsd.models package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.optim_logging.html">aslsd.optim_logging package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.plots.html">aslsd.plots package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.simulation.html">aslsd.simulation package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.solvers.html">aslsd.solvers package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.utilities.html">aslsd.utilities package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="aslsd.html#module-aslsd">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">aslsd</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules.html">aslsd</a> &raquo;</li>
+          <li><a href="aslsd.html">aslsd package</a> &raquo;</li>
+      <li>aslsd.models package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/aslsd.models.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="aslsd-models-package">
+<h1>aslsd.models package<a class="headerlink" href="#aslsd-models-package" title="Permalink to this headline"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline"></a></h2>
+</section>
+<section id="module-aslsd.models.mhp">
+<span id="aslsd-models-mhp-module"></span><h2>aslsd.models.mhp module<a class="headerlink" href="#module-aslsd.models.mhp" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">aslsd.models.mhp.</span></span><span class="sig-name descname"><span class="pre">MHP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_kernel_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matrix_n_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_ker_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ix_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ker_param_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff_phi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff_psi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff_sim_upsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff_cross_upsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_fitted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fitted_mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fitted_ker_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_residuals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fitted_adjacency</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class for multivariate Hawkes processes (MHP) models.</p>
+<p>Let <span class="math notranslate nohighlight">\(\mathbf{N}\)</span> be a d-dimensional counting process with
+conditional intensity <span class="math notranslate nohighlight">\(\boldsymbol{\lambda}\)</span>.
+We say that <span class="math notranslate nohighlight">\(\mathbf{N}\)</span> is a (linear) MHP if, for all
+<span class="math notranslate nohighlight">\(i \in[d]\)</span> and for all <span class="math notranslate nohighlight">\(t \geq 0\)</span>, we have</p>
+<div class="math notranslate nohighlight">
+\[\lambda_{i}(t):=\mu_{i}+\sum_{j=1}^{d}
+\sum_{\left\{m: t_{m}^{j}&lt;t\right\}} \phi_{ij}\left(t-t_{m}^{j}\right),\]</div>
+<p>where</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\forall i,j \in [d],  \phi_{ij}:[0,+\infty) \to [0,+\infty)\)</span> is in <span class="math notranslate nohighlight">\(L_{1}\)</span>. We write <span class="math notranslate nohighlight">\(\boldsymbol{\phi}=(\phi_{ij})_{i,j\in [d]}\)</span>. The functions <span class="math notranslate nohighlight">\(\phi_{i j}\)</span> are called the kernels of the MHP;</p></li>
+<li><p><span class="math notranslate nohighlight">\(\forall i \in[d], \mu_{i}&gt;0\)</span>. The floats <span class="math notranslate nohighlight">\(\mu_{i}\)</span> are called baseline intensities.</p></li>
+</ul>
+<p>For all <span class="math notranslate nohighlight">\(i,j \in [d]\)</span>, and for all <span class="math notranslate nohighlight">\(t \geq 0\)</span>, define</p>
+<div class="math notranslate nohighlight">
+\[\psi_{ij}(t):=\int_0^t \phi_{ij}(u)\mathrm{d}u.\]</div>
+<p>We write <span class="math notranslate nohighlight">\(\boldsymbol{\psi}=(\psi_{ij})_{ij\in [d]}\)</span>.</p>
+<p>For all <span class="math notranslate nohighlight">\(i,j,k \in [d]\)</span>, and for all <span class="math notranslate nohighlight">\(t,s \geq 0\)</span>,
+define</p>
+<div class="math notranslate nohighlight">
+\[\Upsilon_{ijk}(t,s):=\int_0^t \phi_{ki}(u)\phi_{kj}(u+s)\mathrm{d}u.\]</div>
+<p>We write <span class="math notranslate nohighlight">\(\boldsymbol{\Upsilon}=(\Upsilon_{ijk})_{ijk\in [d]}\)</span>.</p>
+<p>In our implementation, the class attribute</p>
+<ul class="simple">
+<li><p><cite>phi</cite> denotes the matrix of kernel functions <span class="math notranslate nohighlight">\(\boldsymbol{\phi}\)</span>, such that <cite>phi[i][j]</cite> is the kernel function <span class="math notranslate nohighlight">\(\phi_{ij}\)</span>;</p></li>
+<li><p><cite>psi</cite> denotes the matrix of primitive functions <span class="math notranslate nohighlight">\(\boldsymbol{\psi}\)</span>, such that <cite>psi[i][j]</cite> is the primitive function <span class="math notranslate nohighlight">\(\psi_{ij}\)</span>;</p></li>
+<li><p><cite>upsilon</cite> denotes the tensor of correlation functions <span class="math notranslate nohighlight">\(\boldsymbol{\Upsilon}\)</span>, such that <cite>upsilon[i][j][k]</cite> is the correlation function <span class="math notranslate nohighlight">\(\Upsilon_{ijk}\)</span>.</p></li>
+</ul>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.kernel_matrix">
+<span class="sig-name descname"><span class="pre">kernel_matrix</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.kernel_matrix" title="Permalink to this definition"></a></dt>
+<dd><p>Matrix of kernel models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><cite>list</cite> of <cite>list</cite> of <cite>KernelModel</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.d">
+<span class="sig-name descname"><span class="pre">d</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.d" title="Permalink to this definition"></a></dt>
+<dd><p>Dimension of the MHP.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><cite>int</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.matrix_n_param">
+<span class="sig-name descname"><span class="pre">matrix_n_param</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.matrix_n_param" title="Permalink to this definition"></a></dt>
+<dd><p>Matrix of numbers of parameters per kernel.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><cite>list</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.n_ker_param">
+<span class="sig-name descname"><span class="pre">n_ker_param</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.n_ker_param" title="Permalink to this definition"></a></dt>
+<dd><p>Total number of kernel parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><cite>int</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.ix_map">
+<span class="sig-name descname"><span class="pre">ix_map</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.ix_map" title="Permalink to this definition"></a></dt>
+<dd><p>DESCRIPTION. The default is None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><cite>list</cite> of <cite>list</cite> of <cite>dict</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.interval_map">
+<span class="sig-name descname"><span class="pre">interval_map</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.interval_map" title="Permalink to this definition"></a></dt>
+<dd><p>Matrix of indices of first and last parameters of kernels in the flat
+vector of parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><cite>list</cite> of <cite>list</cite> of <cite>int</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.mu_names">
+<span class="sig-name descname"><span class="pre">mu_names</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.mu_names" title="Permalink to this definition"></a></dt>
+<dd><p>List of names of baseline parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><cite>list</cite> of <cite>str</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.ker_param_names">
+<span class="sig-name descname"><span class="pre">ker_param_names</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.ker_param_names" title="Permalink to this definition"></a></dt>
+<dd><p>Tensor of names of kernel parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><cite>list</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.param_bounds">
+<span class="sig-name descname"><span class="pre">param_bounds</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.param_bounds" title="Permalink to this definition"></a></dt>
+<dd><p>Tensor of lower bounds of kernel parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>TYPE, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.phi">
+<span class="sig-name descname"><span class="pre">phi</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.phi" title="Permalink to this definition"></a></dt>
+<dd><p>DESCRIPTION. The default is None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>TYPE, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.diff_phi">
+<span class="sig-name descname"><span class="pre">diff_phi</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.diff_phi" title="Permalink to this definition"></a></dt>
+<dd><p>DESCRIPTION. The default is None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>TYPE, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.psi">
+<span class="sig-name descname"><span class="pre">psi</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.psi" title="Permalink to this definition"></a></dt>
+<dd><p>DESCRIPTION. The default is None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>TYPE, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.diff_psi">
+<span class="sig-name descname"><span class="pre">diff_psi</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.diff_psi" title="Permalink to this definition"></a></dt>
+<dd><p>DESCRIPTION. The default is None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>TYPE, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.upsilon">
+<span class="sig-name descname"><span class="pre">upsilon</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.upsilon" title="Permalink to this definition"></a></dt>
+<dd><p>DESCRIPTION. The default is None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>TYPE, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.diff_sim_upsilon">
+<span class="sig-name descname"><span class="pre">diff_sim_upsilon</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.diff_sim_upsilon" title="Permalink to this definition"></a></dt>
+<dd><p>DESCRIPTION. The default is None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>TYPE, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.diff_cross_upsilon">
+<span class="sig-name descname"><span class="pre">diff_cross_upsilon</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.diff_cross_upsilon" title="Permalink to this definition"></a></dt>
+<dd><p>DESCRIPTION. The default is None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>TYPE, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.is_fitted">
+<span class="sig-name descname"><span class="pre">is_fitted</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.is_fitted" title="Permalink to this definition"></a></dt>
+<dd><p>DESCRIPTION. The default is False.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>TYPE, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.fitted_mu">
+<span class="sig-name descname"><span class="pre">fitted_mu</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.fitted_mu" title="Permalink to this definition"></a></dt>
+<dd><p>DESCRIPTION. The default is None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>TYPE, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.fitted_ker_param">
+<span class="sig-name descname"><span class="pre">fitted_ker_param</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.fitted_ker_param" title="Permalink to this definition"></a></dt>
+<dd><p>DESCRIPTION. The default is None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>TYPE, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.fit_residuals">
+<span class="sig-name descname"><span class="pre">fit_residuals</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.fit_residuals" title="Permalink to this definition"></a></dt>
+<dd><p>DESCRIPTION. The default is None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>TYPE, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.fitted_adjacency">
+<span class="sig-name descname"><span class="pre">fitted_adjacency</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.fitted_adjacency" title="Permalink to this definition"></a></dt>
+<dd><p>DESCRIPTION. The default is None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>TYPE, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.fit_log">
+<span class="sig-name descname"><span class="pre">fit_log</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.fit_log" title="Permalink to this definition"></a></dt>
+<dd><p>DESCRIPTION. The default is None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>TYPE, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.clear_fit">
+<span class="sig-name descname"><span class="pre">clear_fit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.clear_fit" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_times</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">varpi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solvers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">estimators</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1234</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.fit" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.get_branching_ratio">
+<span class="sig-name descname"><span class="pre">get_branching_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel_param</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.get_branching_ratio" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.get_l2_projection">
+<span class="sig-name descname"><span class="pre">get_l2_projection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mhp_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1234</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.get_l2_projection" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.get_n_param">
+<span class="sig-name descname"><span class="pre">get_n_param</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.get_n_param" title="Permalink to this definition"></a></dt>
+<dd><p>Get the matrix of number of parameters per kernel model.
+If we denote by <span class="math notranslate nohighlight">\(M\)</span> this matrix and by <span class="math notranslate nohighlight">\(d\)</span> the
+dimensionality of the MHP model, then <span class="math notranslate nohighlight">\(M\)</span> is a <span class="math notranslate nohighlight">\(d\times d\)</span>
+matrix which entry <span class="math notranslate nohighlight">\(M_{ij}\)</span> is the number of parameters of kernel
+<span class="math notranslate nohighlight">\(\phi_{ij}\)</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>mat_n_param</strong> – Matrix of number of parameters per kernel model.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><cite>list</cite> of <cite>list</cite> of <cite>int</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.get_param_bounds">
+<span class="sig-name descname"><span class="pre">get_param_bounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.get_param_bounds" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.get_param_names">
+<span class="sig-name descname"><span class="pre">get_param_names</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index_from_one</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.get_param_names" title="Permalink to this definition"></a></dt>
+<dd><p>Get the matrix of parameter names per kernel model.
+If we denote by <span class="math notranslate nohighlight">\(M\)</span> this matrix and by <span class="math notranslate nohighlight">\(d\)</span> the
+dimensionality of the MHP model, then <span class="math notranslate nohighlight">\(M\)</span> is a <span class="math notranslate nohighlight">\(d\times d\)</span>
+matrix which entry <span class="math notranslate nohighlight">\(M_{ij}\)</span> is the number of parameters of kernel
+<span class="math notranslate nohighlight">\(\phi_{ij}\)</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>mat_n_param</strong> – Matrix of number of parameters per kernel model.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><cite>list</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.get_random_param">
+<span class="sig-name descname"><span class="pre">get_random_param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref_mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_ker_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">range_ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_bratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_omega</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_omega</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flatten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1234</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.get_random_param" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.get_residuals">
+<span class="sig-name descname"><span class="pre">get_residuals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">process_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1234</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.get_residuals" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.is_sbf">
+<span class="sig-name descname"><span class="pre">is_sbf</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.is_sbf" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="id0">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">kernel_matrix</span></span><a class="headerlink" href="#id0" title="Permalink to this definition"></a></dt>
+<dd><p>Kernel matrix of the MHP.
+Setting the kernel matrix to a new value will automatically modify the
+values of the other attributes that depend on it.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.ks_test_residuals">
+<span class="sig-name descname"><span class="pre">ks_test_residuals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">residuals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.ks_test_residuals" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.make_adjacency_matrix">
+<span class="sig-name descname"><span class="pre">make_adjacency_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.make_adjacency_matrix" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.make_kernel_functionals">
+<span class="sig-name descname"><span class="pre">make_kernel_functionals</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.make_kernel_functionals" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.make_maps">
+<span class="sig-name descname"><span class="pre">make_maps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.make_maps" title="Permalink to this definition"></a></dt>
+<dd><p>Get lists storing the mapping for parameter indices.
+Denote by <span class="math notranslate nohighlight">\(d\)</span> the dimensionality of the MHP model. For all
+<span class="math notranslate nohighlight">\(k \in [d]\)</span>, denote by <span class="math notranslate nohighlight">\(n_k\)</span> the total number of
+parameters of all kernels <span class="math notranslate nohighlight">\((\phi_{kj})_{j \in [d]}\)</span>. We flatten
+The list
+<cite>ix_map</cite> is such that for all <span class="math notranslate nohighlight">\(k \in [d]\)</span>, and for all
+<span class="math notranslate nohighlight">\(i \in n_k\)</span>, <cite>ix_map[k][i]</cite> is a dictionary with keys <cite>ker</cite> and
+<cite>par</cite>. The value <cite>ix_map[k][i][‘ker’]</cite> is an integer representing the
+index <cite>j</cite> such that the <cite>i</cite>-th parameter of the flat vector of
+parameters is a parameter of the kernel <span class="math notranslate nohighlight">\(\phi_{kj}\)</span>. By default,
+since the <cite>0</cite>-th parameter of the flat vector corresponds to the
+background rate <span class="math notranslate nohighlight">\(\mu_k\)</span>, we set <cite>ix_map[k][0][‘ker’]</cite> to <cite>-1</cite>.
+Now let <cite>j=ix_map[k][i][‘ker’]</cite>. The value <cite>ix_map[k][i][‘par’]</cite> is an
+integer representing the
+index <cite>p</cite> such that the <cite>i</cite>-th parameter of the flat vector of
+parameters is the <cite>p</cite>-th parameter of the kernel <span class="math notranslate nohighlight">\(\phi_{kj}\)</span>.
+The list <cite>interval_map</cite> is such that for all <span class="math notranslate nohighlight">\(k \in [d]\)</span>, and for all
+<span class="math notranslate nohighlight">\(j \in [d]\)</span>, <cite>interval_map[k][j]</cite> is a list of two integers
+<cite>[p,q]</cite> such that <cite>p</cite> (resp. <cite>q-1</cite>) is the index of the first (resp.
+last) parameter of kernel <span class="math notranslate nohighlight">\(\phi_{kj}\)</span> in the flat vector of
+parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>ix_map</strong> (<cite>list</cite> of <cite>list</cite> of <cite>dict</cite>) – DESCRIPTION.</p></li>
+<li><p><strong>interval_map</strong> (<cite>list</cite> of <cite>list</cite> of <cite>int</cite>) – DESCRIPTION.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.matrix2tensor_params">
+<span class="sig-name descname"><span class="pre">matrix2tensor_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_param</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.matrix2tensor_params" title="Permalink to this definition"></a></dt>
+<dd><p>Convert the vector of background rates <cite>mu</cite> and the matrix of kernel
+parameters <cite>kernel_param</cite> to the list of flat vectors of parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mu</strong> (<em>TYPE</em>) – Vector of background rates.</p></li>
+<li><p><strong>kernel_param</strong> (<em>TYPE</em>) – Matrix of kernel parameters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>DESCRIPTION.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>TYPE</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.plot_adjacency_matrix">
+<span class="sig-name descname"><span class="pre">plot_adjacency_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adjacency</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">event_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_from_one</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">annotate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Blues'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'image.png'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.plot_adjacency_matrix" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.plot_kernels">
+<span class="sig-name descname"><span class="pre">plot_kernels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_from_one</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'image.png'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.plot_kernels" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.plot_solver_path">
+<span class="sig-name descname"><span class="pre">plot_solver_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true_mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_ker_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_ker_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_derivatives</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">display_derivatives_zero</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(10,</span> <span class="pre">10)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'image.png'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.plot_solver_path" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.qq_plot">
+<span class="sig-name descname"><span class="pre">qq_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residuals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">style</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'exponential'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">substract_yx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_points</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">display_line45</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_colors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'image.png'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.qq_plot" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.simu_multipath">
+<span class="sig-name descname"><span class="pre">simu_multipath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_res</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_res</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1234</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disc_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'log'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1234</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.simu_multipath" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.simulate">
+<span class="sig-name descname"><span class="pre">simulate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1234</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.simulate" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.tensor2matrix_params">
+<span class="sig-name descname"><span class="pre">tensor2matrix_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor_param</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.tensor2matrix_params" title="Permalink to this definition"></a></dt>
+<dd><p>Convert the list of flat vectors of parameters to a vector of
+background rates <cite>mu</cite> and a matrix of kernel parameters <cite>kernel_param</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tensor_param</strong> (<em>TYPE</em>) – DESCRIPTION.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>mu</strong> (<em>TYPE</em>) – Vector of background rates.</p></li>
+<li><p><strong>kernel_param</strong> (<em>TYPE</em>) – Matrix of kernel parameters.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.models.mhp.MHP.tensor2matrix_solverpaths">
+<span class="sig-name descname"><span class="pre">tensor2matrix_solverpaths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor_paths</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.tensor2matrix_solverpaths" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-aslsd.models">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-aslsd.models" title="Permalink to this headline"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="aslsd.kernels.html" class="btn btn-neutral float-left" title="aslsd.kernels package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="aslsd.optim_logging.html" class="btn btn-neutral float-right" title="aslsd.optim_logging package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Alvaro Cartea, Samuel N. Cohen, and Saad Labyad.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

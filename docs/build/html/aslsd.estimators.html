@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>aslsd.estimators package &mdash; aslsd 0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="aslsd.estimators.tests package" href="aslsd.estimators.tests.html" />
+    <link rel="prev" title="aslsd.basis_kernels.tests package" href="aslsd.basis_kernels.tests.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> aslsd
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme.html">aslsd</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">aslsd</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="aslsd.html">aslsd package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="aslsd.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="aslsd.applications.html">aslsd.applications package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.basis_kernels.html">aslsd.basis_kernels package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">aslsd.estimators package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.evaluation.html">aslsd.evaluation package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.events.html">aslsd.events package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.exponential_mhp.html">aslsd.exponential_mhp package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.homogeneous_poisson.html">aslsd.homogeneous_poisson package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.kernels.html">aslsd.kernels package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.models.html">aslsd.models package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.optim_logging.html">aslsd.optim_logging package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.plots.html">aslsd.plots package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.simulation.html">aslsd.simulation package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.solvers.html">aslsd.solvers package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.utilities.html">aslsd.utilities package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="aslsd.html#module-aslsd">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">aslsd</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules.html">aslsd</a> &raquo;</li>
+          <li><a href="aslsd.html">aslsd package</a> &raquo;</li>
+      <li>aslsd.estimators package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/aslsd.estimators.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="aslsd-estimators-package">
+<h1>aslsd.estimators package<a class="headerlink" href="#aslsd-estimators-package" title="Permalink to this headline"></a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="aslsd.estimators.tests.html">aslsd.estimators.tests package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="aslsd.estimators.tests.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aslsd.estimators.tests.html#module-aslsd.estimators.tests.test">aslsd.estimators.tests.test module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aslsd.estimators.tests.html#module-aslsd.estimators.tests">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline"></a></h2>
+</section>
+<section id="module-aslsd.estimators.adaptive_stratified_estimator">
+<span id="aslsd-estimators-adaptive-stratified-estimator-module"></span><h2>aslsd.estimators.adaptive_stratified_estimator module<a class="headerlink" href="#module-aslsd.estimators.adaptive_stratified_estimator" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">aslsd.estimators.adaptive_stratified_estimator.</span></span><span class="sig-name descname"><span class="pre">AdaptiveStratified</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aslsd.estimators.estimator.Estimator" title="aslsd.estimators.estimator.Estimator"><code class="xref py py-class docutils literal notranslate"><span class="pre">aslsd.estimators.estimator.Estimator</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.diff_lse_mu_k">
+<span class="sig-name descname"><span class="pre">diff_lse_mu_k</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mu_k</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.diff_lse_mu_k" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.diff_lse_theta_kpr">
+<span class="sig-name descname"><span class="pre">diff_lse_theta_kpr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu_k</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.diff_lse_theta_kpr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.estimate_dphi">
+<span class="sig-name descname"><span class="pre">estimate_dphi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ki</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.estimate_dphi" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.estimate_dphi_adaptivedom">
+<span class="sig-name descname"><span class="pre">estimate_dphi_adaptivedom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ki</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.estimate_dphi_adaptivedom" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.estimate_dphi_adaptivedom_gtarget">
+<span class="sig-name descname"><span class="pre">estimate_dphi_adaptivedom_gtarget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ki</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.estimate_dphi_adaptivedom_gtarget" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.estimate_dphi_gtarget">
+<span class="sig-name descname"><span class="pre">estimate_dphi_gtarget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ki</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.estimate_dphi_gtarget" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.estimate_dpsi">
+<span class="sig-name descname"><span class="pre">estimate_dpsi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ki</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.estimate_dpsi" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.estimate_dupsilon">
+<span class="sig-name descname"><span class="pre">estimate_dupsilon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ki</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_kj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.estimate_dupsilon" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.estimate_dupsilon_adaptivedom">
+<span class="sig-name descname"><span class="pre">estimate_dupsilon_adaptivedom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ki</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_kj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.estimate_dupsilon_adaptivedom" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.estimate_dupsilon_adaptivedom_gtarget">
+<span class="sig-name descname"><span class="pre">estimate_dupsilon_adaptivedom_gtarget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ki</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_kj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.estimate_dupsilon_adaptivedom_gtarget" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.estimate_dupsilon_gtarget">
+<span class="sig-name descname"><span class="pre">estimate_dupsilon_gtarget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ki</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_kj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.estimate_dupsilon_gtarget" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.estimate_dupsilonzero">
+<span class="sig-name descname"><span class="pre">estimate_dupsilonzero</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ki</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.estimate_dupsilonzero" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.get_log">
+<span class="sig-name descname"><span class="pre">get_log</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.get_log" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.get_true_allocation_phi">
+<span class="sig-name descname"><span class="pre">get_true_allocation_phi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ki</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.get_true_allocation_phi" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.get_true_allocation_upsilon">
+<span class="sig-name descname"><span class="pre">get_true_allocation_upsilon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ki</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_kj</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.get_true_allocation_upsilon" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.intialize_logs">
+<span class="sig-name descname"><span class="pre">intialize_logs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.intialize_logs" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.lse_k_estimate">
+<span class="sig-name descname"><span class="pre">lse_k_estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.lse_k_estimate" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.lse_k_grad_estimate">
+<span class="sig-name descname"><span class="pre">lse_k_grad_estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.lse_k_grad_estimate" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.set_doublesum_estimation">
+<span class="sig-name descname"><span class="pre">set_doublesum_estimation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.set_doublesum_estimation" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.set_singlesum_estimation">
+<span class="sig-name descname"><span class="pre">set_singlesum_estimation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.set_singlesum_estimation" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.set_stratification">
+<span class="sig-name descname"><span class="pre">set_stratification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.set_stratification" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-aslsd.estimators.double_ix_stratification">
+<span id="aslsd-estimators-double-ix-stratification-module"></span><h2>aslsd.estimators.double_ix_stratification module<a class="headerlink" href="#module-aslsd.estimators.double_ix_stratification" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="aslsd.estimators.double_ix_stratification.DoubleIxStratification">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">aslsd.estimators.double_ix_stratification.</span></span><span class="sig-name descname"><span class="pre">DoubleIxStratification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h_max</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.double_ix_stratification.DoubleIxStratification" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.double_ix_stratification.DoubleIxStratification.get_default_adaptive_rel_alloc_0">
+<span class="sig-name descname"><span class="pre">get_default_adaptive_rel_alloc_0</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.double_ix_stratification.DoubleIxStratification.get_default_adaptive_rel_alloc_0" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.double_ix_stratification.DoubleIxStratification.get_default_adaptive_strata">
+<span class="sig-name descname"><span class="pre">get_default_adaptive_strata</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.double_ix_stratification.DoubleIxStratification.get_default_adaptive_strata" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.double_ix_stratification.DoubleIxStratification.get_default_nonadaptive_strata">
+<span class="sig-name descname"><span class="pre">get_default_nonadaptive_strata</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.double_ix_stratification.DoubleIxStratification.get_default_nonadaptive_strata" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.double_ix_stratification.DoubleIxStratification.get_lag_strata_finitepop">
+<span class="sig-name descname"><span class="pre">get_lag_strata_finitepop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.double_ix_stratification.DoubleIxStratification.get_lag_strata_finitepop" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.double_ix_stratification.DoubleIxStratification.get_lag_strata_sizes">
+<span class="sig-name descname"><span class="pre">get_lag_strata_sizes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lag_sizes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.double_ix_stratification.DoubleIxStratification.get_lag_strata_sizes" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.double_ix_stratification.DoubleIxStratification.get_stratification_size">
+<span class="sig-name descname"><span class="pre">get_stratification_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lag_sizes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.double_ix_stratification.DoubleIxStratification.get_stratification_size" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-aslsd.estimators.estimator">
+<span id="aslsd-estimators-estimator-module"></span><h2>aslsd.estimators.estimator module<a class="headerlink" href="#module-aslsd.estimators.estimator" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="aslsd.estimators.estimator.Estimator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">aslsd.estimators.estimator.</span></span><span class="sig-name descname"><span class="pre">Estimator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.estimator.Estimator" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.estimator.Estimator.get_log">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_log</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.estimator.Estimator.get_log" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.estimator.Estimator.initialize">
+<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">process_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mhp_model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.estimator.Estimator.initialize" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.estimator.Estimator.lse_k_estimate">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">lse_k_estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.estimator.Estimator.lse_k_estimate" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.estimator.Estimator.lse_k_grad_estimate">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">lse_k_grad_estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.estimator.Estimator.lse_k_grad_estimate" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-aslsd.estimators.exact_estimator">
+<span id="aslsd-estimators-exact-estimator-module"></span><h2>aslsd.estimators.exact_estimator module<a class="headerlink" href="#module-aslsd.estimators.exact_estimator" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="aslsd.estimators.exact_estimator.ExactEstimator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">aslsd.estimators.exact_estimator.</span></span><span class="sig-name descname"><span class="pre">ExactEstimator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.exact_estimator.ExactEstimator" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aslsd.estimators.estimator.Estimator" title="aslsd.estimators.estimator.Estimator"><code class="xref py py-class docutils literal notranslate"><span class="pre">aslsd.estimators.estimator.Estimator</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.exact_estimator.ExactEstimator.diff_lse_mu_k">
+<span class="sig-name descname"><span class="pre">diff_lse_mu_k</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.exact_estimator.ExactEstimator.diff_lse_mu_k" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.exact_estimator.ExactEstimator.diff_lse_theta_kpr">
+<span class="sig-name descname"><span class="pre">diff_lse_theta_kpr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.exact_estimator.ExactEstimator.diff_lse_theta_kpr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.exact_estimator.ExactEstimator.get_log">
+<span class="sig-name descname"><span class="pre">get_log</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.exact_estimator.ExactEstimator.get_log" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.exact_estimator.ExactEstimator.lse_k_estimate">
+<span class="sig-name descname"><span class="pre">lse_k_estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.exact_estimator.ExactEstimator.lse_k_estimate" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.exact_estimator.ExactEstimator.lse_k_grad_estimate">
+<span class="sig-name descname"><span class="pre">lse_k_grad_estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.exact_estimator.ExactEstimator.lse_k_grad_estimate" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-aslsd.estimators.single_ix_stratification">
+<span id="aslsd-estimators-single-ix-stratification-module"></span><h2>aslsd.estimators.single_ix_stratification module<a class="headerlink" href="#module-aslsd.estimators.single_ix_stratification" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="aslsd.estimators.single_ix_stratification.SingleIxStratification">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">aslsd.estimators.single_ix_stratification.</span></span><span class="sig-name descname"><span class="pre">SingleIxStratification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_events_i</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.single_ix_stratification.SingleIxStratification" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.single_ix_stratification.SingleIxStratification.get_default_abs_alloc">
+<span class="sig-name descname"><span class="pre">get_default_abs_alloc</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.single_ix_stratification.SingleIxStratification.get_default_abs_alloc" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.single_ix_stratification.SingleIxStratification.get_default_strata">
+<span class="sig-name descname"><span class="pre">get_default_strata</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.single_ix_stratification.SingleIxStratification.get_default_strata" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.estimators.single_ix_stratification.SingleIxStratification.get_stratification_size">
+<span class="sig-name descname"><span class="pre">get_stratification_size</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.estimators.single_ix_stratification.SingleIxStratification.get_stratification_size" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-aslsd.estimators">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-aslsd.estimators" title="Permalink to this headline"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="aslsd.basis_kernels.tests.html" class="btn btn-neutral float-left" title="aslsd.basis_kernels.tests package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="aslsd.estimators.tests.html" class="btn btn-neutral float-right" title="aslsd.estimators.tests package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Alvaro Cartea, Samuel N. Cohen, and Saad Labyad.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

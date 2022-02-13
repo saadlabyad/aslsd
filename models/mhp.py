@@ -1,5 +1,6 @@
 # License: BSD 3 clause
 
+import bisect
 import copy
 import itertools
 
@@ -14,53 +15,107 @@ from aslsd.optim_logging.optim_logger import OptimLogger
 from aslsd.plots import graphic_tools as gt
 from aslsd.solvers.adam import ADAM
 from aslsd.solvers.solver import Solver
+from aslsd.utilities import useful_functions as uf
 
 
 class MHP:
     """
     Class for multivariate Hawkes processes (MHP) models.
+
     Let :math:`\\mathbf{N}` be a d-dimensional counting process with
-    conditional intensity :math:`\boldsymbol{\\lambda}`.
+    conditional intensity :math:`\\boldsymbol{\\lambda}`.
     We say that :math:`\\mathbf{N}` is a (linear) MHP if, for all
     :math:`i \\in[d]` and for all :math:`t \\geq 0`, we have
+
     .. math::
-    \\lambda_{i}(t)=\\mu_{i}+\\sum_{j=1}^{d}
-    \\sum_{\\left\\{m: t_{m}^{j}<t\right\\}} \\phi_{ij}\\left(t-t_{m}^{j}\\right)
+        \\lambda_{i}(t):=\\mu_{i}+\\sum_{j=1}^{d}
+        \\sum_{\\left\\{m: t_{m}^{j}<t\\right\\}} \\phi_{ij}\\left(t-t_{m}^{j}\\right),
 
     where
-    * :math:`\\forall i,j \\in [d],  \\phi_{ij}:[0,+\\infty) \\to [0,+\\infty)`
-    is in $L_{1}$. We write :math:`\\boldsymbol{\\phi}=(\\phi_{ij})_{ij\\in [d]}`
-    The functions :math:`\\phi_{i j}` are called the kernels of the MHP;
-    * :math:`\\forall i \\in[d], \\mu_{i}>0 `. The floats :math:`\\mu_{i}`
-    are called baseline intensities.
 
-    For all :math:`\\forall i,j \\in [d]`, and for all :math:`t \\geq 0`, define
+    * :math:`\\forall i,j \\in [d],  \\phi_{ij}:[0,+\\infty) \\to [0,+\\infty)` is in :math:`L_{1}`. We write :math:`\\boldsymbol{\\phi}=(\\phi_{ij})_{i,j\\in [d]}`. The functions :math:`\\phi_{i j}` are called the kernels of the MHP;
+
+    * :math:`\\forall i \\in[d], \\mu_{i}>0`. The floats :math:`\\mu_{i}` are called baseline intensities.
+
+    For all :math:`i,j \\in [d]`, and for all :math:`t \\geq 0`, define
+
     .. math::
-    \\psi_{ij}(t):=\\int_0^t \\phi_{ij}(u)\\mathrm{d}u.
-    We write :math:`\\boldsymbol{\\psi}=(\\psi_{ij})_{ij\\in [d]}`
+        \\psi_{ij}(t):=\\int_0^t \\phi_{ij}(u)\\mathrm{d}u.
 
-    For all :math:`\\forall i,j,k \\in [d]`, and for all :math:`t,s \\geq 0`,
+    We write :math:`\\boldsymbol{\\psi}=(\\psi_{ij})_{ij\\in [d]}`.
+
+    For all :math:`i,j,k \\in [d]`, and for all :math:`t,s \\geq 0`,
     define
-    .. math::
-    \\Upsilon_{ijk}(t,s):=\\int_0^t \\phi_{ki}(u)\\phi_{kj}(u+s)\\mathrm{d}u.
-    We write :math:`\\boldsymbol{\\Upsilon}=(\\Upsilon_{ijk})_{ijk\\in [d]}`
 
-    In our implementation, the class attributes
-    * `phi` denotes the matrix of kernel functions :math:`\\boldsymbol{\\phi},
-    such that `phi[i][j]` is the kernel function :math:`\\phi_{ij}`;
-    * `psi` denotes the matrix of primitive functions :math:`\\boldsymbol{\\psi},
-    such that `psi[i][j]` is the primitive function :math:`\\psi_{ij}`;
-    * `upsilon` denotes the tensor of correlation functions
-    :math:`\\boldsymbol{\\Upsilon}, such that `upsilon[i][j][k]` is the
-    correlation function :math:`\\Upsilon_{ijk}`.
+    .. math::
+        \\Upsilon_{ijk}(t,s):=\\int_0^t \\phi_{ki}(u)\\phi_{kj}(u+s)\\mathrm{d}u.
+
+    We write :math:`\\boldsymbol{\\Upsilon}=(\\Upsilon_{ijk})_{ijk\\in [d]}`.
+
+    In our implementation, the class attribute
+
+    * `phi` denotes the matrix of kernel functions :math:`\\boldsymbol{\\phi}`, such that `phi[i][j]` is the kernel function :math:`\\phi_{ij}`;
+
+    * `psi` denotes the matrix of primitive functions :math:`\\boldsymbol{\\psi}`, such that `psi[i][j]` is the primitive function :math:`\\psi_{ij}`;
+
+    * `upsilon` denotes the tensor of correlation functions :math:`\\boldsymbol{\\Upsilon}`, such that `upsilon[i][j][k]` is the correlation function :math:`\\Upsilon_{ijk}`.
 
     Attributes
     ----------
+    kernel_matrix : `list` of `list` of `KernelModel`
+        Matrix of kernel models.
+
     d : `int`
         Dimension of the MHP.
 
-    kernel_matrix : `list` of `list` of `KernelModel`
-        Matrix of kernel models.
+    matrix_n_param : `list`
+        Matrix of numbers of parameters per kernel.
+
+    n_ker_param : `int`
+        Total number of kernel parameters.
+
+    ix_map : `list` of `list` of `dict`
+        DESCRIPTION. The default is None.
+
+    interval_map : `list` of `list` of `int`
+        Matrix of indices of first and last parameters of kernels in the flat
+        vector of parameters.
+
+    mu_names : `list` of `str`
+        List of names of baseline parameters.
+
+    ker_param_names : `list`
+        Tensor of names of kernel parameters.
+
+    param_bounds : TYPE, optional
+        Tensor of lower bounds of kernel parameters.
+
+    phi : TYPE, optional
+        DESCRIPTION. The default is None.
+    diff_phi : TYPE, optional
+        DESCRIPTION. The default is None.
+    psi : TYPE, optional
+        DESCRIPTION. The default is None.
+    diff_psi : TYPE, optional
+        DESCRIPTION. The default is None.
+    upsilon : TYPE, optional
+        DESCRIPTION. The default is None.
+    diff_sim_upsilon : TYPE, optional
+        DESCRIPTION. The default is None.
+    diff_cross_upsilon : TYPE, optional
+        DESCRIPTION. The default is None.
+    is_fitted : TYPE, optional
+        DESCRIPTION. The default is False.
+    fitted_mu : TYPE, optional
+        DESCRIPTION. The default is None.
+    fitted_ker_param : TYPE, optional
+        DESCRIPTION. The default is None.
+    fit_residuals : TYPE, optional
+        DESCRIPTION. The default is None.
+    fitted_adjacency : TYPE, optional
+        DESCRIPTION. The default is None.
+    fit_log : TYPE, optional
+        DESCRIPTION. The default is None.
 
     """
 
@@ -86,6 +141,12 @@ class MHP:
     # Kernel matrix
     @property
     def kernel_matrix(self):
+        """
+        Kernel matrix of the MHP.
+        Setting the kernel matrix to a new value will automatically modify the
+        values of the other attributes that depend on it.
+
+        """
         return self._kernel_matrix
 
     @kernel_matrix.setter
@@ -116,11 +177,15 @@ class MHP:
     def get_n_param(self):
         """
         Get the matrix of number of parameters per kernel model.
+        If we denote by :math:`M` this matrix and by :math:`d` the
+        dimensionality of the MHP model, then :math:`M` is a :math:`d\\times d`
+        matrix which entry :math:`M_{ij}` is the number of parameters of kernel
+        :math:`\\phi_{ij}`.
 
         Returns
         -------
         mat_n_param : `list` of `list` of `int`
-            DESCRIPTION.
+            Matrix of number of parameters per kernel model.
 
         """
         d = self.d
@@ -130,6 +195,37 @@ class MHP:
 
     # Parameters map
     def make_maps(self):
+        """
+        Get lists storing the mapping for parameter indices.
+        Denote by :math:`d` the dimensionality of the MHP model. For all
+        :math:`k \\in [d]`, denote by :math:`n_k` the total number of
+        parameters of all kernels :math:`(\\phi_{kj})_{j \\in [d]}`. We flatten
+        The list
+        `ix_map` is such that for all :math:`k \\in [d]`, and for all
+        :math:`i \\in n_k`, `ix_map[k][i]` is a dictionary with keys `ker` and
+        `par`. The value `ix_map[k][i]['ker']` is an integer representing the
+        index `j` such that the `i`-th parameter of the flat vector of
+        parameters is a parameter of the kernel :math:`\\phi_{kj}`. By default,
+        since the `0`-th parameter of the flat vector corresponds to the
+        background rate :math:`\\mu_k`, we set `ix_map[k][0]['ker']` to `-1`.
+        Now let `j=ix_map[k][i]['ker']`. The value `ix_map[k][i]['par']` is an
+        integer representing the
+        index `p` such that the `i`-th parameter of the flat vector of
+        parameters is the `p`-th parameter of the kernel :math:`\\phi_{kj}`.
+        The list `interval_map` is such that for all :math:`k \\in [d]`, and for all
+        :math:`j \\in [d]`, `interval_map[k][j]` is a list of two integers
+        `[p,q]` such that `p` (resp. `q-1`) is the index of the first (resp.
+        last) parameter of kernel :math:`\\phi_{kj}` in the flat vector of
+        parameters.
+
+        Returns
+        -------
+        ix_map : `list` of `list` of `dict`
+            DESCRIPTION.
+        interval_map : `list` of `list` of `int`
+            DESCRIPTION.
+
+        """
         d = self.d
         ix_map = [[None for i in range(1+sum(self.matrix_n_param[k]))]
                   for k in range(d)]
@@ -156,7 +252,23 @@ class MHP:
         return ix_map, interval_map
 
     def tensor2matrix_params(self, tensor_param):
-        #   Convert the list of parameters
+        """
+        Convert the list of flat vectors of parameters to a vector of
+        background rates `mu` and a matrix of kernel parameters `kernel_param`.
+
+        Parameters
+        ----------
+        tensor_param : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        mu : TYPE
+            Vector of background rates.
+        kernel_param : TYPE
+            Matrix of kernel parameters.
+
+        """
         d = self.d
         mu = np.array([tensor_param[i][0] for i in range(d)])
         kernel_param = np.array([[tensor_param[i][self.interval_map[i][j][0]:
@@ -166,13 +278,30 @@ class MHP:
         return mu, kernel_param
 
     def matrix2tensor_params(self, mu, kernel_param):
+        """
+        Convert the vector of background rates `mu` and the matrix of kernel
+        parameters `kernel_param` to the list of flat vectors of parameters.
+
+        Parameters
+        ----------
+        mu : TYPE
+            Vector of background rates.
+        kernel_param : TYPE
+            Matrix of kernel parameters.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
         d = self.d
         x = [None]*d
         for k in range(d):
             x_k = []
-            #   mu_k
+            # mu_k
             x_k.append(mu[k])
-            #   kernel parameters
+            # kernel parameters
             for i in range(d):
                 x_k.extend(copy.deepcopy(kernel_param[k][i]))
             x[k] = np.array(copy.deepcopy(x_k), dtype=object)
@@ -208,6 +337,19 @@ class MHP:
 
     # Param names
     def get_param_names(self, index_from_one=False):
+        """
+        Get the matrix of parameter names per kernel model.
+        If we denote by :math:`M` this matrix and by :math:`d` the
+        dimensionality of the MHP model, then :math:`M` is a :math:`d\\times d`
+        matrix which entry :math:`M_{ij}` is the number of parameters of kernel
+        :math:`\\phi_{ij}`.
+
+        Returns
+        -------
+        mat_n_param : `list`
+            Matrix of number of parameters per kernel model.
+
+        """
         d = self.d
         param_names = {}
         if d == 1:
@@ -607,9 +749,34 @@ class MHP:
             n_tot = sum([len(L) for L in list_times])
             print('Simulation Complete, ', n_tot, ' events simulated.')
         return list_times
-    
+
+    def simu_multipath(self, path_res, t_res, x_min, x_max, mu=None,
+                       kernel_param=None, seed=1234, verbose=False,
+                       disc_type='log', base_seed=1234):
+        d = self.d
+        rng = np.random.default_rng(base_seed)
+        vec_seeds = rng.choice(10**5, size=path_res, replace=False)
+
+        if disc_type == 'log':
+            T_f = 10**x_max
+        elif disc_type == 'linear':
+            T_f = x_max
+        list_Tf = uf.discretize_space(x_min, x_max, t_res, disc_type)
+        list_paths = [[[] for j in range(path_res)] for i in range(t_res)]
+        for j in range(path_res):
+            seed = vec_seeds[j]
+            list_times = self.simulate(T_f, mu=mu, kernel_param=kernel_param,
+                                       seed=seed, verbose=verbose)
+            for i in range(t_res):
+                local_Tf = list_Tf[i]
+                list_n_f = [bisect.bisect_left(list_times[index_dim],
+                                               local_Tf)-1
+                            for index_dim in range(d)]
+                list_paths[i][j] = [list_times[0][:list_n_f[index_dim]+1]
+                                    for index_dim in range(d)]
+        return list_Tf, list_paths
+
     # Metrics
-    
     # L2 projection
     def get_l2_projection(self, mhp_2, param_2, n_iter=1000,
                           solver=None, log_error=False, rng=None,

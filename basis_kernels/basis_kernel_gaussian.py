@@ -380,6 +380,34 @@ dict_diff_kl_divergence['GaussianKernel'] = diff_kl_divergence_gauss_gauss
 
 
 class GaussianKernel(BasisKernel):
+    """
+    Class for Gaussian basis kernels. The associated basis function
+    is defined for all :math:`t \\geq 0` by
+
+    .. math::
+        f_{\\vartheta}(t) := \\frac{\\omega}{\\beta\\sqrt{2\\pi}}\\exp\\bigg(-\\frac{(t-\\delta)^2}{2\\beta^2}\\bigg).
+
+    The parameters of this basis kernel are given by
+
+    .. math::
+        \\vartheta := (\\omega,\\beta,\\delta).
+
+    where
+
+    * :math:`\\omega \\geq 0` controls the :math:`L_{1}` norm of :math:`f`;
+    * :math:`\\beta > 0` is the standard deviation of the Gaussian;
+    * :math:`\\delta > 0` is the mean of the Gaussian.
+
+    Notes
+    ------
+        The closed form expressions for the derivatives of the functions
+        :math:`\\Phi`, :math:`\\Psi`, and :math:`\\Upsilon` are available in
+        Cartea, Á., Cohen, S. N., and Labyad, S., (November 22, 2021)
+        'Gradient-based estimation of linear Hawkes processes with general
+        kernels'.
+        `Available at SSRN. <https://ssrn.com/abstract=3969208>`_
+
+    """
 
     # Number of parameters
     def get_n_vars(self):

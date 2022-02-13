@@ -7,6 +7,35 @@ from aslsd.utilities import useful_functions as uf
 
 
 class TriangularKernel(BasisKernel):
+    """
+    Class for triangular basis kernels. The associated basis function
+    is defined for all :math:`t \\geq 0` by
+
+    .. math::
+        f_{\\vartheta}(t) := \\omega \\left(\\frac{t-\\alpha}{\\beta} \\mathbb{1}_{\\left\\{0 \\leq t-\\alpha \\leq \\beta\\right\\}}-\\frac{t-\\alpha-\\beta-\\delta}{\\delta} \\mathbb{1}_{\\left\\{0 \\leq t-\\alpha-\\beta \\leq \\delta\\right\\}}\\right).
+
+    The parameters of this basis kernel are given by
+
+    .. math::
+        \\vartheta := (\\omega, \\alpha, \\beta, \\delta).
+
+    where
+
+    * :math:`\\omega \\geq 0` controls the :math:`L_{1}` norm of :math:`f`;
+    * :math:`\\alpha \\geq 0` is the left corner of the triangle;
+    * :math:`\\beta \\geq 0` is the distance to the altitude foot;
+    * :math:`\\delta \\geq 0` is the distance between the altitude foot and the right corner of the triangle.
+
+    Notes
+    ------
+        The closed form expressions for the derivatives of the functions
+        :math:`\\Phi`, :math:`\\Psi`, and :math:`\\Upsilon` are available in
+        Cartea, Á., Cohen, S. N., and Labyad, S., (November 22, 2021)
+        'Gradient-based estimation of linear Hawkes processes with general
+        kernels'.
+        `Available at SSRN. <https://ssrn.com/abstract=3969208>`_
+
+    """
 
     # Number of parameters
     def get_n_vars(self):

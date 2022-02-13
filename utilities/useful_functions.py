@@ -1,4 +1,5 @@
 # License: BSD 3 clause
+
 import string
 
 import numpy as np
@@ -12,8 +13,8 @@ lower_case_varnames = (list(string.ascii_lowercase)[:11]
 
 def get_alphabet_range(n):
     """
-    Get the list of the first n letters of the alphabet, excluding the letters
-    'l' and 'o' following pycodestyle E741.
+    Get the list of the first n letters of the Roman alphabet, excluding the
+    letters 'l' and 'o' following pycodestyle E741.
 
     Parameters
     ----------
@@ -39,10 +40,42 @@ def get_alphabet_range(n):
 
 
 def prod_ratio(x, y):
+    """
+    Given floats :math:`x, y \\in \\mathbb{R}`, return the quantity
+
+    .. math::
+        \\frac{xy}{x+y}.
+
+    Parameters
+    ----------
+    x : `float`
+    y : `float`
+
+    Returns
+    -------
+    `float`
+
+    """
     return (x*y)/(x+y)
 
 
 def share_ratio(x, y):
+    """
+    Given floats :math:`x, y \\in \\mathbb{R}`, return the quantity
+
+    .. math::
+        \\frac{x}{x+y}.
+
+    Parameters
+    ----------
+    x : `float`
+    y : `float`
+
+    Returns
+    -------
+    `float`
+
+    """
     return (x)/(x+y)
 
 
@@ -50,6 +83,39 @@ def share_ratio(x, y):
 # Triangles
 # =============================================================================
 def tri(t, alpha, beta, delta):
+    """
+    Standard triangle function.
+
+    This function corresponds to a triangle with left corner
+    :math:`\\alpha \\geq 0`, with distance to the altitude foot
+    :math:`\\beta \\geq 0`, and with distance between the
+    altitude foot and the right corner of the triangle :math:`\\delta \\geq 0`.
+    By standard triangle, we mean that the altitude of this triangle has `y`
+    coordinate `1`.
+
+    Formally, this function is defined for all :math:`t \\in \\mathbb{R}` by
+
+    .. math::
+        f(t) := \\left(\\frac{t-\\alpha}{\\beta} \\mathbb{1}_{\\left\\{0 \\leq t-\\alpha \\leq \\beta\\right\\}}-\\frac{t-\\alpha-\\beta-\\delta}{\\delta} \\mathbb{1}_{\\left\\{0 \\leq t-\\alpha-\\beta \\leq \\delta\\right\\}}\\right).
+
+
+    Parameters
+    ----------
+    t : `float` or `numpy.ndarray`
+        Float or vector of floats at which to evaluate the triangle function.
+    alpha : `float`
+        Left corner of the triangle.
+    beta : `float`
+        Distance to the altitude foot.
+    delta : `float`
+        Distance between the altitude foot and the right corner of the triangle.
+
+    Returns
+    -------
+    `float` or `numpy.ndarray`
+        Value or vector of values taken by the triangle function.
+
+    """
     return np.piecewise(t, [(t < alpha), (t >= alpha) & (t < alpha+beta),
                             (t >= alpha+beta) & (t < alpha+beta+delta),
                             (t > alpha+beta+delta)],
@@ -60,20 +126,99 @@ def tri(t, alpha, beta, delta):
 # =============================================================================
 # Gaussian density
 # =============================================================================
-def gaussian_pdf(x, mean=0., std=1.):
-    return 1./(std*np.sqrt(2*np.pi))*np.exp(-0.5*((x-mean)/std)**2)
+def gaussian_pdf(t, mean=0., std=1.):
+    """
+    Probability density function (pdf) of a Gaussian random variable.
+
+    | The pdf :math:`f_{\\mathcal{N}}` of a Gaussian random variable with mean :math:`\\delta` and variance :math:`\\beta^2` is defined for all :math:`t \\in \\mathbb{R}` by
+
+    .. math::
+        f_{\\mathcal{N}}(t) := \\frac{1}{\\beta\\sqrt{2\\pi}}\\exp\\bigg(-\\frac{(t-\\delta)^2}{2\\beta^2}\\bigg).
 
 
-def normal_cdf(x):
-    # Normal CDF evaluated in x
-    # i.e. probability of a N(0,1) takes a value in [-\infty,x]
-    #   scipy.special.ndtr is faster than norm.cdf
-    return scipy.special.ndtr(x)
+    Parameters
+    ----------
+    t : `float` or `numpy.ndarray`
+        Float or vector of floats at which to evaluate the Gaussian pdf.
+    mean : `float`, optional
+        Mean of the Gaussian. The default is `0.`.
+    std : `float`, optional
+        Standard deviation of the Gaussian. The default is `1.`.
+
+    Returns
+    -------
+    `float` or `numpy.ndarray`
+        Value or vector of values taken by the pdf.
+
+    Notes
+    ------
+    In the current version of the aslsd package, we use the implementation
+    of this function in numpy, before potentially moving to our own
+    implementation.
+
+    """
+    return 1./(std*np.sqrt(2*np.pi))*np.exp(-0.5*((t-mean)/std)**2)
+
+
+def normal_cdf(t):
+    """
+    Cumulative distribution function (cdf) of a normal random variable.
+
+    | The cdf :math:`F_{\\mathcal{N}}` of a normal random variable is defined for all :math:`t \\in \\mathbb{R}` by
+
+    .. math::
+        F_{\\mathcal{N}}(t) := \\frac{1}{\\sqrt{2\\pi}}\\int_{(-\\infty, t]}\\exp\\bigg(-\\frac{u^2}{2}\\bigg) du.
+
+
+    Parameters
+    ----------
+    t : `float` or `numpy.ndarray`
+        Float or vector of floats at which to evaluate the cdf.
+
+    Returns
+    -------
+    `float` or `numpy.ndarray`
+        Value or vector of values taken by the cdf.
+
+    Notes
+    ------
+    In the current version of the aslsd package, we use the implementation
+    of this function in scipy, before potentially moving to our own
+    implementation.
+
+    """
+    return scipy.special.ndtr(t)
 
 
 def gaussian_int(start, end):
-    # Integral of the normal gaussian on [start,end]
-    # i.e. probability of a N(0,1) takes a value in [start,end]
+    """
+    Integral :math:`I` of the normal pdf on an interval :math:`[t_0, t_1]`.
+
+    | The integral :math:`I` of a normal pdf is defined for all :math:`t_0, t_1 \\in \\mathbb{R}` by
+
+    .. math::
+        I(t_0,t_1) := \\frac{1}{\\sqrt{2\\pi}}\\int_{[t_0, t_1]}\\exp\\bigg(-\\frac{u^2}{2}\\bigg) du.
+
+
+    Parameters
+    ----------
+    start : `float` or `numpy.ndarray`
+        Lower bound or vector of lower bounds of the integration interval.
+    end : `float` or `numpy.ndarray`
+        Upper bound or vector of lower bounds of the integration interval.
+
+    Returns
+    -------
+    `float` or `numpy.ndarray`
+        Value or vector of values taken by the integral.
+
+    Notes
+    ------
+    In the current version of the aslsd package, we use the implementation
+    of this function in scipy, before potentially moving to our own
+    implementation.
+
+    """
     return scipy.special.ndtr(end)-scipy.special.ndtr(start)
 
 
@@ -81,30 +226,172 @@ def gaussian_int(start, end):
 # Gamma density
 # =============================================================================
 def gammaf(alpha):
-    #   Gamma function
+    """
+    Gamma function.
+
+    | The Gamma function is defined for all :math:`\\alpha \\in \\mathbb{C}` with positive real part by
+
+    .. math::
+        \\Gamma(\\alpha) := \\int_{[0, +\\infty)} t^{\\alpha-1}\\exp^{-t} dt.
+
+    Parameters
+    ----------
+    alpha : `float` or `numpy.ndarray`
+        Float or vector of floats at which to evaluate the Gamma function.
+
+    Returns
+    -------
+    `float` or `numpy.ndarray`
+        Value or vector of values taken by the Gamma function.
+
+    Notes
+    ------
+    In the current version of the aslsd package, we use the implementation
+    of this function in scipy, before potentially moving to our own
+    implementation.
+
+    """
     return scipy.special.gamma(alpha)
 
 
 def linc_gammaf(alpha, x):
-    #   Lower incomplete Gamma function
+    """
+    Lower incomplete Gamma function.
+
+    | The lower incomplete Gamma function is defined for all :math:`\\alpha \\in \\mathbb{C}` with positive real part and for all :math:`\\alpha \\in \\mathbb{C}` by
+
+    .. math::
+        \\gamma(\\alpha, x) := \\int_{[0, x]} t^{\\alpha-1}\\exp^{-t} dt.
+
+    Parameters
+    ----------
+    alpha : `float` or `numpy.ndarray`
+        Float or vector of floats at which to evaluate the function.
+    x : `float` or `numpy.ndarray`
+        Upper bound or vector of upper bounds at which to evaluate the integral.
+
+    Returns
+    -------
+    `float` or `numpy.ndarray`
+        Value or vector of values taken by the Gamma function.
+
+    Notes
+    ------
+    In the current version of the aslsd package, we use the implementation
+    of this function in scipy, before potentially moving to our own
+    implementation.
+
+    """
     return scipy.special.gamma(alpha)*scipy.special.gammainc(alpha, x)
 
 
-def std_gamma_cdf(alpha, x):
-    #   CDF of a standard Gamma RV
-    return scipy.special.gammainc(alpha, x)
+def std_gamma_cdf(alpha, t):
+    """
+    Cumulative distribution function (cdf) of a standard Gamma random variable.
+
+    | The cdf :math:`F_{\\Gamma}` of a Gamma random variable with shape parameter :math:`\\alpha \\in \\mathbb{C}` with positive real part is defined for all :math:`t \\in \\mathbb{R}` by
+
+    .. math::
+        F_{\\Gamma}(t) := \\frac{1}{\\Gamma(\\alpha)}\\gamma(\\alpha, t).
+
+    Parameters
+    ----------
+    alpha : `float` or `numpy.ndarray`
+        Shape parameter or vector of shape parameters.
+    t : `float` or `numpy.ndarray`
+        Float or vector of floats at which to evaluate the cdf.
+
+    Returns
+    -------
+    `float` or `numpy.ndarray`
+        Value or vector of values taken by the cdf.
+
+    Notes
+    ------
+    In the current version of the aslsd package, we use the implementation
+    of this function in scipy, before potentially moving to our own
+    implementation.
+
+    """
+    return scipy.special.gammainc(alpha, t)
 
 
 # =============================================================================
 # Exponential Sums
 # =============================================================================
-def update_sum_exp_1D(beta, E_n, s):
-    return np.exp(-beta*s)*(1+E_n)
+def update_sum_exp_1D(beta, S_n, s):
+    """
+    Induction step for the computation of sums of expontential decays.
+
+    Consider a sequence :math:`(t_1 < t_2 < \\dots < t_n < \\dots)`. Let
+    :math:`\\beta \\in \\mathbb{R}`. For all integers :math:`n \\geq 2`, define
+    the cumulative sum
+
+    .. math::
+        S_{n} := \\sum_{k=1}^{n-1} \\exp\\Big(-\\beta(t_n-t_k)\\Big).
+
+    It is clear that for all :math:`n`, we have the induction formula
+
+    .. math::
+        S_{n+1} = \\exp\\Big(-\\beta(t_{n+1}-t_n)\\Big)(1+S_n).
+
+    This function performs this induction step by returning the quantity
+
+    .. math::
+        \\exp\\big(-\\beta s\\big)(1+S_n).
+
+    Parameters
+    ----------
+    beta : `float`
+        Decay rate.
+    S_n : `float`
+        Previous value of the cumulative sum.
+    s : `float`
+        Inter-arrival time.
+
+    Returns
+    -------
+    `float`
+        Updated value of the cumulative sum.
+
+    """
+    return np.exp(-beta*s)*(1+S_n)
 
 
 def double_sum_exp_1D(beta, times):
-    # Compute inductively
-    # \sum_{m=2}^{N} \sum_{n=1}^{m-1} \exp ( -\beta (t_m -t_n) )
+    """
+    Inductive computation of double sums of exponential decays.
+
+    Consider a sequence :math:`(t_1 < t_2 < \\dots < t_N)`. Let
+    :math:`\\beta \\in \\mathbb{R}`. For all integers :math:`m \\geq 2`, define
+    the cumulative sum
+
+    .. math::
+        S_{m} := \\sum_{k=1}^{m-1} \\exp\\Big(-\\beta(t_m-t_k)\\Big).
+
+    For all integers :math:`N \\geq 2`, define the double sum
+
+    .. math::
+        Z_{N} := \\sum_{m=2}^{N} S_{m}.
+
+    This function computes :math:`Z_n` in linear time using the induction formula
+
+    .. math::
+        S_{m+1} = \\exp\\Big(-\\beta(t_{m+1}-t_m)\\Big)(1+S_m).
+
+    Parameters
+    ----------
+    beta : `float`
+        Decay rate.
+    times : `numpy.ndarray`
+        List of times.
+
+    Returns
+    -------
+    res : `float`
+        Double sum of exponential decays.
+
+    """
     res = 0.
     u_m = 0.
     for m in range(1, len(times)):
@@ -114,10 +401,42 @@ def double_sum_exp_1D(beta, times):
 
 
 def double_sum_exp_1D_midpoint(beta, times, T_f):
-    # Compute inductively
-    # \sum_{m=2}^{N} \sum_{n=1}^{m-1} \exp ( -2\beta (T_f - (t_m +t_n)/2 ) )
-    res = 0.
+    """
+    Inductive computation of double sums of exponential decays with midpoint dependence.
 
+    Consider a sequence :math:`(t_1 < t_2 < \\dots < t_N < T_f)`. Let
+    :math:`\\beta \\in \\mathbb{R}`. For all integers :math:`m \\geq 2`, define
+    the cumulative sum
+
+    .. math::
+        S_{m} := \\sum_{n=1}^{m-1}\\exp\\Big(-2\\beta\\big(T_f-(t_m +t_n)/2\\big)\\Big).
+
+    For all integers :math:`N \\geq 2`, define the double sum
+
+    .. math::
+        Z_{N} := \\sum_{m=2}^{N}S_m.
+
+    This function computes :math:`Z_n` in linear time using the induction formula
+
+    .. math::
+        S_{m+1} = \\exp\\Big(-2\\beta\\big(T_f-(t_{m+1} +t_m)/2\\big)\\Big)+\\exp\\Big(\\beta(t_{m+1}-t_m)\\Big)S_m.    
+
+    Parameters
+    ----------
+    beta : `float`
+        DESCRIPTION.
+    times : `numpy.ndarray`
+        DESCRIPTION.
+    T_f : `float`
+        Terminal time.
+
+    Returns
+    -------
+    res : `float`
+        Double sum of exponential decays.
+
+    """
+    res = 0.
     u_m = 0.
     for m in range(1, len(times)):
         u_m = (np.exp(beta*(times[m]-times[m-1]))*u_m
@@ -129,48 +448,6 @@ def double_sum_exp_1D_midpoint(beta, times, T_f):
 # =============================================================================
 # List operations
 # =============================================================================
-def make_uniform_partition(n_buckets, index_min, index_max, Q_alloc,
-                           alloc_type='Uniform'):
-    list_m_p = [None]*n_buckets
-    avg_step = int((index_max-index_min+1)/n_buckets)
-    m_0 = index_min
-    for p in range(n_buckets):
-        m_1 = min(m_0+avg_step-1, index_max)
-        list_m_p[p] = [m_0, m_1]
-        m_0 = m_1+1
-    list_m_p[-1][1] = index_max
-    if alloc_type == 'Uniform':
-        list_B_p = [int(Q_alloc/n_buckets) for p in range(n_buckets)]
-    elif alloc_type == 'Proportional':
-        list_B_p = [int(Q_alloc/n_buckets) for p in range(n_buckets)]
-    return list_B_p, list_m_p
-
-
-def make_semi_uniform_partition(n_buckets, index_min, index_max, Q_alloc,
-                                std_offsets=[30, 50, 100, 200, 300, 10**3],
-                                alloc_type='Uniform', strata_sizes=[]):
-    if n_buckets == 0:
-        return [], []
-    else:
-        list_m_p = [None]*n_buckets
-        m_0 = index_min
-        for p in range(len(std_offsets)):
-            m_1 = m_0+std_offsets[p]
-            list_m_p[p] = [m_0, m_1]
-            m_0 = m_1+1
-        avg_step = int((index_max-m_0+1)/(n_buckets-len(std_offsets)))
-        for p in range(len(std_offsets), n_buckets):
-            m_1 = min(m_0+avg_step-1, index_max)
-            list_m_p[p] = [m_0, m_1]
-            m_0 = m_1+1
-        list_m_p[-1][1] = index_max
-        if alloc_type == 'Uniform':
-            list_B_p = [int(Q_alloc/n_buckets) for p in range(n_buckets)]
-        elif alloc_type == 'Proportional':
-            list_B_p = [int(Q_alloc/n_buckets) for p in range(n_buckets)]
-        return list_B_p, list_m_p
-
-
 def discretize_space(x_min, x_max, res, disc_type):
     if disc_type == 'log':
         return np.logspace(x_min, x_max, res)
@@ -191,81 +468,51 @@ def concatenate_linspace(vec_T, vec_n_res):
     return X
 
 
-def get_index_in_basis(list_r, basisfunc_index):
-    #   list_r is a list of r values in a mixed model
-    #   basisfunc_index is the index of a basis function in the model, where all basis functions
-    #   are enumerated continuously
-    #   This function outputs the corresponding submodel for basisfunc_index, as well as the index of the basis function among functions of that model
-    mixed_index = 0
-    running_sum = list_r[0]
-    old_sum = 0
-    while basisfunc_index >= running_sum:
-        old_sum = running_sum
-        mixed_index += 1
-        running_sum += list_r[mixed_index]
-    index_in_basis = basisfunc_index-old_sum
-    return mixed_index, index_in_basis
-
-# list_r=[4]
-# basisfunc_index=3
-# mixed_index, index_in_basis=get_index_in_basis(list_r,basisfunc_index)
-# print('The function of basis index ',basisfunc_index,' belongs to the group ',mixed_index,'and has index ',index_in_basis,' in this group')
-
-
-# =============================================================================
-# Learning rate decays
-# =============================================================================
-def func_rate_decay_exp(t, learning_rate, divider=2, period=200):
-    q = t//period
-    return learning_rate/float(divider**q)
-
-#   Test
-# X=np.linspace(0,1000,10*5)
-# Y=[func_rate_decay_exp(t, learning_rate=200) for t in X]
-
-# import matplotlib.pyplot as plt
-# plt.plot(X,Y)
-
-
-def func_rate_decay_lin(t, learning_rate, divider=1.):
-    return learning_rate/float(divider+t)
-
-#   Test
-# X=np.linspace(0,1000,10*5)
-# Y=[func_rate_decay_lin(t,learning_rate=10**-1,divider=1.) for t in X]
-
-# import matplotlib.pyplot as plt
-# plt.plot(X,Y)
-
-
 # =============================================================================
 # Derivatives
 # =============================================================================
 def finite_diff(func, x, epsilon=10**-3, diff_type='central difference',
                 diff_index=0):
     """
-    Finite differences estimate of the derivative of func in x.
+    Finite differences estimate of the derivative of `func` at `x`.
+
+    Let :math:`f` be a function that is differentiable at :math:`x \\in \\mathbb{R}`.
+    Let :math:`\\epsilon >0`. Define finite differences estimates of :math:`f^\\prime(x)`.
+    
+    The central difference estimate is define as 
+
+    .. math::
+        \\frac{f(x+\\epsilon /2)-f(x-\\epsilon /2)}{\\epsilon}.
+
+    The forward difference estimate is define as
+
+    .. math::
+        \\frac{f(x+\\epsilon)-f(x)}{\\epsilon}.
+
+    The backward difference estimate is define as
+
+    .. math::
+        \\frac{f(x)-f(x-\\epsilon )}{\\epsilon}.
 
     Parameters
     ----------
-    func : TYPE
-        DESCRIPTION.
-    x : TYPE
-        DESCRIPTION.
-    epsilon : TYPE, optional
-        DESCRIPTION. The default is 10**-3.
-    diff_type : TYPE, optional
-        DESCRIPTION. The default is 'central difference'.
-    diff_index : TYPE, optional
-        DESCRIPTION. The default is 0.
+    func : `function`
+        Function to differentiate.
+    x : `float` or `numpy.ndarray`
+        Value at which to estimate the derivative.
+    epsilon : `float`, optional
+        Step parameter of the approximation. The default is 10**-3.
+    diff_type : `str`, optional
+        Type of finite differences estimator. The default is 'central difference'.
+    diff_index : `int`, optional
+        Index of the derivation variable. The default is 0.
 
     Returns
     -------
-    TYPE
-        DESCRIPTION.
+    `float`
+        Finite differences estimate of the derivative.
 
     """
-
     if (type(x) == np.ndarray) and (x.size >= 1):
         delta = np.zeros(x.size)
         delta[diff_index] = epsilon
@@ -278,25 +525,3 @@ def finite_diff(func, x, epsilon=10**-3, diff_type='central difference',
         return (func(x+delta)-func(x))/epsilon
     if diff_type == 'backward difference':
         return (func(x)-func(x-delta))/epsilon
-
-
-#   Test
-# def func(t):
-#     return np.exp(-t**2)*np.cos(-2.*t)
-
-# def true_der_func(t):
-#     return np.exp(-t**2)*(-2.*t*np.cos(-2.*t)+2*np.sin(-2.*t))
-
-# delta=10**-10
-
-
-# X=np.linspace(0,10,1000)
-# Y_true=[true_der_func(x) for x in X]
-# Y_finite_diff=[finite_diff(func,x,delta=delta) for x in X]
-
-# import matplotlib.pyplot as plt
-# fig=plt.figure(dpi=300)
-# plt.plot(X,Y_finite_diff,label='Finite diff',color='steelblue')
-# plt.plot(X,Y_true,label='True',linestyle='dashed',color='darkorange')
-# plt.legend()
-# fig.show()

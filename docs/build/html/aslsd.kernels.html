@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>aslsd.kernels package &mdash; aslsd 0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="aslsd.models package" href="aslsd.models.html" />
+    <link rel="prev" title="aslsd.homogeneous_poisson package" href="aslsd.homogeneous_poisson.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> aslsd
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme.html">aslsd</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">aslsd</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="aslsd.html">aslsd package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="aslsd.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="aslsd.applications.html">aslsd.applications package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.basis_kernels.html">aslsd.basis_kernels package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.estimators.html">aslsd.estimators package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.evaluation.html">aslsd.evaluation package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.events.html">aslsd.events package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.exponential_mhp.html">aslsd.exponential_mhp package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.homogeneous_poisson.html">aslsd.homogeneous_poisson package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">aslsd.kernels package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.models.html">aslsd.models package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.optim_logging.html">aslsd.optim_logging package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.plots.html">aslsd.plots package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.simulation.html">aslsd.simulation package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.solvers.html">aslsd.solvers package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.utilities.html">aslsd.utilities package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="aslsd.html#module-aslsd">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">aslsd</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules.html">aslsd</a> &raquo;</li>
+          <li><a href="aslsd.html">aslsd package</a> &raquo;</li>
+      <li>aslsd.kernels package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/aslsd.kernels.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="aslsd-kernels-package">
+<h1>aslsd.kernels package<a class="headerlink" href="#aslsd-kernels-package" title="Permalink to this headline"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline"></a></h2>
+</section>
+<section id="module-aslsd.kernels.kernel">
+<span id="aslsd-kernels-kernel-module"></span><h2>aslsd.kernels.kernel module<a class="headerlink" href="#module-aslsd.kernels.kernel" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">aslsd.kernels.kernel.</span></span><span class="sig-name descname"><span class="pre">KernelModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_basis_kernels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_basis_ker</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_null</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vec_n_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ix_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff_phi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff_psi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff_sim_upsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff_cross_upsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_simu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">l1_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff_l1_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">l2_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">l2_dot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">l2_distance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kl_divergence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff_kl_divergence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class for parametric kernel models of MHP.</p>
+<div class="line-block">
+<div class="line">Let <span class="math notranslate nohighlight">\(\theta\)</span> denote the vector of parameters of the kernel. A kernel <span class="math notranslate nohighlight">\(\phi_{\theta}\)</span> is a sums of basis kernels <span class="math notranslate nohighlight">\(\Big(f^{(r)}_{\vartheta^{(r)}}\Big)_{r \in [n_b]}\)</span>, <span class="math notranslate nohighlight">\(n_b \geq 1\)</span>.</div>
+</div>
+<p>For all <span class="math notranslate nohighlight">\(t \geq 0\)</span>, define</p>
+<div class="math notranslate nohighlight">
+\[\phi_{\theta}(t) := \sum_{r=1}^{n_{\textrm{b}}}
+f^{(r)}_{\vartheta^{(r)}}(t).\]</div>
+<p>The vector of parameters of kernel <span class="math notranslate nohighlight">\(\phi_{\theta}\)</span> is obtainend by
+concatenating the vectors of parameters <span class="math notranslate nohighlight">\(\vartheta^{(r)}\)</span>
+of each of the <span class="math notranslate nohighlight">\(n_b\)</span> basis kernels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>_basis_kernels</strong> (<cite>BasisKernel</cite> or <cite>list</cite> or <cite>numpy.ndarray</cite>) – Array of events of basis kernels.
+If <a href="#id1"><span class="problematic" id="id2">`</span></a>BasisKernel`then broadcasted to a unidimensional list.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.append">
+<span class="sig-name descname"><span class="pre">append</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj_2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.append" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.basis_kernels">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">basis_kernels</span></span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.basis_kernels" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.diff_l2_projection_loss">
+<span class="sig-name descname"><span class="pre">diff_l2_projection_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ker_param_2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.diff_l2_projection_loss" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.get_l2_projection">
+<span class="sig-name descname"><span class="pre">get_l2_projection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ker_param_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params_0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1234</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.get_l2_projection" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.get_l2_projection_loss">
+<span class="sig-name descname"><span class="pre">get_l2_projection_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ker_param_2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.get_l2_projection_loss" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.get_param_bounds">
+<span class="sig-name descname"><span class="pre">get_param_bounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.get_param_bounds" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.get_vec_param_names">
+<span class="sig-name descname"><span class="pre">get_vec_param_names</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.get_vec_param_names" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.is_compatible">
+<span class="sig-name descname"><span class="pre">is_compatible</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel_2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.is_compatible" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.is_sbf">
+<span class="sig-name descname"><span class="pre">is_sbf</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.is_sbf" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.ix_omegas">
+<span class="sig-name descname"><span class="pre">ix_omegas</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.ix_omegas" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.make_diff_cross_upsilon">
+<span class="sig-name descname"><span class="pre">make_diff_cross_upsilon</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.make_diff_cross_upsilon" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.make_diff_l1_norm">
+<span class="sig-name descname"><span class="pre">make_diff_l1_norm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.make_diff_l1_norm" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.make_diff_l2_dot">
+<span class="sig-name descname"><span class="pre">make_diff_l2_dot</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.make_diff_l2_dot" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.make_diff_l2_norm">
+<span class="sig-name descname"><span class="pre">make_diff_l2_norm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.make_diff_l2_norm" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.make_diff_phi">
+<span class="sig-name descname"><span class="pre">make_diff_phi</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.make_diff_phi" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.make_diff_psi">
+<span class="sig-name descname"><span class="pre">make_diff_psi</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.make_diff_psi" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.make_diff_sim_upsilon">
+<span class="sig-name descname"><span class="pre">make_diff_sim_upsilon</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.make_diff_sim_upsilon" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.make_kernel_functionals">
+<span class="sig-name descname"><span class="pre">make_kernel_functionals</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.make_kernel_functionals" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.make_l1_metrics">
+<span class="sig-name descname"><span class="pre">make_l1_metrics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.make_l1_metrics" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.make_l1_norm">
+<span class="sig-name descname"><span class="pre">make_l1_norm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.make_l1_norm" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.make_l2_dot">
+<span class="sig-name descname"><span class="pre">make_l2_dot</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.make_l2_dot" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.make_l2_metrics">
+<span class="sig-name descname"><span class="pre">make_l2_metrics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.make_l2_metrics" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.make_l2_norm">
+<span class="sig-name descname"><span class="pre">make_l2_norm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.make_l2_norm" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.make_maps">
+<span class="sig-name descname"><span class="pre">make_maps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.make_maps" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.make_offset_gen">
+<span class="sig-name descname"><span class="pre">make_offset_gen</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.make_offset_gen" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.make_phi">
+<span class="sig-name descname"><span class="pre">make_phi</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.make_phi" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.make_psi">
+<span class="sig-name descname"><span class="pre">make_psi</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.make_psi" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.make_upsilon">
+<span class="sig-name descname"><span class="pre">make_upsilon</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.make_upsilon" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aslsd.kernels.kernel.KernelModel.test_nullity">
+<span class="sig-name descname"><span class="pre">test_nullity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.kernels.kernel.KernelModel.test_nullity" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-aslsd.kernels">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-aslsd.kernels" title="Permalink to this headline"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="aslsd.homogeneous_poisson.html" class="btn btn-neutral float-left" title="aslsd.homogeneous_poisson package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="aslsd.models.html" class="btn btn-neutral float-right" title="aslsd.models package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Alvaro Cartea, Samuel N. Cohen, and Saad Labyad.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

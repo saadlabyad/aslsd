@@ -239,13 +239,40 @@ def diff_l2_dot_exp_gauss(ix_func, ix_diff, vars_1, vars_2):
                     * np.exp(-beta_1*(delta_2-0.5*beta_1*beta_2**2))
                     * uf.normal_cdf((delta_2-beta_1*beta_2**2)/beta_2))
         if ix_diff == 1:
-            pass        
+            pass
 
 
 dict_diff_l2_dot['GaussianKernel'] = diff_l2_dot_exp_gauss
 
 
 class ExponentialKernel(BasisKernel):
+    """
+    Class for exponential basis kernels. The associated basis function
+    is defined for all :math:`t \\geq 0` by
+
+    .. math::
+        f_{\\vartheta}(t) := \\omega\\beta\\exp(-\\beta t).
+
+    The parameters of this basis kernel are given by
+
+    .. math::
+        \\vartheta := (\\omega,\\beta).
+
+    where
+
+    * :math:`\\omega \\geq 0` controls the :math:`L_{1}` norm of :math:`f`;
+    * :math:`\\beta > 0` is the decay rate of :math:`f`.
+
+    Notes
+    ------
+        The closed form expressions for the derivatives of the functions
+        :math:`\\Phi`, :math:`\\Psi`, and :math:`\\Upsilon` are available in
+        Cartea, Á., Cohen, S. N., and Labyad, S., (November 22, 2021)
+        'Gradient-based estimation of linear Hawkes processes with general
+        kernels'.
+        `Available at SSRN. <https://ssrn.com/abstract=3969208>`_
+
+    """
 
     # Number of parameters
     def get_n_vars(self):

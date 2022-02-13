@@ -1,0 +1,37 @@
+aslsd.events package
+====================
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   aslsd.events.tests
+
+Submodules
+----------
+
+aslsd.events.process\_path module
+---------------------------------
+
+.. automodule:: aslsd.events.process_path
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aslsd.events.time\_ordering module
+----------------------------------
+
+.. automodule:: aslsd.events.time_ordering
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: aslsd.events
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -12,16 +12,18 @@ from aslsd.solvers.adam import ADAM
 
 class KernelModel():
     """
-    Class for kernel models of MHP.
-    We see kernels :math:`\\phi` of an MHP as sums of basis kernels,
-    .. math::
-        \\phi_{\\theta}(t) := \\sum_{r=1}^{n_{\textrm{b}}}
-        f^{(r)}_{\\vartheta_r}(t)
+    Class for parametric kernel models of MHP.
 
-    where :math:`\\theta` is the vector of parameters of kernel :math:`\\phi`,
-    obtainend by concatenating the vectors of parameters :math:`\\vartheta_r`
-    of each of the :math:`n_b` basis kernels
-    :math:`f^{(r)}_{\\vartheta}`, :math:`r \\in [n_b]`.
+    | Let :math:`\\theta` denote the vector of parameters of the kernel. A kernel :math:`\\phi_{\\theta}` is a sums of basis kernels :math:`\\Big(f^{(r)}_{\\vartheta^{(r)}}\\Big)_{r \\in [n_b]}`, :math:`n_b \\geq 1`.
+    For all :math:`t \\geq 0`, define
+
+    .. math::
+        \\phi_{\\theta}(t) := \\sum_{r=1}^{n_{\\textrm{b}}}
+        f^{(r)}_{\\vartheta^{(r)}}(t).
+
+    The vector of parameters of kernel :math:`\\phi_{\\theta}` is obtainend by
+    concatenating the vectors of parameters :math:`\\vartheta^{(r)}`
+    of each of the :math:`n_b` basis kernels.
 
     Parameters
     ----------

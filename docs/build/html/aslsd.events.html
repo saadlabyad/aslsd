@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>aslsd.events package &mdash; aslsd 0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="aslsd.events.tests package" href="aslsd.events.tests.html" />
+    <link rel="prev" title="aslsd.evaluation.tests package" href="aslsd.evaluation.tests.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> aslsd
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme.html">aslsd</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">aslsd</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="aslsd.html">aslsd package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="aslsd.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="aslsd.applications.html">aslsd.applications package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.basis_kernels.html">aslsd.basis_kernels package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.estimators.html">aslsd.estimators package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.evaluation.html">aslsd.evaluation package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">aslsd.events package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.exponential_mhp.html">aslsd.exponential_mhp package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.homogeneous_poisson.html">aslsd.homogeneous_poisson package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.kernels.html">aslsd.kernels package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.models.html">aslsd.models package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.optim_logging.html">aslsd.optim_logging package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.plots.html">aslsd.plots package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.simulation.html">aslsd.simulation package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.solvers.html">aslsd.solvers package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="aslsd.utilities.html">aslsd.utilities package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="aslsd.html#module-aslsd">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">aslsd</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules.html">aslsd</a> &raquo;</li>
+          <li><a href="aslsd.html">aslsd package</a> &raquo;</li>
+      <li>aslsd.events package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/aslsd.events.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="aslsd-events-package">
+<h1>aslsd.events package<a class="headerlink" href="#aslsd-events-package" title="Permalink to this headline"></a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="aslsd.events.tests.html">aslsd.events.tests package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="aslsd.events.tests.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aslsd.events.tests.html#module-aslsd.events.tests.time_ordering_test">aslsd.events.tests.time_ordering_test module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aslsd.events.tests.html#module-aslsd.events.tests">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline"></a></h2>
+</section>
+<section id="module-aslsd.events.process_path">
+<span id="aslsd-events-process-path-module"></span><h2>aslsd.events.process_path module<a class="headerlink" href="#module-aslsd.events.process_path" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="aslsd.events.process_path.ProcessPath">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">aslsd.events.process_path.</span></span><span class="sig-name descname"><span class="pre">ProcessPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_times</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_events</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_times2end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">varpi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lag_sizes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.events.process_path.ProcessPath" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+</section>
+<section id="module-aslsd.events.time_ordering">
+<span id="aslsd-events-time-ordering-module"></span><h2>aslsd.events.time_ordering module<a class="headerlink" href="#module-aslsd.events.time_ordering" title="Permalink to this headline"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.events.time_ordering.get_kappa_varpi">
+<span class="sig-prename descclassname"><span class="pre">aslsd.events.time_ordering.</span></span><span class="sig-name descname"><span class="pre">get_kappa_varpi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_times</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_f</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.events.time_ordering.get_kappa_varpi" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the functions <span class="math notranslate nohighlight">\(\kappa\)</span> and <span class="math notranslate nohighlight">\(\varpi\)</span>, needed for
+chronological ordering of event times across dimensions, and return them as
+arrays.</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\kappa(j,i,m)\)</span> is the index of the latest event of type <span class="math notranslate nohighlight">\(j\)</span></p></li>
+</ul>
+<p>preceding event time <span class="math notranslate nohighlight">\(t_m^i\)</span>.</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\varpi(i,j,h)\)</span> is the smallest index <span class="math notranslate nohighlight">\(m\)</span> such that there</p></li>
+</ul>
+<p>exists at least h events of type <span class="math notranslate nohighlight">\(j\)</span> preceding event time
+<span class="math notranslate nohighlight">\(t_m^i\)</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>list_times</strong> (<cite>list</cite> of np.ndarray) – list_times[i] is the sorted array of events of type <span class="math notranslate nohighlight">\(i\)</span>.</p></li>
+<li><p><strong>T_f</strong> (<cite>float</cite>) – Terminal time.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>kappa</strong> (<cite>list</cite> of <cite>list</cite> of <cite>numpy.ndarray</cite>) – Description.</p></li>
+<li><p><strong>varpi</strong> (<cite>list</cite> of <cite>list</cite> of <cite>numpy.ndarray</cite>) – Description.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>IndexError</strong> – If <cite>T_f</cite> is smaller than <cite>list_times[i][-1]</cite> for some <cite>i</cite>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="aslsd.events.time_ordering.get_lag_sizes">
+<span class="sig-prename descclassname"><span class="pre">aslsd.events.time_ordering.</span></span><span class="sig-name descname"><span class="pre">get_lag_sizes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_times</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">varpi</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.events.time_ordering.get_lag_sizes" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the number of event of type <span class="math notranslate nohighlight">\(i\)</span> with at least <span class="math notranslate nohighlight">\(h\)</span>
+predecessors of type <span class="math notranslate nohighlight">\(j\)</span>, for all <span class="math notranslate nohighlight">\(i,j \in [d]\)</span>,
+<span class="math notranslate nohighlight">\(h \in [\kappa(j,i,N^i_T)]\)</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>list_times</strong> (<cite>list</cite> of np.ndarray) – list_times[i] is the sorted array of events of type <span class="math notranslate nohighlight">\(i\)</span>.</p></li>
+<li><p><strong>kappa</strong> (<cite>list</cite> of <cite>list</cite> of <cite>numpy.ndarray</cite>) – DESCRIPTION.</p></li>
+<li><p><strong>varpi</strong> (<cite>list</cite> of <cite>list</cite> of <cite>numpy.ndarray</cite>) – DESCRIPTION.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>lag_sizes</strong> – lag_sizes[i][j][h] is the number of events of type <span class="math notranslate nohighlight">\(i\)</span> with at
+least <span class="math notranslate nohighlight">\(h\)</span> predecessors of type <span class="math notranslate nohighlight">\(j\)</span>.
+By convention, matrix_lag_sizes[i][j][0]=0.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><cite>list</cite> of <cite>list</cite> of np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-aslsd.events">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-aslsd.events" title="Permalink to this headline"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="aslsd.evaluation.tests.html" class="btn btn-neutral float-left" title="aslsd.evaluation.tests package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="aslsd.events.tests.html" class="btn btn-neutral float-right" title="aslsd.events.tests package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Alvaro Cartea, Samuel N. Cohen, and Saad Labyad.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

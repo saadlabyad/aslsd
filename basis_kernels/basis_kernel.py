@@ -9,63 +9,85 @@ import aslsd.utilities.useful_functions as uf
 
 class BasisKernel(ABC):
     """
-    Abstract class for parametric families of basis kernels
-    :math:`f_{\\vartheta}:[0,+\\infty) \to [0,+\\infty)`.
-    Kernels :math:`\\phi` of an MHP will be defined as sums of basis kernels,
+    Abstract class for parametric families of basis kernels.
+
+    | A basis kernel with parameters :math:`\\vartheta:=(\\vartheta_1, \\dots, \\vartheta_{n_{\\textrm{param}}})` is characterized by a basis function 
+    
     .. math::
-        \\phi_{\\theta}(t) := \\sum_{r=1}^{n_{\textrm{b}}}
-        f^{(r)}_{\\vartheta_r}(t)
+        f_{\\vartheta}:[0,+\\infty) \\to [0,+\\infty).
+    
+    We assume each parameter :math:`\\vartheta_i` leaves in a half-open interval :math:`[b_i, +\\infty)`.
 
-    where :math:`\\theta` is the vector of parameters of kernel :math:`\\phi`,
-    obtainend by concatenating the vectors of parameters :math:`\\vartheta_r`
-    of each of the :math:`n_b` basis kernels
-    :math:`f^{(r)}_{\\vartheta}`, :math:`r \\in [n_b]`.
+    | In our code, we use sums of basis kernels :math:`\\Big(f^{(r)}_{\\vartheta^{(r)}}\\Big)_{r \\in [n_b]}` to define Kernels :math:`\\phi_{\\theta}` of an MHP, such that for all :math:`t \\geq 0`
+
+    .. math::
+        \\phi_{\\theta}(t) := \\sum_{r=1}^{n_{\\textrm{b}}}
+        f^{(r)}_{\\vartheta^{(r)}}(t),
+
+    where :math:`\\theta` is the vector of parameters of kernel :math:`\\phi_{\\theta}`,
+    obtainend by concatenating the vectors of parameters :math:`\\vartheta^{(r)}`
+    of each of the :math:`n_b` basis kernels.
 
 
-    Parameters
+    Attributes
     ----------
-    fixed_indices : `int` or `list` or `numpy.ndarray`, default=None
-        Array of indices of parameters of the basis kernel that we want to fix
-        to given values, that will be given by fixed_vars.
-        If `int`then broadcasted to a unidimensional list.
-
-    fixed_vars : `float` or `list` or `numpy.ndarray`, default=None
-        Array of values of parameters of the basis kernel that we wish to fix.
-        If `float`then broadcasted to a unidimensional list.
-        Must be of the same length as fixed_indices; fixed_vars[p] is the value
-        to which we want to impose for the parameter of index fixed_indices[p].
-
-    Returns
-    -------
-    kappa : `list` of `list` of `numpy.ndarray`
-        Description.
-
-    varpi : `list` of `list` of `numpy.ndarray`
-        Description.
+    n_fixed_vars : `int`
+        DESCRIPTION. The default is 0.
+    ix_map : TYPE, optional
+        DESCRIPTION. The default is None.
+    dict_interactions : TYPE, optional
+        DESCRIPTION. The default is None.
+    phi : `function`
+        DESCRIPTION. The default is None.
+    diff_phi : `function`
+        DESCRIPTION. The default is None.
+    psi : `function`
+        DESCRIPTION. The default is None.
+    diff_psi : `function`
+        DESCRIPTION. The default is None.
+    upsilon : `function`
+        DESCRIPTION. The default is None.
+    diff_sim_upsilon : `function`
+        DESCRIPTION. The default is None.
+    diff_cross_upsilon : `function`
+        DESCRIPTION. The default is None.
+    allow_simu : `bool`
+        DESCRIPTION. The default is True.
+    sim_func : `function`
+        DESCRIPTION. The default is None.
+    l1_norm : `function`
+        DESCRIPTION. The default is None.
+    diff_l1_norm : `function`
+        DESCRIPTION. The default is None.
+    l2_norm : `function`
+        DESCRIPTION. The default is None.
+    l2_dot : `function`
+        DESCRIPTION. The default is None.
+    l2_distance : `function`
+        DESCRIPTION. The default is None.
+    kl_divergence : `function`
+        DESCRIPTION. The default is None.
+    diff_kl_divergence : `function`
+        DESCRIPTION. The default is None.
 
     Notes
     ------
         To avoid any confusion, we add that the notion of (sums of) basis
         kernels is different from the notion of (sums of) basis
-        functions discussed in Cartea, Á. and Cohen, S. N. and Labyad, S.,
-        'Gradient-based estimation of linear Hawkes processes with general
-        kernels'(November 22, 2021).
-        Available at SSRN: https://ssrn.com/abstract=3969208
+        functions discussed in Cartea, Á., Cohen, S. N., and Labyad, S.,
+        (November 22, 2021) 'Gradient-based estimation of linear Hawkes
+        processes with general kernels'. `Available at SSRN. <https://ssrn.com/abstract=3969208>`_
         In particular, we do not assume that all basis kernels only have one
         parameter, and are proportional to a function with fixed parameter
         values. That is, we do not assume that all basis kernels :math:`f`
         satisfy a structure like
 
         .. math::
-            f_{\\vartheta} = \\omega g
+            f_{\\vartheta} = \\omega g,
 
         where :math:`g` is some function and :math:`\\vartheta=(\\omega)`.
-        Users can fix arbitrary values for some of the components of the
-        vector of parameters :math:`\\vartheta` of the basis kernel. When
-        fitting an MHP, fixed parameters will not be optimized. To avoid
-        confusion, we refer to the vector of all parameters
-        (wether fixed or not) as the variables of the basis kernel, and by
-        abuse we refer to the vector of non-fixed parameters as parameters.
+
+        | Users can fix arbitrary values for some of the components of the vector of parameters :math:`\\vartheta` of the basis kernel. When fitting an MHP, fixed parameters will not be optimized. To avoid confusion, we refer to the vector of all parameters (wether fixed or not) as the variables of the basis kernel, and by abuse we refer to the vector of non-fixed parameters as parameters.
 
     """
 
@@ -76,6 +98,24 @@ class BasisKernel(ABC):
                  l1_norm=None, diff_l1_norm=None, l2_norm=None, l2_dot=None,
                  l2_distance=None, kl_divergence=None,
                  diff_kl_divergence=None):
+        """
+        Initialize BasisKernel.
+
+        Parameters
+        ----------
+        fixed_indices : `int` or `list` or `numpy.ndarray`, default=None
+            Array of indices of parameters of the basis kernel that we want to fix
+            to given values, that will be given by fixed_vars.
+            If `int`then broadcasted to a unidimensional list.
+    
+        fixed_vars : `float` or `list` or `numpy.ndarray`, default=None
+            Array of values of parameters of the basis kernel that we wish to fix.
+            If `float`then broadcasted to a unidimensional list.
+            Must be of the same length as fixed_indices; fixed_vars[p] is the value
+            to which we want to impose for the parameter of index fixed_indices[p].
+
+        """
+
         if fixed_indices is None:
             self.fixed_indices = []
             self.fixed_vars = []
@@ -117,7 +157,7 @@ class BasisKernel(ABC):
 
     def get_n_param(self):
         """
-        Get the number of parameters of the basis kernel.
+        Get the number of non-fixed parameters of the basis kernel.
 
         Returns
         -------
@@ -126,7 +166,13 @@ class BasisKernel(ABC):
 
         Notes
         ------
-            By parameters, we mean the non-fixed paramters.
+            Each parametric class of basis kernels is parametrized by a number
+            of variables :math:`n_{var}`. Users can fix a number
+            :math:`n_{fixed}` of these variables, by explicitly specifying
+            the indices of . We refer to the non-fixed variables as parameters
+            of the BasisKernel object. This function outputs the number of
+            parameters, given by :math:`n_{param} = n_{var}-n_{fixed}`.
+
 
         """
         return self.get_n_vars()-self.n_fixed_vars
@@ -146,7 +192,7 @@ class BasisKernel(ABC):
         In this case, the parameters of the basis kernel are
 
         .. math::
-        \\vartheta^\\intercal=(\\omega, \\varphi^\\intercal).
+            \\vartheta^\\intercal=(\\omega, \\varphi^\\intercal).
 
         We allow for the vector of parameters :math:`\\varphi^\\intercal` to
         be empty in this definition.
@@ -174,11 +220,9 @@ class BasisKernel(ABC):
         Get the list of lower bounds of the domain of each parameter of the
         basis kernel.
 
-        We assume that the :math:`r`-th parameter of the basis kernel,
-        :math:`\\vartheta_r`, there exists a real :math:`b_r` such that the
-        domain of :math:`\\vartheta_r` is the half open interval
-        :math:`[b_r, + \\infty)`. This method returns the vector
-        :math:`(b_1, b_2, \\dots, b_r, \\dots)`.
+        Let :math:`\\vartheta:=(\\vartheta_1, \\dots, \\vartheta_{n_{\\textrm{param}}})` denote the parameters of the basis kernel. 
+        Each parameter :math:`\\vartheta_i` lives in a half-open interval :math:`[b_i, +\\infty)`.
+        This method returns the vector :math:`(b_1, \\dots, b_{n_{\\textrm{param}}})`.
 
         Returns
         -------
@@ -373,6 +417,52 @@ class BasisKernel(ABC):
         pass
 
     def make_kernel_functionals(self):
+        """
+        Set the attributes corresponding to kernel functionals and their
+        derivatives, as functions of (non-fixed) parameters.
+        The functional :math:`\\psi` is defined for all :math:`t \\geq 0` by
+
+        .. math::
+            \\psi(t) := \\int_{[0,t]} f(u)du
+
+        The functional :math:`\\Upsilon` is defined for all :math:`t,s \\geq 0`
+        and for all functions :math:`\\tilde{f}` by
+
+        .. math::
+            \\Upsilon[f, \\tilde{f}](t,s) := \\int_{[0,t]} f(u)\\tilde{f}(u+s)du
+
+
+        In our implementation we denote the functions:
+
+        * :math:`f` by the attribute `phi`;
+        * :math:`\\frac{\\partial f}{\\partial \\vartheta_p}` by the attribute `diff_phi`;
+        * :math:`\\psi` by the attribute `psi`;
+        * :math:`\\frac{\\partial \\psi}{\\partial \\vartheta_p}` by the attribute `diff_psi`;
+        * :math:`\\Upsilon[\\cdot, f]` by the attribute `upsilon_rev`;
+        * :math:`\\Upsilon[f, \\cdot]` by the attribute `upsilon`;
+        * :math:`\\frac{\\partial \\Upsilon[f, f]}{\\partial \\vartheta_p}` by the attribute `diff_sim_upsilon`;
+        * :math:`\\frac{\\partial \\Upsilon[\\cdot, f]}{\\partial \\vartheta_p}` by the attribute `diff_cross_upsilon_rev`;
+        * :math:`\\frac{\\partial \\Upsilon[f, \\cdot]}{\\partial \\vartheta_p}` by the attribute `diff_cross_upsilon`;
+
+        Raises
+        ------
+        NotImplementedError
+            DESCRIPTION.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        Notes
+        ------
+            See Cartea, Á., Cohen, S. N., and Labyad, S., (November 22, 2021)
+            'Gradient-based estimation of linear Hawkes processes with general
+            kernels'.
+            `Available at SSRN. <https://ssrn.com/abstract=3969208>`_
+
+        """
+
         def phi(t, params):
             vars_ = self.make_vars(params)
             return self.make_phi(t, vars_)
@@ -470,6 +560,22 @@ class BasisKernel(ABC):
         pass
 
     def make_l1_metrics(self):
+        """
+        Set the function attributes that comupte the :math:`L_{1}` norm of
+        the basis kernel :math:`f` and its derivatives, as functions of
+        (non-fixed) parameters.
+        The :math:`L_{1}` norm of the basis kernel :math:`f` is defined by
+
+        .. math::
+            \\| f_{\\vartheta} \\|_1 := \\int_{[0,+\\infty]} |f_{\\vartheta}(u)|du.
+
+        In our implementation we denote the functions:
+
+        * :math:`\\| f_{\\vartheta} \\|_1` by the attribute `l1_norm`;
+        * :math:`\\frac{\\partial `\\| f_{\\vartheta} \\|_1`}{\\partial \\vartheta_p}` by the attribute `diff_l1_norm`.
+
+        """
+
         def l1_norm(params):
             vars_ = self.make_vars(params)
             return self.make_l1_norm(vars_)
@@ -498,6 +604,37 @@ class BasisKernel(ABC):
         pass
 
     def make_l2_metrics(self):
+        """
+        Set the function attributes that compute :math:`L_{2}` norms, metrics
+        inner-products, and their derivatives as functions of (non-fixed)
+        parameters.
+        Let :math:`f_{\\vartheta}` denote the basis kernel function with
+        parameters :math:`\\vartheta`.
+        The :math:`L_{2}` norm of the basis kernel function
+        :math:`f_{\\vartheta}` is defined by
+
+        .. math::
+            \\| f_{\\vartheta} \\|_2^2 := \\int_{[0,+\\infty]} |f_{\\vartheta}(u)|^2du.
+
+        The :math:`L_{2}` inner product between the basis kernel function
+        :math:`f_{\\vartheta}` and some other basis kernel function
+        :math:`g_{\\vartheta^\\prime}` is defined by
+
+        .. math::
+            \\langle f,g\\rangle_2 := \\int_{[0,+\\infty]} f_{\\vartheta}(u)g_{\\vartheta^\\prime}(u)du.
+
+        The :math:`L_{2}` metric between :math:`f_{\\vartheta}` and
+        :math:`g_{\\vartheta^\\prime}` is defined by
+
+        .. math::
+            d_2(f_{\\vartheta}, g_{\\vartheta^\\prime}) := \\| f_{\\vartheta}-g_{\\vartheta^\\prime} \\|_2.
+
+        In our implementation we denote the functions:
+
+        * :math:`\\| f_{\\vartheta} \\|_2` by the attribute `l2_norm`;
+        * :math:`\\frac{\\partial `\\| f_{\\vartheta} \\|_2`}{\\partial \\vartheta_p}` by the attribute `diff_l2_norm`.
+
+        """
         def l2_norm(params):
             vars_ = self.make_vars(params)
             return self.make_l2_norm(vars_)
@@ -571,6 +708,25 @@ class BasisKernel(ABC):
         pass
 
     def make_kl_functionals(self):
+        """
+        Set the attributes that compute the Kullback–Leibler (KL) divergence
+        and its derivatives as functions of (non-fixed)
+        parameters.
+        Let :math:`f_{\\vartheta}` denote the basis kernel function with
+        parameters :math:`\\vartheta`. The KL divergence between the basis kernel function
+        :math:`f_{\\vartheta}` and some other (nonzero) basis kernel function
+        :math:`g_{\\vartheta^\\prime}` is defined by
+
+        .. math::
+            D_{\\mathrm{KL}}(f_{\\vartheta} \\| g_{\\vartheta^\\prime):=\\int_{[0,+\\infty]} f_{\\vartheta}(x) \\log \\left(\\frac{f_{\\vartheta}(x)}{g_{\\vartheta^\\prime(x)}\\right) d x
+
+        In our implementation we denote the functions:
+
+        * :math:`\\| f_{\\vartheta} \\|_2` by the attribute `kl_divergence`;
+        * :math:`\\frac{\\partial `\\| f_{\\vartheta} \\|_2`}{\\partial \\vartheta_p}` by the attribute `diff_kl_divergence`.
+
+        """
+
         def kl_divergence(basis_kern_2, params_1, params_2):
             vars_1 = self.make_vars(params_1)
             vars_2 = basis_kern_2.make_vars(params_2)

@@ -96,9 +96,18 @@ dict_l2_dot['NullKernel'] = l2_dot_delayedexp_null
 def l2_dot_delayedexp_delayedexp(vars_1, vars_2):
     omega_1 = vars_1[0]
     beta_1 = vars_1[1]
+    delta_1 = vars_1[2]
     omega_2 = vars_2[0]
     beta_2 = vars_2[1]
-    pass
+    delta_2 = vars_2[2]
+    diff = abs(delta_2-delta_1)
+    if delta_1 >= delta_2:
+        delta = uf.share_ratio(beta_2, beta_1)*diff
+    else:
+        delta = uf.share_ratio(beta_1, beta_2)*diff
+    res = (omega_1*omega_2*uf.prod_ratio(beta_1, beta_2)
+           * np.exp(-(beta_1+beta_2)*delta))
+    return res
 
 
 dict_l2_dot['DelayedExponentialKernel'] = l2_dot_delayedexp_delayedexp
@@ -116,16 +125,20 @@ dict_diff_l2_dot['NullKernel'] = diff_l2_dot_delayedexp_null
 def diff_l2_dot_delayedexp_delayedexp(ix_func, ix_diff, vars_1, vars_2):
     omega_1 = vars_1[0]
     beta_1 = vars_1[1]
+    delta_1 = vars_1[2]
     omega_2 = vars_2[0]
     beta_2 = vars_2[1]
+    delta_2 = vars_2[2]
     if ix_func == 1:
         if ix_diff == 0:
-            pass
+            return l2_dot_delayedexp_delayedexp([1., vars_1[1], vars_1[2]],
+                                                vars_2)
         if ix_diff == 1:
             pass
     elif ix_func == 2:
         if ix_diff == 0:
-            pass
+            return l2_dot_delayedexp_delayedexp(vars_1, [1., vars_2[1],
+                                                         vars_2[2]])
         if ix_diff == 1:
             pass
 
@@ -134,6 +147,34 @@ dict_diff_l2_dot['DelayedExponentialKernel'] = diff_l2_dot_delayedexp_delayedexp
 
 
 class DelayedExponentialKernel(BasisKernel):
+    """
+    Class for delayed exponential basis kernels. The associated basis function
+    is defined for all :math:`t \\geq 0` by
+
+    .. math::
+        f_{\\vartheta}(t) := \\omega\\beta\\exp(-\\beta (t-\\delta))\\mathbb{1}_{t > \\delta}.
+
+    The parameters of this basis kernel are given by
+
+    .. math::
+        \\vartheta := (\\omega,\\beta, \\delta).
+
+    where
+
+    * :math:`\\omega \\geq 0` controls the :math:`L_{1}` norm of :math:`f`;
+    * :math:`\\beta > 0` is the decay rate of :math:`f`;
+    * :math:`\\delta > 0` is the delay of :math:`f`.
+
+    Notes
+    ------
+        The closed form expressions for the derivatives of the functions
+        :math:`\\Phi`, :math:`\\Psi`, and :math:`\\Upsilon` are available in
+        Cartea, Á., Cohen, S. N., and Labyad, S., (November 22, 2021)
+        'Gradient-based estimation of linear Hawkes processes with general
+        kernels'.
+        `Available at SSRN. <https://ssrn.com/abstract=3969208>`_
+
+    """
 
     # Number of parameters
     def get_n_vars(self):
@@ -262,21 +303,35 @@ class DelayedExponentialKernel(BasisKernel):
         # Differential wrt Beta
         elif ix_diff == 1:
             return 0.
+        # Differential wrt Delta
+        elif ix_diff == 2:
+            return 0.
+        else:
+            raise ValueError("The argument ix_diff = ", ix_diff, "is not a ",
+                             "valid differentiation index for basis kernels",
+                             "of type ", str(self.__class__))
 
     def make_l2_norm(self, vars_):
         omega = vars_[0]
         beta = vars_[1]
-        pass
+        return 0.5*beta*omega**2
 
     def make_diff_l2_norm(self, ix_diff, vars_):
         omega = vars_[0]
         beta = vars_[1]
         # Differential wrt Omega
         if ix_diff == 0:
-            pass
+            return omega*beta
         # Differential wrt Beta
         elif ix_diff == 1:
-            pass
+            return 0.5*(omega**2)
+        # Differential wrt Delta
+        elif ix_diff == 2:
+            return 0.
+        else:
+            raise ValueError("The argument ix_diff = ", ix_diff, "is not a ",
+                             "valid differentiation index for basis kernels",
+                             "of type ", str(self.__class__))
 
     def make_l2_dot(self, basis_kern_2, vars_1, vars_2):
         ker_type = str(type(basis_kern_2))

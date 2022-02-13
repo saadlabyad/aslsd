@@ -7,6 +7,33 @@ from aslsd.utilities import useful_functions as uf
 
 
 class RayleighKernel(BasisKernel):
+    """
+    Class for Rayleigh basis kernels. The associated basis function
+    is defined for all :math:`t \\geq 0` by
+
+    .. math::
+        f_{\\vartheta}(t) := \\omega \\frac{t}{\\beta^{2}} \\exp \\left(-\\frac{t^{2}}{2 \\beta^{2}}\\right).
+
+    The parameters of this basis kernel are given by
+
+    .. math::
+        \\vartheta := (\\omega, \\beta).
+
+    where
+
+    * :math:`\\omega \\geq 0` controls the :math:`L_{1}` norm of :math:`f`;
+    * :math:`\\beta > 0` is the scale parameter.
+
+    Notes
+    ------
+        The closed form expressions for the derivatives of the functions
+        :math:`\\Phi`, :math:`\\Psi`, and :math:`\\Upsilon` are available in
+        Cartea, Á., Cohen, S. N., and Labyad, S., (November 22, 2021)
+        'Gradient-based estimation of linear Hawkes processes with general
+        kernels'.
+        `Available at SSRN. <https://ssrn.com/abstract=3969208>`_
+
+    """
 
     # Number of parameters
     def get_n_vars(self):
