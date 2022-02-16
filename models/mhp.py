@@ -90,30 +90,42 @@ class MHP:
     param_bounds : TYPE, optional
         Tensor of lower bounds of kernel parameters.
 
-    phi : TYPE, optional
+    phi : `list` of `list` of `function`
         DESCRIPTION. The default is None.
-    diff_phi : TYPE, optional
+
+    diff_phi : `list` of `list` of `function`
         DESCRIPTION. The default is None.
-    psi : TYPE, optional
+
+    psi : `list` of `list` of `function`
         DESCRIPTION. The default is None.
-    diff_psi : TYPE, optional
+
+    diff_psi : `list` of `list` of `function`
         DESCRIPTION. The default is None.
-    upsilon : TYPE, optional
+
+    upsilon : `list` of `list` of `list` of `function`
         DESCRIPTION. The default is None.
-    diff_sim_upsilon : TYPE, optional
+
+    diff_sim_upsilon : `list` of `list` of `function`
         DESCRIPTION. The default is None.
-    diff_cross_upsilon : TYPE, optional
+
+    diff_cross_upsilon : `list` of `list` of `list` of `function`
         DESCRIPTION. The default is None.
-    is_fitted : TYPE, optional
+
+    is_fitted : `bool`
         DESCRIPTION. The default is False.
-    fitted_mu : TYPE, optional
-        DESCRIPTION. The default is None.
-    fitted_ker_param : TYPE, optional
-        DESCRIPTION. The default is None.
-    fit_residuals : TYPE, optional
-        DESCRIPTION. The default is None.
-    fitted_adjacency : TYPE, optional
-        DESCRIPTION. The default is None.
+
+    fitted_mu : `numpy.ndarray`
+        Fitted baseline.
+
+    fitted_ker_param : `numpy.ndarray`
+        Fitted kernel parameters.
+
+    fit_residuals : `numpy.ndarray`
+        Fit residuals.
+
+    fitted_adjacency : `numpy.ndarray`
+        Adjacency matrix for fitted kernel parameters.
+
     fit_log : TYPE, optional
         DESCRIPTION. The default is None.
 
@@ -286,7 +298,7 @@ class MHP:
         Parameters
         ----------
         mu : TYPE
-            Vector of background rates.
+            Vector of baselines.
         kernel_param : TYPE
             Matrix of kernel parameters.
 
@@ -448,10 +460,67 @@ class MHP:
 
     def fit(self, list_times, T_f, kappa=None, varpi=None, x_0=None,
             n_iter=1000, solvers=None, estimators=None, logger=None, seed=1234,
-            verbose=False, **kwargs):
+            verbose=False, clear=True, write=True, **kwargs):
+        """
+        Fit the MHP model to some observations.
+
+        We suppose that we observe a path of a d-dimensional counting process
+        :math:`\\mathbf{N}` started at time :math:`0` up to some terminal time
+        :math:`T`.
+
+        The least squares error (LSE) of this model for these observations is
+        defined as
+
+        .. math::
+            \\mathcal{R}_{T}(\\boldsymbol{\\mu}):=\\frac{1}{T} \\sum_{k=1}^{d} \\int_{0}^{T} \\lambda_{k}(t)^{2} \\mathrm{~d} t-\\frac{2}{T} \\sum_{k=1}^{d} \\sum_{m=1}^{N_{T}^{k}} \\lambda_{k}\\left(t_{m}^{k}\\right).
+
+        For a homogeneous Poisson model, this simplifies to
+
+        .. math::
+            \\mathcal{R}_{T}(\\boldsymbol{\\mu}):=\\sum_{k=1}^{d} \\bigg( \\mu_{k}^{2} -2 \\frac{N_{T}^{k}}{T} \\bigg).
+
+        Parameters
+        ----------
+        list_times : TYPE
+            DESCRIPTION.
+        T_f : TYPE
+            DESCRIPTION.
+        kappa : TYPE, optional
+            DESCRIPTION. The default is None.
+        varpi : TYPE, optional
+            DESCRIPTION. The default is None.
+        x_0 : TYPE, optional
+            DESCRIPTION. The default is None.
+        n_iter : TYPE, optional
+            DESCRIPTION. The default is 1000.
+        solvers : TYPE, optional
+            DESCRIPTION. The default is None.
+        estimators : TYPE, optional
+            DESCRIPTION. The default is None.
+        logger : TYPE, optional
+            DESCRIPTION. The default is None.
+        seed : TYPE, optional
+            DESCRIPTION. The default is 1234.
+        verbose : TYPE, optional
+            DESCRIPTION. The default is False.
+        clear : TYPE, optional
+            DESCRIPTION. The default is True.
+        write : TYPE, optional
+            DESCRIPTION. The default is True.
+        **kwargs : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        fitted_mu : TYPE
+            DESCRIPTION.
+        fitted_ker_param : TYPE
+            DESCRIPTION.
+
+        """
         rng = np.random.default_rng(seed)
-        # rng = np.random.Generator(np.random.SFC64(seed))
-        # Restart in case already fitted
+
+        # Clear saved data in case already fitted
         self.clear_fit()
 
         # Data

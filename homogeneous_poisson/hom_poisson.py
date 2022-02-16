@@ -68,7 +68,15 @@ class HomPoisson:
                     for i in range(d)]
         return mu_names
 
-    def fit(self, list_times, T_f, write=True):
+    def clear_fit(self):
+        self.is_fitted = False
+        self.fitted_mu = None
+        self.fitted_ker_param = None
+        self.fit_residuals = None
+        self.fitted_adjacency = None
+        self.fit_log = None
+
+    def fit(self, list_times, T_f, clear=True, write=True):
         """
         Fit the Homoegeneous Poisson model to some observations.
 
@@ -110,6 +118,8 @@ class HomPoisson:
             Fitted baselines.
 
         """
+        if clear:
+            self.clear_fit()
         fitted_mu = np.array([len(L) for L in list_times])/T_f
         if write:
             self.is_fitted = True
@@ -167,11 +177,11 @@ class HomPoisson:
         :math:`\\mathbf{N}` started at time :math:`0` up to some terminal time
         :math:`T`.
 
-        Let :math:`k \\in [d]`. For all :math:`m \\in \\mathbb{N}^{*}`, let
+        The residuals of a homogeneous Poisson model :math:`\\boldsymbol{\\mu}`
+        are defined by
 
         .. math::
-            s_{m}^{k}=\\mu_k(t^k_{m+1}-t^k_{m}).
-
+            \\left\\{\\mu_k(t^k_{m+1}-t^k_{m}): k \\in [d], m \\in [N^k_T-1] \\right\\}.
 
         Parameters
         ----------
