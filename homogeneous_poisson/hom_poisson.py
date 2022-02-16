@@ -6,102 +6,143 @@ import numpy as np
 
 
 class HomPoisson:
-    def __init__(self, d, param_names=None,
-                 param_bounds=None, phi=None, diff_phi=None, psi=None,
-                 diff_psi=None, upsilon=None, diff_sim_upsilon=None,
-                 diff_cross_upsilon=None,
-                 fitted_mu=None, fitted_ker_param=None):
+    """
+    Class for homogeneous Poisson models of point processes.
+
+    Let :math:`\\mathbf{N}` be a d-dimensional counting process with
+    conditional intensity :math:`\\boldsymbol{\\lambda}`.
+    We say that :math:`\\mathbf{N}` is a homogeneous Poisson process if there
+    exists positive constants :math:`(\\mu_{i})_{i \\in[d]}` (that we call
+    baselines), such that for all :math:`i \\in[d]` and for all
+    :math:`t \\geq 0`, we have
+
+    .. math::
+        \\lambda_{i}(t):=\\mu_{i}.
+
+
+    Attributes
+    ----------
+    d : `int`
+        Dimension of the homogeneous Poisson process.
+    index_from_one : `bool`, optional
+        Start the indexing of baselines from 1 instead of 0. The default is False.
+    mu_names : `list` of `str`, optional
+        List of names of baseline parameters. The default is None.
+    is_fitted : `bool`, optional
+        True if this model has been fitted. The default is False.
+    fitted_mu : `numpy.ndarray`, optional
+        Array of fitted baselines. The default is None.
+    fit_residuals : `list` of `numpy.ndarray`, optional
+        List of fit residuals. The default is None.
+
+    """
+
+    def __init__(self, d, index_from_one=False, mu_names=None,
+                 is_fitted=False, fitted_mu=None, fit_residuals=None):
         self.d = d
-        self.param_names = self.get_param_names()
+        if mu_names is None:
+            self.mu_names = self.get_param_names(index_from_one=index_from_one)
         self.para_bounds = self.get_param_bounds()
         self.make_kernel_functionals()
 
-    # Parameters map
-    def make_ix_map(self):
-        pass
-
-    # Omega
-    def ix_omegas(self):
-        # Outputs the list of indices of the first parameter of each basis
-        # kernel.
-        # In case of an MHP where each basis kernel has an omega type
-        # parameter, this is useful to control the L1 normal of each kernel,
-        # and therefore the spectral radius of the adjacency matrix of the
-        # MHP. In the context of random initialization of an MHP, this allows
-        # to avoid parameter values that make the MHP unstable.
-        return [x[0] for x in self.interval_map]
-
-    # Bounds
-    def get_param_bounds(self):
-        d = self.d
-        bnds = [[self.kernel_matrix[i][j].get_param_bounds()
-                 for j in range(d)] for i in range(d)]
-        return bnds
-
     # Param names
-    def get_param_names(self):
+    def get_param_names(self, index_from_one=False):
+        """
+        Get the standard names of baseline variables.
+
+        By default, we denote the baselines by :math:`(\\mu_{i})_{i \\in[d]}`.
+
+        Parameters
+        ----------
+        index_from_one : `bool`, optional
+            Start the indexing of baselines from 1 instead of 0. The default is False.
+
+        Returns
+        -------
+        mu_names : `list` of `str`
+            List of names of baseline parameters.
+
+        """
         d = self.d
-        param_names = [[None for j in range(d)] for i in range(d)]
-        for i, j in itertools.product(range(d), range(d)):
-            kernel = self.kernel_matrix[i][j]
-            vec_param_names = kernel.get_vec_param_names(self)
-            n_param = kernel.n_basis_ker
-            param_names[i][j] = [None]*n_param
-            for ix_param_scaled in range(n_param):
-                ix_ker = kernel.ix_map[ix_param_scaled]['ker']
-                ix_param = kernel.ix_map[ix_param_scaled]['par']
-                param_names[i][j][ix_param_scaled] = vec_param_names[ix_ker]
-                + '_{'+str(i)+','+str(j)+','+str(ix_param)+'}'
-        return param_names
+        mu_names = ['$\u03BC_{'+str(i+int(index_from_one))+'}$'
+                    for i in range(d)]
+        return mu_names
 
-    # Kernel functionals
-    def make_kernel_functionals(self):
-        d = self.d
-        self.phi = [[None for j in range(d)] for i in range(d)]
-        self.diff_phi = [[None for j in range(d)] for i in range(d)]
-        self.psi = [[None for j in range(d)] for i in range(d)]
-        self.diff_psi = [[None for j in range(d)] for i in range(d)]
-        self.upsilon = [[[None for k in range(d)] for j in range(d)]
-                        for i in range(d)]
-        self.diff_sim_upsilon = [[None for j in range(d)]
-                                 for i in range(d)]
-        self.diff_cross_upsilon = [[[None for k in range(d)]
-                                    for j in range(d)] for i in range(d)]
-        for i, j in itertools.product(range(d), range(d)):
-            kernel = self.kernel_matrix[i][j]
-            self.phi[i][j] = kernel.make_phi()
-            self.diff_phi[i][j] = kernel.make_diff_phi()
-            self.psi[i][j] = kernel.make_psi()
-            self.diff_psi[i][j] = kernel.make_diff_psi()
-            self.diff_sim_upsilon[i][j] = kernel.make_diff_sim_upsilon()
+    def fit(self, list_times, T_f, write=True):
+        """
+        Fit the Homoegeneous Poisson model to some observations.
 
-        for i, j, k in itertools.product(range(d), range(d), range(d)):
-            kernel_ki = self.kernel_matrix[k][i]
-            kernel_kj = self.kernel_matrix[k][j]
-            if kernel_ki.is_compatible(kernel_kj):
-                func = kernel_ki.make_upsilon()
+        We suppose that we observe a path of a d-dimensional counting process
+        :math:`\\mathbf{N}` started at time :math:`0` up to some terminal time
+        :math:`T`.
 
-                def upsilon(t, s, params_1, params_2):
-                    return func(kernel_kj, t, s, params_1, params_2)
-                self.upsilon[i][j][k] = upsilon
-                diff_func = kernel_ki.make_diff_cross_upsilon()
+        The least squares error (LSE) of this model for these observations is
+        defined as
 
-                def diff_cross_upsilon(t, s, ix_func, ix_diff, params_1,
-                                       params_2):
-                    return diff_func(kernel_kj, t, s, ix_func, ix_diff,
-                                     params_1, params_2)
-                self.diff_cross_upsilon[i][j][k] = diff_cross_upsilon
-            else:
-                raise NotImplementedError("No available interaction"
-                                          " between kernel", k, ",", i,
-                                          " and kernel ", k, ",", j)
+        .. math::
+            \\mathcal{R}_{T}(\\boldsymbol{\\mu}):=\\frac{1}{T} \\sum_{k=1}^{d} \\int_{0}^{T} \\lambda_{k}(t)^{2} \\mathrm{~d} t-\\frac{2}{T} \\sum_{k=1}^{d} \\sum_{m=1}^{N_{T}^{k}} \\lambda_{k}\\left(t_{m}^{k}\\right).
 
-    def fit(self, list_times, T_f):
+        For a homogeneous Poisson model, this simplifies to
+
+        .. math::
+            \\mathcal{R}_{T}(\\boldsymbol{\\mu}):=\\sum_{k=1}^{d} \\bigg( \\mu_{k}^{2} -2 \\frac{N_{T}^{k}}{T} \\bigg).
+
+        This expression is minimized if for all :math:`k \\in [d]` we have
+
+        .. math::
+            \\mu_k^{*}:=\\frac{N_{T}^{k}}{T}.
+
+        The optimal baseline vector :math:`\\boldsymbol{\\mu^{*}}` defined
+        above is also the maximizer of the loglikelihood of these observations.
+
+        Parameters
+        ----------
+        list_times : `list` of `numpy.ndarray`
+            List of jump times for each dimension.
+        T_f : `float`
+            Terminal time.
+        write : `bool`, optional
+            Save the results. The default is True.
+
+        Returns
+        -------
+        fitted_mu : `numpy.ndarray`
+            Fitted baselines.
+
+        """
         fitted_mu = np.array([len(L) for L in list_times])/T_f
-        self.fitted_mu = fitted_mu
+        if write:
+            self.is_fitted = True
+            self.fitted_mu = fitted_mu
+        return fitted_mu
 
     # Simulation
     def simulate(self, T_f, mu=None, seed=1234):
+        """
+        Simulate a path of the homogeneous Poisson model.
+
+        Parameters
+        ----------
+        T_f : `float`
+            Terminal time.
+        mu : `numpy.ndarray`, optional
+            Vector of baselines. If None, use the fitted baselines. The default
+            is None.
+        seed : `int`, optional
+            Seed of the random generator. The default is 1234.
+
+        Raises
+        ------
+        ValueError
+            Raise an error if the baseline is not specified and there is no
+            fitted baseline saved as an atrribute.
+
+        Returns
+        -------
+        list_times : `list` of `numpy.ndarray`
+            List of jump times per dimension.
+
+        """
         if mu is None:
             mu = self.fitted_mu
             if mu is None:
@@ -118,5 +159,51 @@ class HomPoisson:
         return list_times
 
     # Evaluation
-    def get_residuals(self,  list_times, T_f):
-        pass
+    def get_residuals(self,  list_times, mu=None, write=True):
+        """
+        Compute the residuals of the model.
+
+        We suppose that we observe a path of a d-dimensional counting process
+        :math:`\\mathbf{N}` started at time :math:`0` up to some terminal time
+        :math:`T`.
+
+        Let :math:`k \\in [d]`. For all :math:`m \\in \\mathbb{N}^{*}`, let
+
+        .. math::
+            s_{m}^{k}=\\mu_k(t^k_{m+1}-t^k_{m}).
+
+
+        Parameters
+        ----------
+        list_times : `list` of `numpy.ndarray`
+            List of jump times per dimension.
+        mu : `numpy.ndarray`, optional
+            Vector of baselines. If None, use the fitted baselines. The default
+            is None.
+        write : `bool`, optional
+            Save the results. The default is True.
+
+        Raises
+        ------
+        ValueError
+            Raise an error if the baseline is not specified and there is no
+            fitted baseline saved as an atrribute.
+
+        Returns
+        -------
+        residuals : `list` of `numpy.ndarray`
+            List of residuals per dimension.
+
+        """
+        if mu is None:
+            if self.is_fitted:
+                mu = self.fitted_mu
+            else:
+                raise ValueError("Mu must be specified.")
+
+        d = self.d
+        ia_times = [list_times[i][1:]-list_times[i][:-1] for i in range(d)]
+        residuals = [mu[i]*ia_times[i] for i in range(d)]
+        if self.is_fitted and write:
+            self.fit_residuals = residuals
+        return residuals

@@ -177,6 +177,7 @@ class MHP:
     def get_n_param(self):
         """
         Get the matrix of number of parameters per kernel model.
+
         If we denote by :math:`M` this matrix and by :math:`d` the
         dimensionality of the MHP model, then :math:`M` is a :math:`d\\times d`
         matrix which entry :math:`M_{ij}` is the number of parameters of kernel
@@ -647,20 +648,78 @@ class MHP:
 
     # Residuals
     def get_residuals(self, process_path, mu=None, kernel_param=None,
-                      sampling=False, sample_size=10**3, seed=1234,
+                      sampling=False, sample_size=10**3, seed=1234, write=True,
                       verbose=False):
+        """
+        Compute the residuals of the model.
+
+        We suppose that we observe a path of a d-dimensional counting process
+        :math:`\\mathbf{N}` started at time :math:`0` up to some terminal time
+        :math:`T`.
+
+        Let :math:`k \\in [d]`, define the compensator of :math:`N^k`
+        for all :math:`t \\geq 0` by
+
+        .. math::
+            \\Lambda_{k}(t):=\\int_{[0,t]}\\lambda_k(t)\\mathrm{~d} t.
+
+        For all :math:`m \\in \\mathbb{N}^{*}, k \\in [d]`, let
+
+        .. math::
+            s_{m}^{k}=\\Lambda_{k}\\left(t_{m}^{k}\\right).
+
+        For each :math:`k \\in[d]`, define the point process
+
+        .. math::
+            \\mathcal{S}^{k}:=\\left\\{s_{m}^{k}: m \\in \\mathbb{N}^{*}\\right\\};
+
+        then :math:`\\left(\mathcal{S}^{k}\\right)_{k \\in[d]}` are independent
+        standard Poisson processes. The inter-arrival times of
+        :math:`\\mathcal{S}^{k}` ('residuals'), for a model that fits the data
+        well must therefore be close to a standard exponential distribution.        
+
+        Parameters
+        ----------
+        process_path : TYPE
+            DESCRIPTION.
+        mu : TYPE, optional
+            DESCRIPTION. The default is None.
+        kernel_param : TYPE, optional
+            DESCRIPTION. The default is None.
+        sampling : TYPE, optional
+            DESCRIPTION. The default is False.
+        sample_size : TYPE, optional
+            DESCRIPTION. The default is 10**3.
+        seed : TYPE, optional
+            DESCRIPTION. The default is 1234.
+        write : TYPE, optional
+            DESCRIPTION. The default is True.
+        verbose : TYPE, optional
+            DESCRIPTION. The default is False.
+
+        Raises
+        ------
+        ValueError
+            DESCRIPTION.
+
+        Returns
+        -------
+        residuals : TYPE
+            DESCRIPTION.
+
+        """
+        
         if mu is None or kernel_param is None:
             if self.is_fitted:
                 mu = self.fitted_mu
                 kernel_param = self.fitted_ker_param
             else:
                 raise ValueError("Both mu and kernel_param must be specified.")
-        d = self.d
         residuals = gof.get_residuals(process_path, self.psi, mu,
                                       kernel_param, sampling=sampling,
                                       sample_size=sample_size, seed=seed,
                                       verbose=verbose)
-        if self.is_fitted:
+        if self.is_fitted and write:
             self.fit_residuals = residuals
         return residuals
 

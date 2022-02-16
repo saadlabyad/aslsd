@@ -15,6 +15,7 @@
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -54,7 +55,6 @@
 <li class="toctree-l4"><a class="reference internal" href="aslsd.models.html">aslsd.models package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="aslsd.optim_logging.html">aslsd.optim_logging package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="aslsd.plots.html">aslsd.plots package</a></li>
-<li class="toctree-l4"><a class="reference internal" href="aslsd.simulation.html">aslsd.simulation package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="aslsd.solvers.html">aslsd.solvers package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="aslsd.utilities.html">aslsd.utilities package</a></li>
 </ul>
@@ -101,47 +101,194 @@
 <span id="aslsd-homogeneous-poisson-hom-poisson-module"></span><h2>aslsd.homogeneous_poisson.hom_poisson module<a class="headerlink" href="#module-aslsd.homogeneous_poisson.hom_poisson" title="Permalink to this headline"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="aslsd.homogeneous_poisson.hom_poisson.HomPoisson">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">aslsd.homogeneous_poisson.hom_poisson.</span></span><span class="sig-name descname"><span class="pre">HomPoisson</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff_phi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff_psi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff_sim_upsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff_cross_upsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fitted_mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fitted_ker_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.homogeneous_poisson.hom_poisson.HomPoisson" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">aslsd.homogeneous_poisson.hom_poisson.</span></span><span class="sig-name descname"><span class="pre">HomPoisson</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_from_one</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_fitted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fitted_mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_residuals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.homogeneous_poisson.hom_poisson.HomPoisson" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="aslsd.homogeneous_poisson.hom_poisson.HomPoisson.fit">
-<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_times</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_f</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.homogeneous_poisson.hom_poisson.HomPoisson.fit" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<p>Class for homogeneous Poisson models of point processes.</p>
+<p>Let <span class="math notranslate nohighlight">\(\mathbf{N}\)</span> be a d-dimensional counting process with
+conditional intensity <span class="math notranslate nohighlight">\(\boldsymbol{\lambda}\)</span>.
+We say that <span class="math notranslate nohighlight">\(\mathbf{N}\)</span> is a homogeneous Poisson process if there
+exists positive constants <span class="math notranslate nohighlight">\((\mu_{i})_{i \in[d]}\)</span> (that we call
+baselines), such that for all <span class="math notranslate nohighlight">\(i \in[d]\)</span> and for all
+<span class="math notranslate nohighlight">\(t \geq 0\)</span>, we have</p>
+<div class="math notranslate nohighlight">
+\[\lambda_{i}(t):=\mu_{i}.\]</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.homogeneous_poisson.hom_poisson.HomPoisson.d">
+<span class="sig-name descname"><span class="pre">d</span></span><a class="headerlink" href="#aslsd.homogeneous_poisson.hom_poisson.HomPoisson.d" title="Permalink to this definition"></a></dt>
+<dd><p>Dimension of the homogeneous Poisson process.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><cite>int</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.homogeneous_poisson.hom_poisson.HomPoisson.index_from_one">
+<span class="sig-name descname"><span class="pre">index_from_one</span></span><a class="headerlink" href="#aslsd.homogeneous_poisson.hom_poisson.HomPoisson.index_from_one" title="Permalink to this definition"></a></dt>
+<dd><p>Start the indexing of baselines from 1 instead of 0. The default is False.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><cite>bool</cite>, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.homogeneous_poisson.hom_poisson.HomPoisson.mu_names">
+<span class="sig-name descname"><span class="pre">mu_names</span></span><a class="headerlink" href="#aslsd.homogeneous_poisson.hom_poisson.HomPoisson.mu_names" title="Permalink to this definition"></a></dt>
+<dd><p>List of names of baseline parameters. The default is None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><cite>list</cite> of <cite>str</cite>, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.homogeneous_poisson.hom_poisson.HomPoisson.is_fitted">
+<span class="sig-name descname"><span class="pre">is_fitted</span></span><a class="headerlink" href="#aslsd.homogeneous_poisson.hom_poisson.HomPoisson.is_fitted" title="Permalink to this definition"></a></dt>
+<dd><p>True if this model has been fitted. The default is False.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><cite>bool</cite>, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.homogeneous_poisson.hom_poisson.HomPoisson.fitted_mu">
+<span class="sig-name descname"><span class="pre">fitted_mu</span></span><a class="headerlink" href="#aslsd.homogeneous_poisson.hom_poisson.HomPoisson.fitted_mu" title="Permalink to this definition"></a></dt>
+<dd><p>Array of fitted baselines. The default is None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><cite>numpy.ndarray</cite>, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aslsd.homogeneous_poisson.hom_poisson.HomPoisson.fit_residuals">
+<span class="sig-name descname"><span class="pre">fit_residuals</span></span><a class="headerlink" href="#aslsd.homogeneous_poisson.hom_poisson.HomPoisson.fit_residuals" title="Permalink to this definition"></a></dt>
+<dd><p>List of fit residuals. The default is None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><cite>list</cite> of <cite>numpy.ndarray</cite>, optional</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="aslsd.homogeneous_poisson.hom_poisson.HomPoisson.get_param_bounds">
-<span class="sig-name descname"><span class="pre">get_param_bounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.homogeneous_poisson.hom_poisson.HomPoisson.get_param_bounds" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="aslsd.homogeneous_poisson.hom_poisson.HomPoisson.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_times</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.homogeneous_poisson.hom_poisson.HomPoisson.fit" title="Permalink to this definition"></a></dt>
+<dd><p>Fit the Homoegeneous Poisson model to some observations.</p>
+<p>We suppose that we observe a path of a d-dimensional counting process
+<span class="math notranslate nohighlight">\(\mathbf{N}\)</span> started at time <span class="math notranslate nohighlight">\(0\)</span> up to some terminal time
+<span class="math notranslate nohighlight">\(T\)</span>.</p>
+<p>The least squares error (LSE) of this model for these observations is
+defined as</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{R}_{T}(\boldsymbol{\mu}):=\frac{1}{T} \sum_{k=1}^{d} \int_{0}^{T} \lambda_{k}(t)^{2} \mathrm{~d} t-\frac{2}{T} \sum_{k=1}^{d} \sum_{m=1}^{N_{T}^{k}} \lambda_{k}\left(t_{m}^{k}\right).\]</div>
+<p>For a homogeneous Poisson model, this simplifies to</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{R}_{T}(\boldsymbol{\mu}):=\sum_{k=1}^{d} \bigg( \mu_{k}^{2} -2 \frac{N_{T}^{k}}{T} \bigg).\]</div>
+<p>This expression is minimized if for all <span class="math notranslate nohighlight">\(k \in [d]\)</span> we have</p>
+<div class="math notranslate nohighlight">
+\[\mu_k^{*}:=\frac{N_{T}^{k}}{T}.\]</div>
+<p>The optimal baseline vector <span class="math notranslate nohighlight">\(\boldsymbol{\mu^{*}}\)</span> defined
+above is also the maximizer of the loglikelihood of these observations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>list_times</strong> (<cite>list</cite> of <cite>numpy.ndarray</cite>) – List of jump times for each dimension.</p></li>
+<li><p><strong>T_f</strong> (<cite>float</cite>) – Terminal time.</p></li>
+<li><p><strong>write</strong> (<cite>bool</cite>, optional) – Save the results. The default is True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>fitted_mu</strong> – Fitted baselines.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><cite>numpy.ndarray</cite></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="aslsd.homogeneous_poisson.hom_poisson.HomPoisson.get_param_names">
-<span class="sig-name descname"><span class="pre">get_param_names</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.homogeneous_poisson.hom_poisson.HomPoisson.get_param_names" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">get_param_names</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index_from_one</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.homogeneous_poisson.hom_poisson.HomPoisson.get_param_names" title="Permalink to this definition"></a></dt>
+<dd><p>Get the standard names of baseline variables.</p>
+<p>By default, we denote the baselines by <span class="math notranslate nohighlight">\((\mu_{i})_{i \in[d]}\)</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>index_from_one</strong> (<cite>bool</cite>, optional) – Start the indexing of baselines from 1 instead of 0. The default is False.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>mu_names</strong> – List of names of baseline parameters.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><cite>list</cite> of <cite>str</cite></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="aslsd.homogeneous_poisson.hom_poisson.HomPoisson.get_residuals">
-<span class="sig-name descname"><span class="pre">get_residuals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_times</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_f</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.homogeneous_poisson.hom_poisson.HomPoisson.get_residuals" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="aslsd.homogeneous_poisson.hom_poisson.HomPoisson.ix_omegas">
-<span class="sig-name descname"><span class="pre">ix_omegas</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.homogeneous_poisson.hom_poisson.HomPoisson.ix_omegas" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="aslsd.homogeneous_poisson.hom_poisson.HomPoisson.make_ix_map">
-<span class="sig-name descname"><span class="pre">make_ix_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.homogeneous_poisson.hom_poisson.HomPoisson.make_ix_map" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="aslsd.homogeneous_poisson.hom_poisson.HomPoisson.make_kernel_functionals">
-<span class="sig-name descname"><span class="pre">make_kernel_functionals</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.homogeneous_poisson.hom_poisson.HomPoisson.make_kernel_functionals" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">get_residuals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_times</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.homogeneous_poisson.hom_poisson.HomPoisson.get_residuals" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the residuals of the model.</p>
+<p>We suppose that we observe a path of a d-dimensional counting process
+<span class="math notranslate nohighlight">\(\mathbf{N}\)</span> started at time <span class="math notranslate nohighlight">\(0\)</span> up to some terminal time
+<span class="math notranslate nohighlight">\(T\)</span>.</p>
+<p>Let <span class="math notranslate nohighlight">\(k \in [d]\)</span>. For all <span class="math notranslate nohighlight">\(m \in \mathbb{N}^{*}\)</span>, let</p>
+<div class="math notranslate nohighlight">
+\[s_{m}^{k}=\mu_k(t^k_{m+1}-t^k_{m}).\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>list_times</strong> (<cite>list</cite> of <cite>numpy.ndarray</cite>) – List of jump times per dimension.</p></li>
+<li><p><strong>mu</strong> (<cite>numpy.ndarray</cite>, optional) – Vector of baselines. If None, use the fitted baselines. The default
+is None.</p></li>
+<li><p><strong>write</strong> (<cite>bool</cite>, optional) – Save the results. The default is True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – Raise an error if the baseline is not specified and there is no
+    fitted baseline saved as an atrribute.</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>residuals</strong> – List of residuals per dimension.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><cite>list</cite> of <cite>numpy.ndarray</cite></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="aslsd.homogeneous_poisson.hom_poisson.HomPoisson.simulate">
 <span class="sig-name descname"><span class="pre">simulate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1234</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.homogeneous_poisson.hom_poisson.HomPoisson.simulate" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Simulate a path of the homogeneous Poisson model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>T_f</strong> (<cite>float</cite>) – Terminal time.</p></li>
+<li><p><strong>mu</strong> (<cite>numpy.ndarray</cite>, optional) – Vector of baselines. If None, use the fitted baselines. The default
+is None.</p></li>
+<li><p><strong>seed</strong> (<cite>int</cite>, optional) – Seed of the random generator. The default is 1234.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – Raise an error if the baseline is not specified and there is no
+    fitted baseline saved as an atrribute.</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>list_times</strong> – List of jump times per dimension.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><cite>list</cite> of <cite>numpy.ndarray</cite></p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
