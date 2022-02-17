@@ -4,6 +4,8 @@ import itertools
 
 import numpy as np
 
+from aslsd.evaluation import goodness_of_fit as gof
+
 
 class HomPoisson:
     """
@@ -215,3 +217,20 @@ class HomPoisson:
         if self.is_fitted and write:
             self.fit_residuals = residuals
         return residuals
+
+    def qq_plot(self, i, residuals=None, labels=None, style='exponential',
+                substract_yx=False, normalize=False, max_points=None,
+                display_line45=True, log_scale=False,
+                ax=None, save=False, filename='image.png', show=False,
+                **kwargs):
+        if residuals is None:
+            if self.fit_residuals is not None:
+                residuals = self.fit_residuals
+            else:
+                raise ValueError("residuals must be specified.")
+        return gof.qq_plot(residuals[i], n_models=1, labels=labels,
+                           style=style, substract_yx=substract_yx,
+                           normalize=normalize, max_points=max_points,
+                           display_line45=display_line45, log_scale=log_scale,
+                           ax=ax, save=save,
+                           filename=filename, show=show, **kwargs)

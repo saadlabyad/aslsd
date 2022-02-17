@@ -106,7 +106,7 @@ def ks_test_residuals(residuals):
 
 def qq_plot(residuals, n_models=1, labels=None, style='exponential',
             substract_yx=False, normalize=False, max_points=None,
-            display_line45=True, log_scale=False, list_colors=None, ax=None,
+            display_line45=True, log_scale=False, ax=None,
             save=False, filename='image.png', show=False, **kwargs):
     #   Draw Q-Q plot of the residuals of each model.
     if ax is None:
