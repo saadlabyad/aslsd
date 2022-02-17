@@ -42,8 +42,6 @@ class HomPoisson:
         self.d = d
         if mu_names is None:
             self.mu_names = self.get_param_names(index_from_one=index_from_one)
-        self.para_bounds = self.get_param_bounds()
-        self.make_kernel_functionals()
 
     # Param names
     def get_param_names(self, index_from_one=False):
