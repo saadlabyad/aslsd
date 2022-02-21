@@ -6,7 +6,7 @@ In this application, we model the propagation of malaria in China.
 
 ## Data
 We use the data of Unwin, Routledge, Flaxman, Rizoiu, Lai, Cohen, Weiss, Mishra, and Bhatt (In their paper [Using Hawkes processes to model imported and local malaria cases in near-elimination settings](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1008830)) for the propagation of malaria in the Yunan province between 1 January 2011
-and 24 September 2013. We do not host this data in the aslsd Github repository for license purposes. This data is publicly available to download from the Harvard Dataverse, in the publication: [Replication Data for: Using Hawkes Processes to model imported and local malaria cases in near-elimination settings](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/YPRLIL).
+and 24 September 2013. We do not host this data in the `aslsd` Github repository for license purposes. This data is publicly available to download from the Harvard Dataverse, in the publication: [Replication Data for: Using Hawkes Processes to model imported and local malaria cases in near-elimination settings](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/YPRLIL).
 The only file we use is
 ```
 china_malaria.RData
@@ -18,7 +18,7 @@ The user can then run
 ```
 malaria.py
 ```
-which is located in this folder of the `aslsd` package, by specifying the variable `data_filepath`, which is the path to the downloaded data in `csv` format.
+which is located in this folder of the `aslsd` package, by specifying the variable `data_filepath` (this variable is a string representing the path to the downloaded data in `csv` format).
 
 
 ## Models
