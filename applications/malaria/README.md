@@ -1,5 +1,5 @@
 # Malaria
-Reproduce the results from malaria application in the "Applications" section of our paper, [Gradient-based estimation of linear Hawkes processes with general kernels](https://arxiv.org/abs/2111.10637).
+Reproduce the results from the epidemic propagation application in the "Applications" section of our paper, [Gradient-based estimation of linear Hawkes processes with general kernels](https://arxiv.org/abs/2111.10637).
 
 ## Description
 In this application, we model the propagation of Malaria in China.  
