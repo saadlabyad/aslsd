@@ -6,14 +6,18 @@ In this application, we model the propagation of malaria in China.
 
 ## Data
 We use the data of Unwin, Routledge, Flaxman, Rizoiu, Lai, Cohen, Weiss, Mishra, and Bhatt (In their paper [Using Hawkes processes to model imported and local malaria cases in near-elimination settings](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1008830)) for the propagation of malaria in the Yunan province between 1 January 2011
-and 24 September 2013. We do not host this data in the `aslsd` Github repository for license purposes. This data is publicly available to download from the Harvard Dataverse, in the publication: [Replication Data for: Using Hawkes Processes to model imported and local malaria cases in near-elimination settings](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/YPRLIL).
+and 24 September 2013. We do not host this data in the `aslsd` Github repository for license purposes. 
+
+This data is publicly available to download from the Harvard Dataverse, in the publication: [Replication Data for: Using Hawkes Processes to model imported and local malaria cases in near-elimination settings](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/YPRLIL).
 The only file we use is
 ```
 china_malaria.RData
 ```
 
 which can be downloaded [using this link](https://dataverse.harvard.edu/api/access/datafile/4443458).
+
 Once the user has downloaded this file on their machine, they need to convert it into a `csv` file. This can be done for example by using R, or the Python package `pyreadr` available [here](https://pypi.org/project/pyreadr/).
+
 The user can then run 
 ```
 malaria.py
