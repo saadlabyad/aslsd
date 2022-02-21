@@ -1,7 +1,5 @@
 # Malaria
 Reproduce the results from the epidemic propagation application in the "Applications" section of our paper, [Gradient-based estimation of linear Hawkes processes with general kernels](https://arxiv.org/abs/2111.10637).
-
-## Description
 In this application, we model the propagation of malaria in China.  
 
 ## Data
@@ -14,7 +12,7 @@ The only file we use is
 china_malaria.RData
 ```
 
-which can be downloaded [using this link](https://dataverse.harvard.edu/api/access/datafile/4443458).
+which can be downloaded using [this link](https://dataverse.harvard.edu/api/access/datafile/4443458).
 
 Once the user has downloaded this file on their machine, they need to convert it into a `csv` file. This can be done for example by using R, or the Python package `pyreadr` available [here](https://pypi.org/project/pyreadr/).
 
