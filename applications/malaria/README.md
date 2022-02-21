@@ -28,7 +28,7 @@ Unwin et al. use a slightly modified univariate linear Hawkes model with a delay
 model, given the typically small number of observations in the applications they consider, they compute exactly the log-likelihood of their observations and input it to a standard optimization
 solver.
 
-In our paper, we fit two models using `aslsd`: 
+In our paper, we fit two models to this data using `aslsd`: 
 * `SbfGauss1D10R` is an SBF Gaussian model with ten Gaussians
 (with uniformly spaced means in [0, 20] and standard deviations equal to 1.9),
 * `Gauss1D1R` is a non-SBF Gaussian model. 
