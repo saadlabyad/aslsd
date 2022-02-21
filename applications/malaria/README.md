@@ -2,7 +2,7 @@
 Reproduce the results from the epidemic propagation application in the "Applications" section of our paper, [Gradient-based estimation of linear Hawkes processes with general kernels](https://arxiv.org/abs/2111.10637).
 
 ## Description
-In this application, we model the propagation of Malaria in China.  
+In this application, we model the propagation of malaria in China.  
 
 ## Data
 We use the data of Unwin, Routledge, Flaxman, Rizoiu, Lai, Cohen, Weiss, Mishra, and Bhatt (In their paper [Using Hawkes processes to model imported and local malaria cases in near-elimination settings](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1008830)) for the propagation of malaria in the Yunan province between 1 January 2011
@@ -18,7 +18,7 @@ The user can then run
 ```
 malaria.py
 ```
-which is located in this folder of the aslsd package, by specifying the variable `data_filepath`, which is the path to the downloaded data in `csv` format.
+which is located in this folder of the `aslsd` package, by specifying the variable `data_filepath`, which is the path to the downloaded data in `csv` format.
 
 
 ## Models
@@ -26,7 +26,7 @@ Unwin et al. use a slightly modified univariate linear Hawkes model with a delay
 model, given the typically small number of observations in the applications they consider, they compute exactly the log-likelihood of their observations and input it to a standard optimization
 solver.
 
-In our paper, we fit two models using aslsd: 
+In our paper, we fit two models using `aslsd`: 
 * `SbfGauss1D10R` is an SBF Gaussian model with ten Gaussians
 (with uniformly spaced means in [0, 20] and standard deviations equal to 1.9),
 * `Gauss1D1R` is a non-SBF Gaussian model. 
