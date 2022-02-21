@@ -31,8 +31,12 @@ mhp_g1d1r = MHP([[kernel_g1d1r]])
 model_dict['Gauss1D1R'] = mhp_g1d1r
 colors_dict['Gauss1D1R'] = 'darkorange'
 # Gaussian 10R
+fixed_betas_g1d10r = np.ones(10)*1.9
+fixed_deltas_g1d10r = np.linspace(0., 20., 10)
+
 basis_kernels_g1d10r = [GaussianKernel(fixed_indices=[1, 2],
-                                       fixed_vars=[0.5, float(ix_bk)])
+                                       fixed_vars=[fixed_betas_g1d10r[ix_bk],
+                                                   fixed_deltas_g1d10r[ix_bk]])
                         for ix_bk in range(10)]
 kernel_g1d10r = KernelModel(basis_kernels_g1d10r)
 mhp_g1d10r = MHP([[kernel_g1d10r]])
@@ -49,6 +53,7 @@ for key in model_dict.keys():
     else:
         model_dict[key].fit(list_times, T_f)
 
+
 # Visualize results
 t_min = 0.
 t_max = 10.
@@ -57,14 +62,15 @@ fig = plt.figure(dpi=300)
 x_phi = np.linspace(t_min, t_max, n_samples)
 for key in model_dict.keys():
     if key != 'Poisson':
-        true_ker_param = model_dict[key].fitted_ker_param
-        y_phi = model_dict[key].phi[0][0](x_phi, true_ker_param[0][0])
+        ker_param = model_dict[key].fitted_ker_param
+        y_phi = model_dict[key].phi[0][0](x_phi, ker_param[0][0])
         plt.plot(x_phi, y_phi, label=key, color=colors_dict[key])
 plt.legend()
 plt.xlabel(r'$t$')
 plt.ylabel(r'$\phi(t)$')
 plt.title('Kernel plot')
 fig.show()
+
 
 # Goodness-of-fit
 for key in model_dict.keys():

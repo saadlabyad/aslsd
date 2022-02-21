@@ -34,7 +34,6 @@ Example
 
 import numpy as np
 from numpy.random import default_rng
-import pandas as pd
 
 
 def read_cascade(filepath, break_ind=None):
@@ -58,11 +57,11 @@ def read_cascade(filepath, break_ind=None):
     """
     web_dict = {}
     cascades_list = []
-
+    f = open(filepath, encoding="utf8")
     block_1 = True
     if break_ind is None:
         i = 0
-        f = open(filepath, encoding="utf8")
+        
         for line in f:
             if not bool(line.strip()):
                 block_1 = False
@@ -85,10 +84,8 @@ def read_cascade(filepath, break_ind=None):
                     cascades_list[-1]['cascade web ids'].append(splitted_prime[2*ix])
                     cascades_list[-1]['cascade times'].append(float(splitted_prime[2*ix+1]))
             i += 1
-        f.close()
     else:
         i = 0
-        f = open(filepath, encoding="utf8")
         for line in f:
             if not bool(line.strip()):
                 block_1 = False
@@ -113,7 +110,7 @@ def read_cascade(filepath, break_ind=None):
             if i > break_ind:
                 break
             i += 1
-        f.close()
+    f.close()
     return web_dict, cascades_list
 
 

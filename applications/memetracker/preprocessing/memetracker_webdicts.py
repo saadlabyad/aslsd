@@ -32,16 +32,14 @@ Example
 
 """
 
-import numpy as np
-from numpy.random import default_rng
 import pandas as pd
 
 
-def make_topdomain_names_dict():
+def make_topdomain_names_dict(filepath):
     topdomain_names_dict = {}
     i = 0
     break_ind = 245
-    f = open('C:\\Users\\saadl\\Desktop\\Hawkes main\\Applications\\top_domain_names.csv', encoding="utf8")
+    f = open(filepath, encoding="utf8")
     for line in f:
         splitted = line.split(';')
         topdomain_names_dict[splitted[0]] = splitted[1]
@@ -61,8 +59,8 @@ def try_url_ext(url, ext):
     return res
 
 
-def webdict2csv(web_dict, keyword, title=None):
-    topdomain_names_dict = make_topdomain_names_dict()
+def webdict2csv(web_dict, keyword, topdomain_filepath, title=None):
+    topdomain_names_dict = make_topdomain_names_dict(topdomain_filepath)
     res = {'webid': [], 'weburl': [], 'country': []}
     for key in web_dict.keys():
         res['webid'].append(key)
@@ -80,11 +78,11 @@ def webdict2csv(web_dict, keyword, title=None):
     web_df.to_csv(title)
 
 
-def load_countrywise_webdict(keyword):
+def load_countrywise_webdict(filepath):
     final_webdict = {}
     i = 0
     break_ind = 4999
-    f = open('C:\\Users\\saadl\\Desktop\\Hawkes main\\Applications\\final_webdict_'+keyword+'.csv', encoding="utf8")
+    f = open(filepath, encoding="utf8")
     for line in f:
         if i > 0:
             splitted = line.split(';')
