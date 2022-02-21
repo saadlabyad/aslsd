@@ -26,6 +26,7 @@ china_malaria.RData
 
 
 ## Models
+In their paper [Using Hawkes processes to model imported and local malaria cases in near-elimination settings](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1008830),
 Unwin et al. use a slightly modified univariate linear Hawkes model with a delayed Rayleigh kernel to study the transmission in this context. To fit their
 model, given the typically small number of observations in the applications they consider, they compute exactly the log-likelihood of their observations and input it to a standard optimization
 solver.
