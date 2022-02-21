@@ -1,2 +1,2 @@
-# Experiments
-Reproduce the numerical experiments from Section 4 of our paper [Gradient-based estimation of linear Hawkes processes with general kernels](https://arxiv.org/abs/2111.10637).
+# Numerical experiments
+Reproduce the results from the "Numerical experiments" section of our paper, [Gradient-based estimation of linear Hawkes processes with general kernels](https://arxiv.org/abs/2111.10637).

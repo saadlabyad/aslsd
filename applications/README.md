@@ -1,2 +1,2 @@
 # Applications
-Reproduce the applications from Section 5 of our paper [Gradient-based estimation of linear Hawkes processes with general kernels](https://arxiv.org/abs/2111.10637).
+Reproduce the results in the "Applications" section of our paper, [Gradient-based estimation of linear Hawkes processes with general kernels](https://arxiv.org/abs/2111.10637).
