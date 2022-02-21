@@ -27,12 +27,12 @@ model, given the typically small number of observations in the applications they
 solver.
 
 In our paper, we fit two models using aslsd: 
-* `SbfGauss1D10R` is a SBF Gaussian model with ten Gaussians
+* `SbfGauss1D10R` is an SBF Gaussian model with ten Gaussians
 (with uniformly spaced means in [0, 20] and standard deviations equal to 1.9),
 * `Gauss1D1R` is a non-SBF Gaussian model. 
 
 In addition to this, we consider two benchmarks: 
-* `Poisson`, which is a naive homogeneous Poisson model;
-* `SumExp`, an SBF exponential MHP model, fitted using the algorithm of Martin Bompaire, Emmanuel Bacry, and Stéphane Gaïffas, in [Dual optimization for convex constrained objectives without the gradient-Lipschitz assumption](https://arxiv.org/abs/1807.03545#:~:text=Dual%20optimization%20for%20convex%20constrained%20objectives%20without%20the%20gradient%2DLipschitz%20assumption,-Martin%20Bompaire%2C%20Emmanuel&text=The%20minimization%20of%20convex%20objectives,finite%20sums%20of%20convex%20functions.). 
+* `Poisson` is a naive homogeneous Poisson model;
+* `SumExp` is an SBF exponential MHP model, fitted using the algorithm of Martin Bompaire, Emmanuel Bacry, and Stéphane Gaïffas, in [Dual optimization for convex constrained objectives without the gradient-Lipschitz assumption](https://arxiv.org/abs/1807.03545#:~:text=Dual%20optimization%20for%20convex%20constrained%20objectives%20without%20the%20gradient%2DLipschitz%20assumption,-Martin%20Bompaire%2C%20Emmanuel&text=The%20minimization%20of%20convex%20objectives,finite%20sums%20of%20convex%20functions.). 
 
-In the case of `SumExp`, we use the implementation of this algorithm in the Python library `tick`, which can be downloaded [here](https://github.com/X-DataInitiative/tick).
+For `SumExp`, we use the implementation of this algorithm in the Python library `tick`, which can be installed [here](https://github.com/X-DataInitiative/tick).

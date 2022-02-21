@@ -10,8 +10,11 @@ from aslsd.kernels.kernel import KernelModel
 from aslsd.models.mhp import MHP
 from aslsd.events.process_path import ProcessPath
 
+data_filepath = "data/malaria_china_data.csv"
+
+
 # Data preprocessing
-df = pd.read_csv("data/malaria_china_data.csv")
+df = pd.read_csv(data_filepath)
 times = df[df['time_jitter'] > 0.]['time_jitter'].values
 T_f = times[-1]+(times[-1]-times[-2])
 list_times = [times]
@@ -40,8 +43,8 @@ basis_kernels_g1d10r = [GaussianKernel(fixed_indices=[1, 2],
                         for ix_bk in range(10)]
 kernel_g1d10r = KernelModel(basis_kernels_g1d10r)
 mhp_g1d10r = MHP([[kernel_g1d10r]])
-model_dict['Gauss1D10R'] = mhp_g1d10r
-colors_dict['Gauss1D10R'] = 'darkgreen'
+model_dict['SbfGauss1D10R'] = mhp_g1d10r
+colors_dict['SbfGauss1D10R'] = 'darkgreen'
 
 
 # Fitting models
