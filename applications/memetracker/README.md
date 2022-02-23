@@ -53,7 +53,7 @@ For `SumExp` and `WH`, we use the implementations of these algorithms in the Pyt
 ## Bidimensional models
 Diffusion dynamics of news related to the British Royal family
 might significantly differ between British news outlets, North American and Australian media, and those
-from other nationalities. In the 5, 000 news websites that appear in the MemeTracker dataset, it is
+from other nationalities. In the 5,000 news websites that appear in the MemeTracker dataset, it is
 not sufficient to use the top-level domain of the website to deduce its country. We manually verify the nationality of the media sources; the list of media nationalities is available as a csv file in the Applications
 folder of our repository. We model publication times of US and UK articles related to this keyword as
 a bi-dimensional MHP (dimension i = 1 corresponds to US articles and i = 2 to UK articles).
