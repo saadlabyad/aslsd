@@ -777,7 +777,7 @@ class MHP:
             DESCRIPTION.
 
         """
-        
+
         if mu is None or kernel_param is None:
             if self.is_fitted:
                 mu = self.fitted_mu
@@ -941,26 +941,31 @@ class MHP:
             solver = ADAM(**kwargs)
 
         if log_error:
-            l2_err_log = [[np.zeros(n_iter) for j in range(d)] for i in range(d)]
+            l2_err_log = [[np.zeros(n_iter) for j in range(d)]
+                          for i in range(d)]
         else:
             l2_err_log = None
         for i, j in itertools.product(range(d), range(d)):
             kernel = self._kernel_matrix[i][j]
             kernel_2 = mhp_2._kernel_matrix[i][j]
             ker_param_2 = param_2[i][j]
-            res_ij = kernel.get_l2_projection(kernel_2, ker_param_2, n_iter= n_iter, params_0=ker_0[i][j],
-                                              solver=solver, log_error=log_error, rng=ker_0[i][j],
+            res_ij = kernel.get_l2_projection(kernel_2, ker_param_2,
+                                              n_iter=n_iter,
+                                              params_0=ker_0[i][j],
+                                              solver=solver,
+                                              log_error=log_error,
+                                              rng=ker_0[i][j],
                                               verbose=verbose, **kwargs)
             param_1[i][j] = copy.deepcopy(res_ij['params'])
             if log_error:
                 l2_err_log[i][j] = copy.deepcopy(res_ij['log'])
         res = {'params': param_1, 'log': l2_err_log}
         return res
-    
+
     # Plots
     def plot_kernels(self, kernel_param=None, t_min=0., t_max=10.,
                      n_samples=1000, index_from_one=False, log_scale=False,
-                     dpi=300, axs=None, save=False, filename='image.png',
+                     axs=None, save=False, filename='image.png',
                      show=False, **kwargs):
         if kernel_param is None:
             if self.is_fitted:
@@ -970,15 +975,15 @@ class MHP:
         return gt.plot_kernels(self.phi, kernel_param, t_min=t_min,
                                t_max=t_max, n_samples=n_samples,
                                index_from_one=index_from_one,
-                               log_scale=log_scale, dpi=dpi, axs=axs,
+                               log_scale=log_scale, axs=axs,
                                save=save, filename=filename, show=show,
                                **kwargs)
 
     def plot_adjacency_matrix(self, adjacency=None, kernel_param=None,
                               event_names=None,
                               index_from_one=False, annotate=False,
-                              cmap="Blues", dpi=300, save=False,
-                              filename='image.png', show=True):
+                              cmap="Blues", save=False,
+                              filename='image.png', show=True, **kwargs):
         if adjacency is None:
             if self.is_fitted:
                 if self.fitted_adjacency is None:
@@ -996,14 +1001,13 @@ class MHP:
 
         return gt.plot_adjacency_matrix(adjacency, event_names=event_names,
                                         index_from_one=index_from_one,
-                                        annotate=annotate, cmap=cmap, dpi=dpi,
+                                        annotate=annotate, cmap=cmap,
                                         save=save, filename=filename,
-                                        show=show)
+                                        show=show, **kwargs)
 
     def plot_solver_path(self, true_mu=None, true_ker_param=None, min_mu=None,
                          min_ker_param=None, plot_derivatives=False,
-                         display_derivatives_zero=False, figsize=(10, 10),
-                         dpi=300, pad=300, axs=None, save=False,
+                         display_derivatives_zero=False, axs=None, save=False,
                          filename='image.png', show=False, **kwargs):
         if not self.is_fitted:
             raise ValueError("MHP must be fitted before plotting solver path")
@@ -1018,6 +1022,5 @@ class MHP:
                                    min_mu=min_mu, min_ker_param=min_ker_param,
                                    plot_derivatives=plot_derivatives,
                                    display_derivatives_zero=display_derivatives_zero,
-                                   figsize=figsize, dpi=dpi, pad=pad, axs=axs,
-                                   save=save, filename=filename, show=show,
-                                   **kwargs)
+                                   axs=axs, save=save, filename=filename,
+                                   show=show, **kwargs)

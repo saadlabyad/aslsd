@@ -15,7 +15,7 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
                      true_ker_param=None, min_mu=None,
                      min_ker_param=None, plot_derivatives=False,
                      derivatives_zero=False,
-                     figsize=(10, 10), dpi=300, pad=300, axs=None, save=False,
+                     axs=None, save=False,
                      filename='image.png', show=False, **kwargs):
     """
     Generic function to plot solver paths for each estimated MHP parameter.
@@ -78,7 +78,7 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
         fig_count = 0
         if axs is None:
             fig, axs = plt.subplots(n_param, 2, sharex=True, sharey=False,
-                                    figsize=figsize, dpi=dpi)
+                                    **kwargs)
         # Mu
         for i in range(d):
             # Parameter
@@ -132,14 +132,14 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
         axs[n_param-1, 0].set(xlabel='Iteration')
         axs[n_param-1, 1].set(xlabel='Iteration')
 
-        if pad is not None:
-            fig.tight_layout(pad=pad)
+        if "pad" in kwargs:
+            fig.tight_layout(**kwargs)
 
     else:
         n_rows = (n_param // 2) + (n_param % 2)
         if n_rows > 1:
             fig, axs = plt.subplots(n_rows, 2, sharex=True,
-                                    sharey=False, figsize=figsize, dpi=dpi)
+                                    sharey=False, **kwargs)
             fig_count = 0
             #   Mu
             for i in range(d):
@@ -170,12 +170,11 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
             axs[n_rows-1, 0].set(xlabel='Iteration')
             axs[n_rows-1, 1].set(xlabel='Iteration')
 
-            if pad is not None:
-                fig.tight_layout(pad=pad)
+            if "pad" in kwargs:
+                fig.tight_layout(**kwargs)
 
         else:
-            fig, axs = plt.subplots(1, 2, sharex=True, sharey=False, dpi=dpi,
-                                    figsize=(10, 4))
+            fig, axs = plt.subplots(1, 2, sharex=True, sharey=False, **kwargs)
             fig_count = 0
             #   Mu
             for i in range(d):
@@ -204,8 +203,8 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
             axs[0].set(xlabel='Iteration')
             axs[1].set(xlabel='Iteration')
 
-            if pad is not None:
-                fig.tight_layout(pad=pad)
+            if "pad" in kwargs:
+                fig.tight_layout(**kwargs)
 
     if save:
         plt.savefig(filename)
@@ -352,7 +351,7 @@ def plot_solver_path_contour(x_updates, y_updates, loss_function, scale=1.,
 
 
 def plot_kernels(phi, kernel_param, t_min=0., t_max=10., n_samples=10**3,
-                 index_from_one=False, log_scale=False, dpi=300, axs=None,
+                 index_from_one=False, log_scale=False, axs=None,
                  save=False, filename='image.png', show=False, **kwargs):
     """
     Generic function to plot the matrix of kernels of an MHP.
@@ -364,8 +363,7 @@ def plot_kernels(phi, kernel_param, t_min=0., t_max=10., n_samples=10**3,
 
     d = len(phi)
     if axs is None:
-        fig, axs = plt.subplots(d, d, sharex=True, sharey=False, dpi=dpi,
-                                **kwargs)
+        fig, axs = plt.subplots(d, d, sharex=True, sharey=False, **kwargs)
     x_phi = np.linspace(t_min, t_max, n_samples)
     if d > 1:
         for i, j in itertools.product(range(d), range(d)):
@@ -393,8 +391,8 @@ def plot_kernels(phi, kernel_param, t_min=0., t_max=10., n_samples=10**3,
 def plot_function_shaded_error(x_vals, list_y_vals, list_y_std,
                                list_colors=standard_colors, xname=None,
                                yname=None, list_labels=[], show=True,
-                               labeling=True, scale='lin', dpi=300):
-    fig = plt.figure(figsize=(8, 6), dpi=dpi)
+                               labeling=True, scale='lin', **kwargs):
+    fig = plt.figure(figsize=(8, 6), **kwargs)
     n_plots = len(list_y_vals)
 
     for t in range(n_plots):
@@ -423,8 +421,8 @@ def plot_function_shaded_error(x_vals, list_y_vals, list_y_std,
 
 
 def animate_plot_sequence(ref_x, list_y, x_min=None, x_max=None, y_min=None,
-                          y_max=None, list_y_ref=None, interval=20, dpi=300,
-                          save=False, filename='video', show=False):
+                          y_max=None, list_y_ref=None, interval=20,
+                          save=False, filename='video', show=False, **kwargs):
     """
     Generic function to construct an animation for a sequence of functions.
     Based on
@@ -445,7 +443,7 @@ def animate_plot_sequence(ref_x, list_y, x_min=None, x_max=None, y_min=None,
     if y_max is None:
         y_max = max([max(L) for L in list_y])
 
-    fig = plt.figure(dpi=dpi)
+    fig = plt.figure(**kwargs)
     ax = plt.axes(xlim=(x_min, x_max), ylim=(y_min, y_max))
     line, = ax.plot([], [], lw=2, color='steelblue')
     if list_y_ref is not None:
@@ -489,8 +487,8 @@ def animate_plot_sequence(ref_x, list_y, x_min=None, x_max=None, y_min=None,
     # your system: for more information, see
     # http://matplotlib.sourceforge.net/api/animation_api.html
     if save:
-        anim.save(filename+'.mp4', fps=30, dpi=dpi,
-                  extra_args=['-vcodec', 'libx264'])
+        anim.save(filename+'.mp4', fps=30,
+                  extra_args=['-vcodec', 'libx264'], **kwargs)
     if show:
         plt.show()
     return anim
@@ -624,8 +622,8 @@ def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
 
 def plot_adjacency_matrix(adjacency_matrix, event_names=None,
                           index_from_one=False, annotate=False,
-                          cmap="Blues", dpi=300, save=False,
-                          filename='image.png', show=True):
+                          cmap="Blues", save=False,
+                          filename='image.png', show=True, **kwargs):
     """
     Generic function to plot an adjacency matrix.
 
@@ -637,8 +635,7 @@ def plot_adjacency_matrix(adjacency_matrix, event_names=None,
     d = len(adjacency_matrix)
     if event_names is None:
         event_names = [str(i+int(index_from_one)) for i in range(d)]
-    fig, ax = plt.subplots()
-    fig.set_dpi(dpi)
+    fig, ax = plt.subplots(**kwargs)
     row_labels = [u"\u2192" + ' ' + ev for ev in event_names]
     col_labels = [ev + ' ' + u"\u2192" for ev in event_names]
     im, cbar = make_heatmap(np.array(adjacency_matrix), row_labels, col_labels,
