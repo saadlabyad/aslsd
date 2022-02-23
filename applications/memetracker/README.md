@@ -13,7 +13,7 @@ memes-w5-all-2011-03-2012-02-n5000-call-nc10-cl2-cascades-keywords.tgz
 ```
 
 
-Once the user has downloaded this file on their machine, they need to need to extract the following file from this archive:
+Once the user has downloaded this archive on their machine, they need to extract the following file:
 
 ```
 memes-w5-all-2011-03-2012-02-n5000-call-nc10-cl2-keywords-in-body-prince william-william-kate middleton-kate-middleton-westminster-watch-marriage-queen-king-elizabeth-charles-cascades.txt
