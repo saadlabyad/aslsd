@@ -21,7 +21,7 @@ def get_kappa_varpi(list_times, T_f):
 
     Parameters
     ----------
-    list_times : `list` of np.ndarray
+    list_times : `list` of `numpy.ndarray`
         list_times[i] is the sorted array of events of type :math:`i`.
 
     T_f : `float`
@@ -30,10 +30,13 @@ def get_kappa_varpi(list_times, T_f):
     Returns
     -------
     kappa : `list` of `list` of `numpy.ndarray`
-        Description.
+        kappa[j][i][m] is the index of the latest event of type :math:`j`
+        preceding event time :math:`t_m^i`.
 
     varpi : `list` of `list` of `numpy.ndarray`
-        Description.
+        varpi[i][j][h] is the smallest index :math:`m` such that there
+        exists at least h events of type :math:`j` preceding event time
+        :math:`t_m^i`.
 
     Raises
     ------
@@ -100,7 +103,7 @@ def get_lag_sizes(list_times, kappa, varpi):
 
     Returns
     -------
-    lag_sizes : `list` of `list` of np.ndarray
+    lag_sizes : `list` of `list` of `numpy.ndarray`
         lag_sizes[i][j][h] is the number of events of type :math:`i` with at
         least :math:`h` predecessors of type :math:`j`.
         By convention, matrix_lag_sizes[i][j][0]=0.
