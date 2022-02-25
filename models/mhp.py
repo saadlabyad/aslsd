@@ -91,28 +91,28 @@ class MHP:
         Tensor of lower bounds of kernel parameters.
 
     phi : `list` of `list` of `function`
-        DESCRIPTION. The default is None.
+        Matrix of kernel functions.
 
     diff_phi : `list` of `list` of `function`
-        DESCRIPTION. The default is None.
+        Matrix of derivatives of kernel functions.
 
     psi : `list` of `list` of `function`
-        DESCRIPTION. The default is None.
+        Matrix of `psi` functions.
 
     diff_psi : `list` of `list` of `function`
-        DESCRIPTION. The default is None.
+        Matrix of derivatives of `psi` functions.
 
     upsilon : `list` of `list` of `list` of `function`
-        DESCRIPTION. The default is None.
+        Matrix of `upsilon` functions.
 
     diff_sim_upsilon : `list` of `list` of `function`
-        DESCRIPTION. The default is None.
+        Matrix of derivatives of auto-correlation `upsilon` functions.
 
     diff_cross_upsilon : `list` of `list` of `list` of `function`
-        DESCRIPTION. The default is None.
+        Matrix of derivatives of cross-correlation `upsilon` functions.
 
     is_fitted : `bool`
-        DESCRIPTION. The default is False.
+        True if the MHP has been fitted.
 
     fitted_mu : `numpy.ndarray`
         Fitted baseline.
@@ -126,8 +126,8 @@ class MHP:
     fitted_adjacency : `numpy.ndarray`
         Adjacency matrix for fitted kernel parameters.
 
-    fit_log : TYPE, optional
-        DESCRIPTION. The default is None.
+    fit_log : `aslsd.OptimLogger`
+        Fit log.
 
     """
 
@@ -209,12 +209,43 @@ class MHP:
     # Parameters map
     def make_maps(self):
         """
-        Get lists storing the mapping for parameter indices.
+        Compute the mapping between the MHP parameter indices and the flattened
+        vectors of parameters.
+
         Denote by :math:`d` the dimensionality of the MHP model. For all
+        :math:`i, j \\in [d]`, denote the vector of parameters of the kernel
+        :math:`\\phi_{i j}` by :math:`\\vartheta_{i j}`, the dimension of
+        :math:`\\vartheta_{i j}` by :math:`\\rho_{i j}`, and the total number
+        of event type :math:`k` parameters of the model by
+
+        .. math::
+            n^{(k)}_{\\text {param }}:=1+\\sum_{i=1}^{d} \\rho_{k i},
+        where the additive term :math:`1` in the right hand side correspond to
+        the baseline parameter.
+
+        For all :math:`k \\in[d]`, concatenate the vectors of event type
+        :math:`k` kernel parameters as
+
+        .. math::
+            \\vartheta_{k}^{\\top}=\\left(\\vartheta_{k 1}^{\\top}, \\ldots, \\vartheta_{k d}^{\\top}\\right),
+
+        and define the vectors of event type :math:`k` MHP parameters
+        :math:`\\theta_{k}^{\\top}=\\left(\\mu_{k}, \\vartheta_{k}^{\\top}\\right)`.
+        Finally, define the vector of parameters :math:`\\theta` of the MHP by
+
+        .. math::
+            \\theta^{\\top}=\\left(\\theta_{1}^{\\top}, \\ldots, \\theta_{d}^{\\top}\\right) .
+
+        The vector of event type :math:`k` MHP parameters, :math:`\\theta_{k}`,
+        is the vector of dimension :math:`n^{(k)}_{\\text {param }}` containing
+        the baseline parameter :math:`\\mu_{k}` and the parameters of all
+        kernels :math:`(\\phi_{kj})_{j \\in [d]}`.
+
+        For all
         :math:`k \\in [d]`, denote by :math:`n_k` the total number of
-        parameters of all kernels :math:`(\\phi_{kj})_{j \\in [d]}`. We flatten
-        The list
-        `ix_map` is such that for all :math:`k \\in [d]`, and for all
+        parameters  We flatten
+
+        The list `ix_map` is such that for all :math:`k \\in [d]`, and for all
         :math:`i \\in n_k`, `ix_map[k][i]` is a dictionary with keys `ker` and
         `par`. The value `ix_map[k][i]['ker']` is an integer representing the
         index `j` such that the `i`-th parameter of the flat vector of
@@ -236,7 +267,8 @@ class MHP:
         ix_map : `list` of `list` of `dict`
             DESCRIPTION.
         interval_map : `list` of `list` of `int`
-            DESCRIPTION.
+            Matrix of indices of first and last parameters of kernels in the
+            flat vector of parameters.
 
         """
         d = self.d

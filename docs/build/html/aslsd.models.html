@@ -234,7 +234,7 @@ vector of parameters.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="aslsd.models.mhp.MHP.phi">
 <span class="sig-name descname"><span class="pre">phi</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.phi" title="Permalink to this definition"></a></dt>
-<dd><p>DESCRIPTION. The default is None.</p>
+<dd><p>Matrix of kernel functions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><cite>list</cite> of <cite>list</cite> of <cite>function</cite></p>
@@ -245,7 +245,7 @@ vector of parameters.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="aslsd.models.mhp.MHP.diff_phi">
 <span class="sig-name descname"><span class="pre">diff_phi</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.diff_phi" title="Permalink to this definition"></a></dt>
-<dd><p>DESCRIPTION. The default is None.</p>
+<dd><p>Matrix of derivatives of kernel functions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><cite>list</cite> of <cite>list</cite> of <cite>function</cite></p>
@@ -256,7 +256,7 @@ vector of parameters.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="aslsd.models.mhp.MHP.psi">
 <span class="sig-name descname"><span class="pre">psi</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.psi" title="Permalink to this definition"></a></dt>
-<dd><p>DESCRIPTION. The default is None.</p>
+<dd><p>Matrix of <cite>psi</cite> functions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><cite>list</cite> of <cite>list</cite> of <cite>function</cite></p>
@@ -267,7 +267,7 @@ vector of parameters.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="aslsd.models.mhp.MHP.diff_psi">
 <span class="sig-name descname"><span class="pre">diff_psi</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.diff_psi" title="Permalink to this definition"></a></dt>
-<dd><p>DESCRIPTION. The default is None.</p>
+<dd><p>Matrix of derivatives of <cite>psi</cite> functions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><cite>list</cite> of <cite>list</cite> of <cite>function</cite></p>
@@ -278,7 +278,7 @@ vector of parameters.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="aslsd.models.mhp.MHP.upsilon">
 <span class="sig-name descname"><span class="pre">upsilon</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.upsilon" title="Permalink to this definition"></a></dt>
-<dd><p>DESCRIPTION. The default is None.</p>
+<dd><p>Matrix of <cite>upsilon</cite> functions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><cite>list</cite> of <cite>list</cite> of <cite>list</cite> of <cite>function</cite></p>
@@ -289,7 +289,7 @@ vector of parameters.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="aslsd.models.mhp.MHP.diff_sim_upsilon">
 <span class="sig-name descname"><span class="pre">diff_sim_upsilon</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.diff_sim_upsilon" title="Permalink to this definition"></a></dt>
-<dd><p>DESCRIPTION. The default is None.</p>
+<dd><p>Matrix of derivatives of auto-correlation <cite>upsilon</cite> functions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><cite>list</cite> of <cite>list</cite> of <cite>function</cite></p>
@@ -300,7 +300,7 @@ vector of parameters.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="aslsd.models.mhp.MHP.diff_cross_upsilon">
 <span class="sig-name descname"><span class="pre">diff_cross_upsilon</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.diff_cross_upsilon" title="Permalink to this definition"></a></dt>
-<dd><p>DESCRIPTION. The default is None.</p>
+<dd><p>Matrix of derivatives of cross-correlation <cite>upsilon</cite> functions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><cite>list</cite> of <cite>list</cite> of <cite>list</cite> of <cite>function</cite></p>
@@ -311,7 +311,7 @@ vector of parameters.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="aslsd.models.mhp.MHP.is_fitted">
 <span class="sig-name descname"><span class="pre">is_fitted</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.is_fitted" title="Permalink to this definition"></a></dt>
-<dd><p>DESCRIPTION. The default is False.</p>
+<dd><p>True if the MHP has been fitted.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><cite>bool</cite></p>
@@ -366,10 +366,10 @@ vector of parameters.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="aslsd.models.mhp.MHP.fit_log">
 <span class="sig-name descname"><span class="pre">fit_log</span></span><a class="headerlink" href="#aslsd.models.mhp.MHP.fit_log" title="Permalink to this definition"></a></dt>
-<dd><p>DESCRIPTION. The default is None.</p>
+<dd><p>Fit log.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>TYPE, optional</p>
+<dd class="field-odd"><p><cite>aslsd.OptimLogger</cite></p>
 </dd>
 </dl>
 </dd></dl>
@@ -555,12 +555,33 @@ values of the other attributes that depend on it.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="aslsd.models.mhp.MHP.make_maps">
 <span class="sig-name descname"><span class="pre">make_maps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.make_maps" title="Permalink to this definition"></a></dt>
-<dd><p>Get lists storing the mapping for parameter indices.
-Denote by <span class="math notranslate nohighlight">\(d\)</span> the dimensionality of the MHP model. For all
+<dd><p>Compute the mapping between the MHP parameter indices and the flattened
+vectors of parameters.</p>
+<p>Denote by <span class="math notranslate nohighlight">\(d\)</span> the dimensionality of the MHP model. For all
+<span class="math notranslate nohighlight">\(i, j \in [d]\)</span>, denote the vector of parameters of the kernel
+<span class="math notranslate nohighlight">\(\phi_{i j}\)</span> by <span class="math notranslate nohighlight">\(\vartheta_{i j}\)</span>, the dimension of
+<span class="math notranslate nohighlight">\(\vartheta_{i j}\)</span> by <span class="math notranslate nohighlight">\(\rho_{i j}\)</span>, and the total number
+of parameters of the model by</p>
+<div class="math notranslate nohighlight">
+\[n_{\text {param }}:=d+\sum_{i=1}^{d} \sum_{j=1}^{d} \rho_{i j},\]</div>
+<p>where the additive term <span class="math notranslate nohighlight">\(d\)</span> in the right hand side correspond to
+the <span class="math notranslate nohighlight">\(d\)</span> baseline parameters.</p>
+<p>For all <span class="math notranslate nohighlight">\(k \in[d]\)</span>, concatenate the vectors of event type
+<span class="math notranslate nohighlight">\(k\)</span> kernel parameters as</p>
+<div class="math notranslate nohighlight">
+\[\vartheta_{k}^{\top}=\left(\vartheta_{k 1}^{\top}, \ldots, \vartheta_{k d}^{\top}\right),\]</div>
+<p>and define the vectors of event type <span class="math notranslate nohighlight">\(k\)</span> MHP parameters
+<span class="math notranslate nohighlight">\(\theta_{k}^{\top}=\left(\mu_{k}, \vartheta_{k}^{\top}\right)\)</span>.
+Finally, define the vector of parameters <span class="math notranslate nohighlight">\(\theta\)</span> of the MHP by</p>
+<div class="math notranslate nohighlight">
+\[\theta^{\top}=\left(\theta_{1}^{\top}, \ldots, \theta_{d}^{\top}\right) .\]</div>
+<p>The vector of event type <span class="math notranslate nohighlight">\(k\)</span> MHP parameters <span class="math notranslate nohighlight">\(\theta_{k}\)</span>
+is the vector containing the baseline parameter <span class="math notranslate nohighlight">\(\mu_{k}\)</span> and
+the parameters of all kernels <span class="math notranslate nohighlight">\((\phi_{kj})_{j \in [d]}\)</span>.</p>
+<p>For all
 <span class="math notranslate nohighlight">\(k \in [d]\)</span>, denote by <span class="math notranslate nohighlight">\(n_k\)</span> the total number of
-parameters of all kernels <span class="math notranslate nohighlight">\((\phi_{kj})_{j \in [d]}\)</span>. We flatten
-The list
-<cite>ix_map</cite> is such that for all <span class="math notranslate nohighlight">\(k \in [d]\)</span>, and for all
+parameters  We flatten</p>
+<p>The list <cite>ix_map</cite> is such that for all <span class="math notranslate nohighlight">\(k \in [d]\)</span>, and for all
 <span class="math notranslate nohighlight">\(i \in n_k\)</span>, <cite>ix_map[k][i]</cite> is a dictionary with keys <cite>ker</cite> and
 <cite>par</cite>. The value <cite>ix_map[k][i][‘ker’]</cite> is an integer representing the
 index <cite>j</cite> such that the <cite>i</cite>-th parameter of the flat vector of
@@ -580,7 +601,8 @@ parameters.</p>
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p><ul class="simple">
 <li><p><strong>ix_map</strong> (<cite>list</cite> of <cite>list</cite> of <cite>dict</cite>) – DESCRIPTION.</p></li>
-<li><p><strong>interval_map</strong> (<cite>list</cite> of <cite>list</cite> of <cite>int</cite>) – DESCRIPTION.</p></li>
+<li><p><strong>interval_map</strong> (<cite>list</cite> of <cite>list</cite> of <cite>int</cite>) – Matrix of indices of first and last parameters of kernels in the
+flat vector of parameters.</p></li>
 </ul>
 </p>
 </dd>
