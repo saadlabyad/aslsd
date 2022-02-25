@@ -241,10 +241,6 @@ class MHP:
         the baseline parameter :math:`\\mu_{k}` and the parameters of all
         kernels :math:`(\\phi_{kj})_{j \\in [d]}`.
 
-        For all
-        :math:`k \\in [d]`, denote by :math:`n_k` the total number of
-        parameters  We flatten
-
         The list `ix_map` is such that for all :math:`k \\in [d]`, and for all
         :math:`i \\in n_k`, `ix_map[k][i]` is a dictionary with keys `ker` and
         `par`. The value `ix_map[k][i]['ker']` is an integer representing the

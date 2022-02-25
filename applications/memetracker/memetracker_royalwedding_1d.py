@@ -8,12 +8,10 @@ import numpy as np
 from aslsd.applications.memetracker.preprocessing import memetracker_preprocessing as mtp
 from aslsd.applications.memetracker.preprocessing import memetracker_webdicts as mweb
 from aslsd.basis_kernels.basis_kernel_exponential import ExponentialKernel
-from aslsd.basis_kernels.basis_kernel_gaussian import GaussianKernel
 from aslsd.events.process_path import ProcessPath
-from aslsd.homogeneous_poisson.hom_poisson import HomPoisson
 from aslsd.kernels.kernel import KernelModel
 from aslsd.models.mhp import MHP
-
+from aslsd.models.hom_poisson import HomPoisson
 
 # Data preprocessing
 memes_filepath = "data/memetracker_royalwedding_data.txt"

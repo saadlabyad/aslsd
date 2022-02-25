@@ -11,12 +11,9 @@ import pandas as pd
 from aslsd.applications.memetracker.preprocessing import memetracker_preprocessing as mtp
 from aslsd.applications.memetracker.preprocessing import memetracker_webdicts as mweb
 from aslsd.basis_kernels.basis_kernel_exponential import ExponentialKernel
-from aslsd.basis_kernels.basis_kernel_gaussian import GaussianKernel
 from aslsd.events.process_path import ProcessPath
-from aslsd.homogeneous_poisson.hom_poisson import HomPoisson
 from aslsd.kernels.kernel import KernelModel
 from aslsd.models.mhp import MHP
-
 
 # Data preprocessing
 memes_filepath = "data/memetracker_royalwedding_data.txt"
@@ -40,8 +37,8 @@ list_times = [times_us, times_uk]
 d = len(list_times)
 min_data_date=datetime.utcfromtimestamp(times[0]*3600).strftime('%Y-%m-%d %H:%M:%S')
 max_data_date=datetime.utcfromtimestamp(times[-1]*3600).strftime('%Y-%m-%d %H:%M:%S')
-print('Min data date',min_data_date)
-print('Max data date',max_data_date)
+print('Min data date', min_data_date)
+print('Max data date', max_data_date)
 rescale_factor = 1.
 date_rec_min = datetime(2011, 11, 1, 0, 0, 0, tzinfo=timezone.utc)
 t_rec_min = date_rec_min.timestamp()/3600.

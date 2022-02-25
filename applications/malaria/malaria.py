@@ -5,9 +5,9 @@ import numpy as np
 import pandas as pd
 
 from aslsd.basis_kernels.basis_kernel_gaussian import GaussianKernel
-from aslsd.homogeneous_poisson.hom_poisson import HomPoisson
 from aslsd.kernels.kernel import KernelModel
 from aslsd.models.mhp import MHP
+from aslsd.models.hom_poisson import HomPoisson
 from aslsd.events.process_path import ProcessPath
 
 data_filepath = "data/malaria_china_data.csv"
