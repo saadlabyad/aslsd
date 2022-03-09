@@ -109,8 +109,12 @@ class HomPoisson:
             List of jump times for each dimension.
         T_f : `float`
             Terminal time.
+        clear : `bool`, optional
+            If true, delete all previously saved results and logs from the
+            corresponding attributes of the MHP object. The default is True.
         write : `bool`, optional
-            Save the results. The default is True.
+            If true, save the estimation results and logs in the corresponding
+            attributes of the MHP object. The default is True.
 
         Returns
         -------

@@ -1,5 +1,16 @@
 # License: BSD 3 clause
 
+"""
+Reproduce the results from the news propagation application in the
+"Applications" section of our paper.
+
+In this application, we are interested in the diffusion of information across
+different media platforms.
+
+In this second example, we aggregate all publication timestamps into a path of
+a bidimensional point process.
+"""
+
 from datetime import datetime, timezone
 import copy
 import itertools

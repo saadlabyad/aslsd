@@ -377,7 +377,9 @@ vector of parameters.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="aslsd.models.mhp.MHP.clear_fit">
 <span class="sig-name descname"><span class="pre">clear_fit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.clear_fit" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Delete all previously saved results and logs from the
+corresponding attributes of the MHP object.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="aslsd.models.mhp.MHP.fit">
@@ -396,26 +398,34 @@ defined as</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>list_times</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
-<li><p><strong>T_f</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
+<li><p><strong>list_times</strong> (<cite>list</cite> of <cite>numpy.ndarray</cite>) – List of jump times for each dimension.</p></li>
+<li><p><strong>T_f</strong> (<cite>float</cite>) – Terminal time.</p></li>
 <li><p><strong>kappa</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – DESCRIPTION. The default is None.</p></li>
 <li><p><strong>varpi</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – DESCRIPTION. The default is None.</p></li>
-<li><p><strong>x_0</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – DESCRIPTION. The default is None.</p></li>
-<li><p><strong>n_iter</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – DESCRIPTION. The default is 1000.</p></li>
-<li><p><strong>solvers</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – DESCRIPTION. The default is None.</p></li>
-<li><p><strong>estimators</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – DESCRIPTION. The default is None.</p></li>
-<li><p><strong>logger</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – DESCRIPTION. The default is None.</p></li>
-<li><p><strong>seed</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – DESCRIPTION. The default is 1234.</p></li>
-<li><p><strong>verbose</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – DESCRIPTION. The default is False.</p></li>
-<li><p><strong>clear</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – DESCRIPTION. The default is True.</p></li>
-<li><p><strong>write</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – DESCRIPTION. The default is True.</p></li>
-<li><p><strong>**kwargs</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
+<li><p><strong>x_0</strong> (<cite>list</cite> of <cite>numpy.ndarray</cite>, optional) – x_0[k] is the initial guess for parameters of problem k. The
+default is None.</p></li>
+<li><p><strong>n_iter</strong> (<cite>list</cite> or <cite>int</cite>, optional) – n_iter[k] is the number of iterations of the the optimisation
+algorithm for problem k. If  n_iter is of type <cite>int</cite>, it will be
+converted to a d-dimensional array where each entry is equal to
+that integer. The default is 1000.</p></li>
+<li><p><strong>solvers</strong> (<cite>list</cite> of <cite>aslsd.Solver</cite>, optional) – solvers[k] is the optimization solver for problem k. The default
+is None.</p></li>
+<li><p><strong>estimators</strong> (<cite>list</cite> of <cite>aslsd.Esimtator</cite>, optional) – estimators[k] is the gradient estimator for problem k. The default
+is None.</p></li>
+<li><p><strong>logger</strong> (<cite>aslsd.OptimLogger</cite>, optional) – DESCRIPTION. The default is None.</p></li>
+<li><p><strong>seed</strong> (<cite>int</cite>, optional) – Seed for the random number generator. The default is 1234.</p></li>
+<li><p><strong>verbose</strong> (<cite>bool</cite>, optional) – If True, print progression information. The default is False.</p></li>
+<li><p><strong>clear</strong> (<cite>bool</cite>, optional) – If true, delete all previously saved results and logs from the
+corresponding attributes of the MHP object. The default is True.</p></li>
+<li><p><strong>write</strong> (<cite>bool</cite>, optional) – If true, save the estimation results and logs in the corresponding
+attributes of the MHP object. The default is True.</p></li>
+<li><p><strong>**kwargs</strong> (<cite>dict</cite>) – Additional keyword arguments.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><ul class="simple">
-<li><p><strong>fitted_mu</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
-<li><p><strong>fitted_ker_param</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
+<li><p><strong>fitted_mu</strong> (<cite>numpy.ndarray</cite>) – Fitted baselines.</p></li>
+<li><p><strong>fitted_ker_param</strong> (<cite>numpy.ndarray</cite>) – Fitted kernel parameters.</p></li>
 </ul>
 </p>
 </dd>
@@ -424,8 +434,35 @@ defined as</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="aslsd.models.mhp.MHP.get_branching_ratio">
-<span class="sig-name descname"><span class="pre">get_branching_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel_param</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.get_branching_ratio" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">get_branching_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adjacency</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.get_branching_ratio" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the branching ratio of the MHP.</p>
+<p>The branching ratio of an MHP is equal to the spectral radius of
+its adjacency matrix; that is, the maximum of the absolute values of
+the eigenvalues of the adjacency matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>adjacency</strong> (<cite>numpy.ndarray</cite>, optional) – Adjacency matrix of the MHP. The default is None, in that case it
+will be computed.</p></li>
+<li><p><strong>kernel_param</strong> (<cite>numpy.ndarray</cite>, optional) – Matrix of kernel parameters at which to evaluate the adjacency
+matrix. The default is None, in that case fitted kernel
+parameters will be used if they are stored in the corresponding
+attribute of the MHP object.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – Raise an error if the adjacency matrix is not specified, the kernel
+    parameters not specified and there are no kernel parameters saved
+    as an atrribute.</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>adjacency</strong> – Branching ratio of the MHP.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><cite>float</cite></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="aslsd.models.mhp.MHP.get_l2_projection">
@@ -502,24 +539,32 @@ well must therefore be close to a standard exponential distribution.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>process_path</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
-<li><p><strong>mu</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – DESCRIPTION. The default is None.</p></li>
-<li><p><strong>kernel_param</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – DESCRIPTION. The default is None.</p></li>
-<li><p><strong>sampling</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – DESCRIPTION. The default is False.</p></li>
-<li><p><strong>sample_size</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – DESCRIPTION. The default is 10**3.</p></li>
-<li><p><strong>seed</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – DESCRIPTION. The default is 1234.</p></li>
-<li><p><strong>write</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – DESCRIPTION. The default is True.</p></li>
-<li><p><strong>verbose</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – DESCRIPTION. The default is False.</p></li>
+<li><p><strong>process_path</strong> (<cite>aslsd.ProcessPath</cite>) – DESCRIPTION.</p></li>
+<li><p><strong>mu</strong> (<cite>numpy.ndarray</cite>, optional) – Vector of baseline parameters. The default is None, in that case
+fitted baseline parameters will be used if they are stored in the
+corresponding attribute of the MHP object.</p></li>
+<li><p><strong>kernel_param</strong> (<cite>numpy.ndarray</cite>, optional) – Matrix of kernel parameters. The default is None, in that case
+fitted kernel parameters will be used if they are stored in the
+corresponding attribute of the MHP object.</p></li>
+<li><p><strong>sampling</strong> (<cite>bool</cite>, optional) – If True, subsample the residuals. The default is False.</p></li>
+<li><p><strong>sample_size</strong> (<cite>int</cite>, optional) – Size of the subsample of residuals. The default is 10**3. Only
+used if sampling is True.</p></li>
+<li><p><strong>seed</strong> (<cite>int</cite>, optional) – Seed of the random number generator. The default is 1234. Only
+used if sampling is true.</p></li>
+<li><p><strong>write</strong> (<cite>bool</cite>, optional) – If true, save computed residuals in the corresponding
+attributes of the MHP object. The default is True.</p></li>
+<li><p><strong>verbose</strong> (<cite>bool</cite>, optional) – If True, print progress bar. The default is False.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises</dt>
-<dd class="field-even"><p><strong>ValueError</strong> – DESCRIPTION.</p>
+<dd class="field-even"><p><strong>ValueError</strong> – Raise an error if the baseline is not specified and there is no
+    fitted baseline saved as an atrribute.</p>
 </dd>
 <dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><strong>residuals</strong> – DESCRIPTION.</p>
+<dd class="field-odd"><p><strong>residuals</strong> – Residuals of the fitted model.</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>TYPE</p>
+<dd class="field-even"><p><cite>list</cite> of <cite>numpy.ndarray</cite></p>
 </dd>
 </dl>
 </dd></dl>
@@ -545,7 +590,31 @@ values of the other attributes that depend on it.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="aslsd.models.mhp.MHP.make_adjacency_matrix">
 <span class="sig-name descname"><span class="pre">make_adjacency_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.make_adjacency_matrix" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Compute the adjacency matrix of the MHP.</p>
+<p>The adjacency matrix <span class="math notranslate nohighlight">\(A\)</span> of an MHP is the <span class="math notranslate nohighlight">\(d\times d\)</span>
+matrix of <span class="math notranslate nohighlight">\(L_{1}\)</span> norms of kernels; that is, for all
+<span class="math notranslate nohighlight">\(i,j \in [d]\)</span> the corresponding entry of this matrix is given by</p>
+<div class="math notranslate nohighlight">
+\[A_{ij} := \int_{[0,+\infty]} |\phi_{ij}(u)|du..\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>kernel_param</strong> (<cite>numpy.ndarray</cite>, optional) – Matrix of kernel parameters at which to evaluate the adjacency
+matrix. The default is None, in that case fitted kernel
+parameters will be used if they are stored in the corresponding
+attribute of the MHP object.</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – Raise an error if the kernel parameters not specified and there
+    are no kernel parameters saved as an atrribute.</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>adjacency</strong> – Adjacency matrix of the MHP.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><cite>numpy.ndarray</cite></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="aslsd.models.mhp.MHP.make_kernel_functionals">
@@ -561,11 +630,11 @@ vectors of parameters.</p>
 <span class="math notranslate nohighlight">\(i, j \in [d]\)</span>, denote the vector of parameters of the kernel
 <span class="math notranslate nohighlight">\(\phi_{i j}\)</span> by <span class="math notranslate nohighlight">\(\vartheta_{i j}\)</span>, the dimension of
 <span class="math notranslate nohighlight">\(\vartheta_{i j}\)</span> by <span class="math notranslate nohighlight">\(\rho_{i j}\)</span>, and the total number
-of parameters of the model by</p>
+of event type <span class="math notranslate nohighlight">\(k\)</span> parameters of the model by</p>
 <div class="math notranslate nohighlight">
-\[n_{\text {param }}:=d+\sum_{i=1}^{d} \sum_{j=1}^{d} \rho_{i j},\]</div>
-<p>where the additive term <span class="math notranslate nohighlight">\(d\)</span> in the right hand side correspond to
-the <span class="math notranslate nohighlight">\(d\)</span> baseline parameters.</p>
+\[n^{(k)}_{\text {param }}:=1+\sum_{i=1}^{d} \rho_{k i},\]</div>
+<p>where the additive term <span class="math notranslate nohighlight">\(1\)</span> in the right hand side correspond to
+the baseline parameter.</p>
 <p>For all <span class="math notranslate nohighlight">\(k \in[d]\)</span>, concatenate the vectors of event type
 <span class="math notranslate nohighlight">\(k\)</span> kernel parameters as</p>
 <div class="math notranslate nohighlight">
@@ -575,12 +644,10 @@ the <span class="math notranslate nohighlight">\(d\)</span> baseline parameters.
 Finally, define the vector of parameters <span class="math notranslate nohighlight">\(\theta\)</span> of the MHP by</p>
 <div class="math notranslate nohighlight">
 \[\theta^{\top}=\left(\theta_{1}^{\top}, \ldots, \theta_{d}^{\top}\right) .\]</div>
-<p>The vector of event type <span class="math notranslate nohighlight">\(k\)</span> MHP parameters <span class="math notranslate nohighlight">\(\theta_{k}\)</span>
-is the vector containing the baseline parameter <span class="math notranslate nohighlight">\(\mu_{k}\)</span> and
-the parameters of all kernels <span class="math notranslate nohighlight">\((\phi_{kj})_{j \in [d]}\)</span>.</p>
-<p>For all
-<span class="math notranslate nohighlight">\(k \in [d]\)</span>, denote by <span class="math notranslate nohighlight">\(n_k\)</span> the total number of
-parameters  We flatten</p>
+<p>The vector of event type <span class="math notranslate nohighlight">\(k\)</span> MHP parameters, <span class="math notranslate nohighlight">\(\theta_{k}\)</span>,
+is the vector of dimension <span class="math notranslate nohighlight">\(n^{(k)}_{\text {param }}\)</span> containing
+the baseline parameter <span class="math notranslate nohighlight">\(\mu_{k}\)</span> and the parameters of all
+kernels <span class="math notranslate nohighlight">\((\phi_{kj})_{j \in [d]}\)</span>.</p>
 <p>The list <cite>ix_map</cite> is such that for all <span class="math notranslate nohighlight">\(k \in [d]\)</span>, and for all
 <span class="math notranslate nohighlight">\(i \in n_k\)</span>, <cite>ix_map[k][i]</cite> is a dictionary with keys <cite>ker</cite> and
 <cite>par</cite>. The value <cite>ix_map[k][i][‘ker’]</cite> is an integer representing the
@@ -658,7 +725,34 @@ parameters <cite>kernel_param</cite> to the list of flat vectors of parameters.<
 <dl class="py method">
 <dt class="sig sig-object py" id="aslsd.models.mhp.MHP.simulate">
 <span class="sig-name descname"><span class="pre">simulate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1234</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aslsd.models.mhp.MHP.simulate" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Simulate a path of the MHP.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>T_f</strong> (<cite>float</cite>) – Terminal time.</p></li>
+<li><p><strong>mu</strong> (<cite>numpy.ndarray</cite>, optional) – Vector of baseline parameters. The default is None, in that case
+fitted baseline parameters will be used if they are stored in the
+corresponding attribute of the MHP object.</p></li>
+<li><p><strong>kernel_param</strong> (<cite>numpy.ndarray</cite>, optional) – Matrix of kernel parameters. The default is None, in that case
+fitted kernel parameters will be used if they are stored in the
+corresponding attribute of the MHP object.</p></li>
+<li><p><strong>seed</strong> (<cite>int</cite>, optional) – Seed for the random number generator. The default is 1234.</p></li>
+<li><p><strong>verbose</strong> (<cite>bool</cite>, optional) – If True, print progression information. The default is False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – Raise an error if the baseline or the kernel parameters are not
+    specified and there is no fitted baseline or kernel parameters
+    saved as an atrribute.</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>list_times</strong> – List of simulated jump times for each dimension.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><cite>list</cite> of <cite>numpy.ndarray</cite></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="aslsd.models.mhp.MHP.tensor2matrix_params">

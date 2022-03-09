@@ -6,6 +6,45 @@ import numpy as np
 
 
 class OptimLogger:
+    """
+    Class for optimization logger.
+
+    Attributes
+    ----------
+    d : `int`
+        Dimension of the MHP.
+    n_iter : `list` of `int`
+        DESCRIPTION.
+
+    is_log_param : `bool`
+        DESCRIPTION.
+    is_log_grad : `bool`
+        DESCRIPTION.
+    param_logs : `numpy.ndarray`
+        DESCRIPTION.
+    mu : `numpy.ndarray`
+        DESCRIPTION.
+    ker : `numpy.ndarray`
+        DESCRIPTION.
+    grad_logs : `numpy.ndarray`
+        DESCRIPTION.
+    grad_mu : `numpy.ndarray`
+        DESCRIPTION.
+    grad_ker : `numpy.ndarray`
+        DESCRIPTION.
+    estimator_logs : TYPE
+        DESCRIPTION.
+    mu_0 : `numpy.ndarray`
+        DESCRIPTION.
+    ker_0 : `numpy.ndarray`
+        DESCRIPTION.
+
+    **kwargs : TYPE
+        DESCRIPTION.
+
+
+    """
+
     def __init__(self, d, n_iter, **kwargs):
         self.d = d
         self.n_iter = n_iter

@@ -479,6 +479,11 @@ class MHP:
 
     # Fit
     def clear_fit(self):
+        """
+        Delete all previously saved results and logs from the
+        corresponding attributes of the MHP object.
+
+        """
         self.is_fitted = False
         self.fitted_mu = None
         self.fitted_ker_param = None
@@ -509,47 +514,56 @@ class MHP:
 
         Parameters
         ----------
-        list_times : TYPE
-            DESCRIPTION.
-        T_f : TYPE
-            DESCRIPTION.
+        list_times : `list` of `numpy.ndarray`
+            List of jump times for each dimension.
+        T_f : `float`
+            Terminal time.
         kappa : TYPE, optional
             DESCRIPTION. The default is None.
         varpi : TYPE, optional
             DESCRIPTION. The default is None.
-        x_0 : TYPE, optional
+        x_0 : `list` of `numpy.ndarray`, optional
+            x_0[k] is the initial guess for parameters of problem k. The
+            default is None.
+        n_iter : `list` or `int`, optional
+            n_iter[k] is the number of iterations of the the optimisation
+            algorithm for problem k. If  n_iter is of type `int`, it will be
+            converted to a d-dimensional array where each entry is equal to
+            that integer. The default is 1000.
+        solvers : `list` of `aslsd.Solver`, optional
+            solvers[k] is the optimization solver for problem k. The default
+            is None.
+        estimators : `list` of `aslsd.Esimtator`, optional
+            estimators[k] is the gradient estimator for problem k. The default
+            is None.
+        logger : `aslsd.OptimLogger`, optional
             DESCRIPTION. The default is None.
-        n_iter : TYPE, optional
-            DESCRIPTION. The default is 1000.
-        solvers : TYPE, optional
-            DESCRIPTION. The default is None.
-        estimators : TYPE, optional
-            DESCRIPTION. The default is None.
-        logger : TYPE, optional
-            DESCRIPTION. The default is None.
-        seed : TYPE, optional
-            DESCRIPTION. The default is 1234.
-        verbose : TYPE, optional
-            DESCRIPTION. The default is False.
-        clear : TYPE, optional
-            DESCRIPTION. The default is True.
-        write : TYPE, optional
-            DESCRIPTION. The default is True.
-        **kwargs : TYPE
-            DESCRIPTION.
+        seed : `int`, optional
+            Seed for the random number generator. The default is 1234.
+        verbose : `bool`, optional
+            If True, print progression information. The default is False.
+        clear : `bool`, optional
+            If true, delete all previously saved results and logs from the
+            corresponding attributes of the MHP object. The default is True.
+        write : `bool`, optional
+            If true, save the estimation results and logs in the corresponding
+            attributes of the MHP object. The default is True.
+        **kwargs : `dict`
+            Additional keyword arguments.
 
         Returns
         -------
-        fitted_mu : TYPE
-            DESCRIPTION.
-        fitted_ker_param : TYPE
-            DESCRIPTION.
+        fitted_mu : `numpy.ndarray`
+            Fitted baselines.
+        fitted_ker_param : `numpy.ndarray`
+            Fitted kernel parameters.
 
         """
         rng = np.random.default_rng(seed)
 
         # Clear saved data in case already fitted
-        self.clear_fit()
+        if clear:
+            self.clear_fit()
 
         # Data
         d = self.d
@@ -630,17 +644,48 @@ class MHP:
             logger.estimator_logs[k] = esimator_k_log
             x[k] = x_k
         fitted_mu, fitted_ker_param = self.tensor2matrix_params(x)
-        self.is_fitted = True
-        self.fitted_mu = fitted_mu
-        self.fitted_ker_param = fitted_ker_param
-
-        logger.process_logs(self)
-        logger.mu_0 = mu_0
-        logger.ker_0 = ker_0
-        self.fit_log = logger
+        if write:
+            self.is_fitted = True
+            self.fitted_mu = fitted_mu
+            self.fitted_ker_param = fitted_ker_param
+            logger.process_logs(self)
+            logger.mu_0 = mu_0
+            logger.ker_0 = ker_0
+            self.fit_log = logger
         return fitted_mu, fitted_ker_param
 
     def make_adjacency_matrix(self, kernel_param=None):
+        """
+        Compute the adjacency matrix of the MHP.
+
+        The adjacency matrix :math:`A` of an MHP is the :math:`d\\times d`
+        matrix of :math:`L_{1}` norms of kernels; that is, for all
+        :math:`i,j \\in [d]` the corresponding entry of this matrix is given by
+
+        .. math::
+            A_{ij} := \\int_{[0,+\\infty]} |\\phi_{ij}(u)|du..
+
+
+        Parameters
+        ----------
+        kernel_param : `numpy.ndarray`, optional
+            Matrix of kernel parameters at which to evaluate the adjacency
+            matrix. The default is None, in that case fitted kernel
+            parameters will be used if they are stored in the corresponding
+            attribute of the MHP object.
+
+        Raises
+        ------
+        ValueError
+            Raise an error if the kernel parameters not specified and there
+            are no kernel parameters saved as an atrribute.
+
+        Returns
+        -------
+        adjacency : `numpy.ndarray`
+            Adjacency matrix of the MHP.
+
+        """
         log_fitted_adjacency = False
         if kernel_param is None:
             if self.is_fitted:
@@ -655,9 +700,48 @@ class MHP:
             self.fitted_adjacency = adjacency
         return adjacency
 
-    def get_branching_ratio(self, kernel_param):
-        adjacency = self.make_adjacency_matrix(kernel_param)
-        return np.max(np.absolute(np.linalg.eigvals(adjacency)))
+    def get_branching_ratio(self, adjacency=None, kernel_param=None):
+        """
+        Compute the branching ratio of the MHP.
+
+        The branching ratio of an MHP is equal to the spectral radius of
+        its adjacency matrix; that is, the maximum of the absolute values of
+        the eigenvalues of the adjacency matrix.
+
+        Parameters
+        ----------
+        adjacency : `numpy.ndarray`, optional
+            Adjacency matrix of the MHP. The default is None, in that case it
+            will be computed.
+
+        kernel_param : `numpy.ndarray`, optional
+            Matrix of kernel parameters at which to evaluate the adjacency
+            matrix. The default is None, in that case fitted kernel
+            parameters will be used if they are stored in the corresponding
+            attribute of the MHP object.
+
+        Raises
+        ------
+        ValueError
+            Raise an error if the adjacency matrix is not specified, the kernel
+            parameters not specified and there are no kernel parameters saved
+            as an atrribute.
+
+        Returns
+        -------
+         adjacency : `float`
+            Branching ratio of the MHP.
+
+        """
+        if adjacency is None:
+            if kernel_param is None:
+                if self.is_fitted:
+                    kernel_param = self.fitted_ker_param
+                else:
+                    raise ValueError("kernel_param must be specified.")
+            adjacency = self.make_adjacency_matrix(kernel_param)
+        bratio = np.max(np.absolute(np.linalg.eigvals(adjacency)))
+        return bratio
 
     def get_random_param(self, ref_mu=None, ref_ker_param=None, range_ref=0.1,
                          target_bratio=0.6, max_omega=1., true_omega=None,
@@ -728,7 +812,7 @@ class MHP:
                     kernel_param[i][j].append(val)
 
         # Rescaling
-        branching_ratio = self.get_branching_ratio(kernel_param)
+        branching_ratio = self.get_branching_ratio(kernel_param=kernel_param)
         if branching_ratio > 0.:
             scaling = target_bratio/branching_ratio
         for i, j in itertools.product(range(d), range(d)):
@@ -777,35 +861,42 @@ class MHP:
 
         Parameters
         ----------
-        process_path : TYPE
+        process_path : `aslsd.ProcessPath`
             DESCRIPTION.
-        mu : TYPE, optional
-            DESCRIPTION. The default is None.
-        kernel_param : TYPE, optional
-            DESCRIPTION. The default is None.
-        sampling : TYPE, optional
-            DESCRIPTION. The default is False.
-        sample_size : TYPE, optional
-            DESCRIPTION. The default is 10**3.
-        seed : TYPE, optional
-            DESCRIPTION. The default is 1234.
-        write : TYPE, optional
-            DESCRIPTION. The default is True.
-        verbose : TYPE, optional
-            DESCRIPTION. The default is False.
+        mu : `numpy.ndarray`, optional
+            Vector of baseline parameters. The default is None, in that case
+            fitted baseline parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        kernel_param : `numpy.ndarray`, optional
+            Matrix of kernel parameters. The default is None, in that case
+            fitted kernel parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        sampling : `bool`, optional
+            If True, subsample the residuals. The default is False.
+        sample_size : `int`, optional
+            Size of the subsample of residuals. The default is 10**3. Only
+            used if sampling is True.
+        seed : `int`, optional
+            Seed of the random number generator. The default is 1234. Only
+            used if sampling is true.
+        write : `bool`, optional
+            If true, save computed residuals in the corresponding
+            attributes of the MHP object. The default is True.
+        verbose : `bool`, optional
+            If True, print progress bar. The default is False.
 
         Raises
         ------
         ValueError
-            DESCRIPTION.
+            Raise an error if the baseline is not specified and there is no
+            fitted baseline saved as an atrribute.
 
         Returns
         -------
-        residuals : TYPE
-            DESCRIPTION.
+        residuals : `list` of `numpy.ndarray`
+            Residuals of the fitted model.
 
         """
-
         if mu is None or kernel_param is None:
             if self.is_fitted:
                 mu = self.fitted_mu
@@ -847,6 +938,40 @@ class MHP:
     # Simulation
     def simulate(self, T_f, mu=None, kernel_param=None, seed=1234,
                  verbose=False):
+        """
+        Simulate a path of the MHP.
+
+        Parameters
+        ----------
+        T_f : `float`
+            Terminal time.
+        mu : `numpy.ndarray`, optional
+            Vector of baseline parameters. The default is None, in that case
+            fitted baseline parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        kernel_param : `numpy.ndarray`, optional
+            Matrix of kernel parameters. The default is None, in that case
+            fitted kernel parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        seed : `int`, optional
+            Seed for the random number generator. The default is 1234.
+        verbose : `bool`, optional
+            If True, print progression information. The default is False.
+
+        Raises
+        ------
+        ValueError
+            Raise an error if the baseline or the kernel parameters are not
+            specified and there is no fitted baseline or kernel parameters
+            saved as an atrribute.
+
+        Returns
+        -------
+        list_times : `list` of `numpy.ndarray`
+            List of simulated jump times for each dimension.
+
+        """
+
         if mu is None:
             mu = self.fitted_mu
             if mu is None:
@@ -865,7 +990,7 @@ class MHP:
         adjacency = self.make_adjacency_matrix(kernel_param)
         rng = np.random.default_rng(seed)
 
-        branching_ratio = self.get_branching_ratio(kernel_param)
+        branching_ratio = self.get_branching_ratio(adjacency=adjacency)
         if branching_ratio >= 1:
             raise ValueError("Cannot simulate from unstable MHP: ",
                              "The branching ratio of this MHP is ",

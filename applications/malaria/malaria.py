@@ -1,5 +1,12 @@
 # License: BSD 3 clause
 
+"""
+Reproduce the results from the epidemic propagation application in the
+"Applications" section of our paper.
+
+In this application, we model the propagation of malaria in China.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd

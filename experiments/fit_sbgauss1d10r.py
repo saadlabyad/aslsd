@@ -1,12 +1,13 @@
+# License: BSD 3 clause
+
 """
-=========================================
-Fit Gauss1D
-=========================================
 In this example, we simulate a unidimensional (ground truth) MHP with a
 multimodal Gaussian kernel with three modes.
+
 We estimate the parameters of this MHP using ASLSD, with a SBF Gaussian model
-with 10 modes.
+with ten modes.
 """
+
 import os
 import sys
 # add the path of packages to system path

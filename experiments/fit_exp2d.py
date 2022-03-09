@@ -1,9 +1,9 @@
+# License: BSD 3 clause
+
 """
-=========================================
-Fit Exp2D
-=========================================
-In this example, we simulate a groudn truth bidimensional MHP with exponential
-kernels.
+In this example, we simulate a bidimensional (groudn truth) MHP with
+exponential kernels.
+
 We estimate the parameters of this MHP using ASLSD, plot the path of the
 solver, the fitted kernels and the adjacency matrix of the fit.
 """
@@ -11,7 +11,7 @@ solver, the fitted kernels and the adjacency matrix of the fit.
 import itertools
 import os
 import sys
-# add the path of packages to system path
+# Add the path of packages to system path
 nb_dir = os.path.split(os.getcwd())[0]
 if nb_dir not in sys.path:
     sys.path.append(nb_dir)

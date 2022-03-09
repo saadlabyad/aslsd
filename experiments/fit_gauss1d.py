@@ -1,11 +1,9 @@
 # License: BSD 3 clause
 
 """
-=========================================
-Fit Gauss1D
-=========================================
-In this example, we simulate a unidimensional (ground truth) MHP with a truncated 
-Gaussian kernel.
+In this example, we simulate a unidimensional (ground truth) MHP with a
+truncated Gaussian kernel.
+
 We estimate the parameters of this MHP using ASLSD.
 """
 
