@@ -3,6 +3,7 @@
 import bisect
 import copy
 import itertools
+import pickle
 
 import numpy as np
 from tqdm import tqdm
@@ -1160,7 +1161,7 @@ class MHP:
 
     def plot_solver_path(self, true_mu=None, true_ker_param=None, min_mu=None,
                          min_ker_param=None, plot_derivatives=False,
-                         display_derivatives_zero=False, axs=None, save=False,
+                         derivatives_zero=False, axs=None, save=False,
                          filename='image.png', show=False, **kwargs):
         if not self.is_fitted:
             raise ValueError("MHP must be fitted before plotting solver path")
@@ -1174,6 +1175,80 @@ class MHP:
                                    true_ker_param=true_ker_param,
                                    min_mu=min_mu, min_ker_param=min_ker_param,
                                    plot_derivatives=plot_derivatives,
-                                   display_derivatives_zero=display_derivatives_zero,
+                                   derivatives_zero=derivatives_zero,
                                    axs=axs, save=save, filename=filename,
                                    show=show, **kwargs)
+
+    # Serialization
+    def save(self, file, **kwargs):
+        if file.endswith('.pickle'):
+            file_mu = file+'_fitted_mu.pickle'
+        else:
+            file_mu = file+'_fitted_mu'
+        pickle_out = open(file_mu, "wb", **kwargs)
+        pickle.dump(self.fitted_mu, pickle_out)
+        pickle_out.close()
+
+        if file.endswith('.pickle'):
+            file_ker = file+'_fitted_ker.pickle'
+        else:
+            file_ker = file+'_fitted_ker'
+        pickle_out = open(file_ker, "wb", **kwargs)
+        pickle.dump(self.fitted_ker_param, pickle_out)
+        pickle_out.close()
+
+        if file.endswith('.pickle'):
+            file_residuals = file+'_fitted_residuals.pickle'
+        else:
+            file_residuals = file+'_fitted_residuals'
+        file_residuals = file+'_fitted_residuals'
+        pickle_out = open(file_residuals, "wb", **kwargs)
+        pickle.dump(self.fit_residuals, pickle_out)
+        pickle_out.close()
+
+        if file.endswith('.pickle'):
+            file_adjacency = file+'_fitted_adj.pickle'
+        else:
+            file_adjacency = file+'_fitted_adj'
+        file_adjacency = file+'_fitted_adj'
+        pickle_out = open(file_adjacency, "wb", **kwargs)
+        pickle.dump(self.fitted_adjacency, pickle_out)
+        pickle_out.close()
+
+    def load(self, file, **kwargs):
+        if file.endswith('.pickle'):
+            file_mu = file+'_fitted_mu.pickle'
+        else:
+            file_mu = file+'_fitted_mu'
+        pickle_in = open(file_mu, "rb")
+        fitted_mu = pickle.load(pickle_in)
+
+        if file.endswith('.pickle'):
+            file_ker = file+'_fitted_ker.pickle'
+        else:
+            file_ker = file+'_fitted_ker'
+        file_ker = file+'_fitted_ker'
+        pickle_in = open(file_ker, "rb")
+        fitted_ker = pickle.load(pickle_in)
+
+        if file.endswith('.pickle'):
+            file_residuals = file+'_fitted_residuals.pickle'
+        else:
+            file_residuals = file+'_fitted_residuals'
+        pickle_in = open(file_residuals, "rb")
+        fitted_residuals = pickle.load(pickle_in)
+
+        if file.endswith('.pickle'):
+            file_adjacency = file+'_fitted_adj.pickle'
+        else:
+            file_adjacency = file+'_fitted_adj'
+        pickle_in = open(file_adjacency, "rb")
+        fitted_adjacency = pickle.load(pickle_in)
+
+        self.clear_fit()
+
+        self.is_fitted = True
+        self.fitted_mu = fitted_mu
+        self.fitted_ker_param = fitted_ker
+        self.fit_residuals = fitted_residuals
+        self.fitted_adjacency = fitted_adjacency

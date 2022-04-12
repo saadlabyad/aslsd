@@ -66,7 +66,7 @@ kernel_exp1d1r = KernelModel(ExponentialKernel())
 mhp_exp1d1r = MHP([[kernel_exp1d1r]])
 model_dict['Exp1D1R'] = mhp_exp1d1r
 colors_dict['Exp1D1R'] = 'darkorange'
-# Gaussian 1D6R
+# Exponential 1D6R
 basis_kernels_exp1d6r = [ExponentialKernel() for ix_bk in range(6)]
 kernel_exp1d6r = KernelModel(basis_kernels_exp1d6r)
 mhp_exp1d6r = MHP([[kernel_exp1d6r]])
