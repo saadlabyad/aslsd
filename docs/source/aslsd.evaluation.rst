@@ -1,5 +1,5 @@
-aslsd.evaluation package
-========================
+aslsd.evaluation
+================
 
 Subpackages
 -----------
@@ -12,8 +12,8 @@ Subpackages
 Submodules
 ----------
 
-aslsd.evaluation.goodness\_of\_fit module
------------------------------------------
+aslsd.evaluation.goodness\_of\_fit
+----------------------------------
 
 .. automodule:: aslsd.evaluation.goodness_of_fit
    :members:

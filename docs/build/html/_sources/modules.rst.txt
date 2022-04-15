@@ -1,8 +1,13 @@
-aslsd
-=====
+API reference
+=============
+
+Full documentation of functions, classes, and methods in the aslsd package.
+
+Table of contents
+-----------------
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 3
 
    aslsd
 

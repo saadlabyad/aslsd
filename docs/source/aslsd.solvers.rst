@@ -1,27 +1,27 @@
-aslsd.solvers package
-=====================
+aslsd.solvers
+=============
 
 Submodules
 ----------
 
-aslsd.solvers.adam module
--------------------------
+aslsd.solvers.adam
+------------------
 
 .. automodule:: aslsd.solvers.adam
    :members:
    :undoc-members:
    :show-inheritance:
 
-aslsd.solvers.momentum module
------------------------------
+aslsd.solvers.momentum
+----------------------
 
 .. automodule:: aslsd.solvers.momentum
    :members:
    :undoc-members:
    :show-inheritance:
 
-aslsd.solvers.solver module
----------------------------
+aslsd.solvers.solver
+--------------------
 
 .. automodule:: aslsd.solvers.solver
    :members:

@@ -12,16 +12,16 @@ Subpackages
 Submodules
 ----------
 
-aslsd.events.process\_path module
----------------------------------
+aslsd.events.process\_path
+--------------------------
 
 .. automodule:: aslsd.events.process_path
    :members:
    :undoc-members:
    :show-inheritance:
 
-aslsd.events.time\_ordering module
-----------------------------------
+aslsd.events.time\_ordering
+---------------------------
 
 .. automodule:: aslsd.events.time_ordering
    :members:

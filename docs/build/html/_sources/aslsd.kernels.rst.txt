@@ -1,11 +1,11 @@
-aslsd.kernels package
-=====================
+aslsd.kernels
+=============
 
 Submodules
 ----------
 
-aslsd.kernels.kernel module
----------------------------
+aslsd.kernels.kernel
+--------------------
 
 .. automodule:: aslsd.kernels.kernel
    :members:

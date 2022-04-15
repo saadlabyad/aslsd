@@ -37,7 +37,7 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="readme.html">aslsd</a></li>
-<li class="toctree-l1"><a class="reference internal" href="modules.html">aslsd</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">API reference</a></li>
 </ul>
 
         </div>
@@ -332,6 +332,13 @@
 </li>
       </ul></li>
       <li>
+    aslsd.models.exp_hawkes
+
+      <ul>
+        <li><a href="aslsd.models.html#module-aslsd.models.exp_hawkes">module</a>
+</li>
+      </ul></li>
+      <li>
     aslsd.models.mhp
 
       <ul>
@@ -483,6 +490,10 @@
 </li>
       <li><a href="aslsd.basis_kernels.html#aslsd.basis_kernels.basis_kernel_gaussian.diff_cross_upsilon_gauss_null">diff_cross_upsilon_gauss_null() (in module aslsd.basis_kernels.basis_kernel_gaussian)</a>
 </li>
+      <li><a href="aslsd.models.html#aslsd.models.exp_hawkes.diff_exp_lse_omega_kpr">diff_exp_lse_omega_kpr() (in module aslsd.models.exp_hawkes)</a>
+</li>
+      <li><a href="aslsd.models.html#aslsd.models.exp_hawkes.diff_exp_lse_theta_kpr">diff_exp_lse_theta_kpr() (in module aslsd.models.exp_hawkes)</a>
+</li>
       <li><a href="aslsd.basis_kernels.html#aslsd.basis_kernels.basis_kernel.BasisKernel.diff_kl_divergence">diff_kl_divergence (aslsd.basis_kernels.basis_kernel.BasisKernel attribute)</a>
 </li>
       <li><a href="aslsd.basis_kernels.html#aslsd.basis_kernels.basis_kernel_gaussian.diff_kl_divergence_gauss_gauss">diff_kl_divergence_gauss_gauss() (in module aslsd.basis_kernels.basis_kernel_gaussian)</a>
@@ -513,6 +524,8 @@
 
       <ul>
         <li><a href="aslsd.estimators.html#aslsd.estimators.exact_estimator.ExactEstimator.diff_lse_mu_k">(aslsd.estimators.exact_estimator.ExactEstimator method)</a>
+</li>
+        <li><a href="aslsd.models.html#aslsd.models.exp_hawkes.RecurrentExponential.diff_lse_mu_k">(aslsd.models.exp_hawkes.RecurrentExponential method)</a>
 </li>
       </ul></li>
       <li><a href="aslsd.estimators.html#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.diff_lse_theta_kpr">diff_lse_theta_kpr() (aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified method)</a>
@@ -638,6 +651,10 @@
       <li><a href="aslsd.estimators.html#aslsd.estimators.double_ix_stratification.DoubleIxStratification.get_default_nonadaptive_strata">get_default_nonadaptive_strata() (aslsd.estimators.double_ix_stratification.DoubleIxStratification method)</a>
 </li>
       <li><a href="aslsd.estimators.html#aslsd.estimators.single_ix_stratification.SingleIxStratification.get_default_strata">get_default_strata() (aslsd.estimators.single_ix_stratification.SingleIxStratification method)</a>
+</li>
+      <li><a href="aslsd.models.html#aslsd.models.exp_hawkes.get_exp_lse_k">get_exp_lse_k() (in module aslsd.models.exp_hawkes)</a>
+</li>
+      <li><a href="aslsd.models.html#aslsd.models.exp_hawkes.get_exp_sum_reccurence_lag_h">get_exp_sum_reccurence_lag_h() (in module aslsd.models.exp_hawkes)</a>
 </li>
       <li><a href="aslsd.plots.html#aslsd.plots.graphic_tools.get_horizontal_range_brace">get_horizontal_range_brace() (in module aslsd.plots.graphic_tools)</a>
 </li>
@@ -907,15 +924,17 @@
 </li>
       <li><a href="aslsd.basis_kernels.html#aslsd.basis_kernels.basis_kernel.BasisKernel.l2_norm">l2_norm (aslsd.basis_kernels.basis_kernel.BasisKernel attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="aslsd.events.html#aslsd.events.process_path.ProcessPath.lag_sizes">lag_sizes (aslsd.events.process_path.ProcessPath attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="aslsd.utilities.html#aslsd.utilities.useful_functions.linc_gammaf">linc_gammaf() (in module aslsd.utilities.useful_functions)</a>
 </li>
       <li><a href="aslsd.events.html#aslsd.events.process_path.ProcessPath.list_times">list_times (aslsd.events.process_path.ProcessPath attribute)</a>
 </li>
       <li><a href="aslsd.events.html#aslsd.events.process_path.ProcessPath.list_times2end">list_times2end (aslsd.events.process_path.ProcessPath attribute)</a>
+</li>
+      <li><a href="aslsd.models.html#aslsd.models.mhp.MHP.load">load() (aslsd.models.mhp.MHP method)</a>
 </li>
       <li><a href="aslsd.optim_logging.html#aslsd.optim_logging.optim_logger.OptimLogger.log_grad">log_grad() (aslsd.optim_logging.optim_logger.OptimLogger method)</a>
 </li>
@@ -929,6 +948,8 @@
         <li><a href="aslsd.estimators.html#aslsd.estimators.exact_estimator.ExactEstimator.lse_k_estimate">(aslsd.estimators.exact_estimator.ExactEstimator method)</a>
 </li>
       </ul></li>
+      <li><a href="aslsd.models.html#aslsd.models.exp_hawkes.RecurrentExponential.lse_k_grad">lse_k_grad() (aslsd.models.exp_hawkes.RecurrentExponential method)</a>
+</li>
       <li><a href="aslsd.estimators.html#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.lse_k_grad_estimate">lse_k_grad_estimate() (aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified method)</a>
 
       <ul>
@@ -1405,6 +1426,8 @@
 </li>
         <li><a href="aslsd.models.html#module-aslsd.models">aslsd.models</a>
 </li>
+        <li><a href="aslsd.models.html#module-aslsd.models.exp_hawkes">aslsd.models.exp_hawkes</a>
+</li>
         <li><a href="aslsd.models.html#module-aslsd.models.mhp">aslsd.models.mhp</a>
 </li>
         <li><a href="aslsd.optim_logging.html#module-aslsd.optim_logging">aslsd.optim_logging</a>
@@ -1542,6 +1565,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="aslsd.basis_kernels.html#aslsd.basis_kernels.basis_kernel_rayleigh.RayleighKernel">RayleighKernel (class in aslsd.basis_kernels.basis_kernel_rayleigh)</a>
 </li>
+      <li><a href="aslsd.models.html#aslsd.models.exp_hawkes.RecurrentExponential">RecurrentExponential (class in aslsd.models.exp_hawkes)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -1555,6 +1580,8 @@
       <li><a href="aslsd.utilities.html#aslsd.utilities.useful_statistics.sample_single_ix_stratified">sample_single_ix_stratified() (in module aslsd.utilities.useful_statistics)</a>
 </li>
       <li><a href="aslsd.utilities.html#aslsd.utilities.useful_statistics.sample_single_ix_stratum">sample_single_ix_stratum() (in module aslsd.utilities.useful_statistics)</a>
+</li>
+      <li><a href="aslsd.models.html#aslsd.models.mhp.MHP.save">save() (aslsd.models.mhp.MHP method)</a>
 </li>
       <li><a href="aslsd.estimators.html#aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified.set_doublesum_estimation">set_doublesum_estimation() (aslsd.estimators.adaptive_stratified_estimator.AdaptiveStratified method)</a>
 </li>
@@ -1614,6 +1641,8 @@
 <h2 id="U">U</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="aslsd.models.html#aslsd.models.exp_hawkes.update_exp_sum_recurrence">update_exp_sum_recurrence() (in module aslsd.models.exp_hawkes)</a>
+</li>
       <li><a href="aslsd.utilities.html#aslsd.utilities.useful_functions.update_sum_exp_1D">update_sum_exp_1D() (in module aslsd.utilities.useful_functions)</a>
 </li>
       <li><a href="aslsd.basis_kernels.html#aslsd.basis_kernels.basis_kernel.BasisKernel.upsilon">upsilon (aslsd.basis_kernels.basis_kernel.BasisKernel attribute)</a>

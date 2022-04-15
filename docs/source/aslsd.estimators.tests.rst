@@ -1,11 +1,11 @@
-aslsd.estimators.tests package
-==============================
+aslsd.estimators.tests
+======================
 
 Submodules
 ----------
 
-aslsd.estimators.tests.test module
-----------------------------------
+aslsd.estimators.tests.test
+---------------------------
 
 .. automodule:: aslsd.estimators.tests.test
    :members:

@@ -1,5 +1,5 @@
-aslsd.estimators package
-========================
+aslsd.estimators
+================
 
 Subpackages
 -----------
@@ -12,40 +12,40 @@ Subpackages
 Submodules
 ----------
 
-aslsd.estimators.adaptive\_stratified\_estimator module
--------------------------------------------------------
+aslsd.estimators.adaptive\_stratified\_estimator
+------------------------------------------------
 
 .. automodule:: aslsd.estimators.adaptive_stratified_estimator
    :members:
    :undoc-members:
    :show-inheritance:
 
-aslsd.estimators.double\_ix\_stratification module
---------------------------------------------------
+aslsd.estimators.double\_ix\_stratification
+-------------------------------------------
 
 .. automodule:: aslsd.estimators.double_ix_stratification
    :members:
    :undoc-members:
    :show-inheritance:
 
-aslsd.estimators.estimator module
----------------------------------
+aslsd.estimators.estimator
+--------------------------
 
 .. automodule:: aslsd.estimators.estimator
    :members:
    :undoc-members:
    :show-inheritance:
 
-aslsd.estimators.exact\_estimator module
-----------------------------------------
+aslsd.estimators.exact\_estimator
+---------------------------------
 
 .. automodule:: aslsd.estimators.exact_estimator
    :members:
    :undoc-members:
    :show-inheritance:
 
-aslsd.estimators.single\_ix\_stratification module
---------------------------------------------------
+aslsd.estimators.single\_ix\_stratification
+-------------------------------------------
 
 .. automodule:: aslsd.estimators.single_ix_stratification
    :members:

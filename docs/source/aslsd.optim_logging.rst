@@ -1,11 +1,11 @@
-aslsd.optim\_logging package
-============================
+aslsd.optim\_logging
+====================
 
 Submodules
 ----------
 
-aslsd.optim\_logging.optim\_logger module
------------------------------------------
+aslsd.optim\_logging.optim\_logger
+----------------------------------
 
 .. automodule:: aslsd.optim_logging.optim_logger
    :members:

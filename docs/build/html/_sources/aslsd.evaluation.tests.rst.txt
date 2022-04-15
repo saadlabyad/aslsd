@@ -1,11 +1,11 @@
-aslsd.evaluation.tests package
-==============================
+aslsd.evaluation.tests
+======================
 
 Submodules
 ----------
 
-aslsd.evaluation.tests.test module
-----------------------------------
+aslsd.evaluation.tests.test
+---------------------------
 
 .. automodule:: aslsd.evaluation.tests.test
    :members:

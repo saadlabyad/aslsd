@@ -1,19 +1,19 @@
-aslsd.utilities package
-=======================
+aslsd.utilities
+===============
 
 Submodules
 ----------
 
-aslsd.utilities.useful\_functions module
-----------------------------------------
+aslsd.utilities.useful\_functions
+---------------------------------
 
 .. automodule:: aslsd.utilities.useful_functions
    :members:
    :undoc-members:
    :show-inheritance:
 
-aslsd.utilities.useful\_statistics module
------------------------------------------
+aslsd.utilities.useful\_statistics
+----------------------------------
 
 .. automodule:: aslsd.utilities.useful_statistics
    :members:

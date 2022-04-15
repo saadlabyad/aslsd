@@ -1,11 +1,11 @@
-aslsd.plots package
-===================
+aslsd.plots
+===========
 
 Submodules
 ----------
 
-aslsd.plots.graphic\_tools module
----------------------------------
+aslsd.plots.graphic\_tools
+--------------------------
 
 .. automodule:: aslsd.plots.graphic_tools
    :members:

@@ -1,5 +1,5 @@
-aslsd.applications package
-==========================
+aslsd.applications
+==================
 
 Module contents
 ---------------

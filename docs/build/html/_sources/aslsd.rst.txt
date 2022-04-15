@@ -1,5 +1,5 @@
-aslsd package
-=============
+aslsd
+=====
 
 Subpackages
 -----------
@@ -12,8 +12,6 @@ Subpackages
    aslsd.estimators
    aslsd.evaluation
    aslsd.events
-   aslsd.exponential_mhp
-   aslsd.homogeneous_poisson
    aslsd.kernels
    aslsd.models
    aslsd.optim_logging

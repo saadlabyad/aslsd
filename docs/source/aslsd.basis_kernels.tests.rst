@@ -1,11 +1,11 @@
-aslsd.basis\_kernels.tests package
-==================================
+aslsd.basis\_kernels.tests
+==========================
 
 Submodules
 ----------
 
-aslsd.basis\_kernels.tests.test module
---------------------------------------
+aslsd.basis\_kernels.tests.test
+-------------------------------
 
 .. automodule:: aslsd.basis_kernels.tests.test
    :members:

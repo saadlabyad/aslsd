@@ -1,11 +1,11 @@
-aslsd.events.tests package
-==========================
+aslsd.events.tests
+==================
 
 Submodules
 ----------
 
-aslsd.events.tests.time\_ordering\_test module
-----------------------------------------------
+aslsd.events.tests.time\_ordering\_test
+---------------------------------------
 
 .. automodule:: aslsd.events.tests.time_ordering_test
    :members:
