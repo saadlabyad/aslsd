@@ -102,6 +102,7 @@ def get_residuals(process_path, psi, mu, kernel_param, sampling=False,
 
 #   MTLH
 def get_residuals_k_mtlh(k, process_path, mu_compensator, psi, impact,
+                         expected_impact_matrix,
                          mu_param, kernel_param, impact_param,
                          sampling=False, sample_size=10**3, seed=1234,
                          verbose=False):
@@ -158,13 +159,15 @@ def get_residuals_k_mtlh(k, process_path, mu_compensator, psi, impact,
                     loc_times_1 = t_m_1-list_times[i][np.arange(ind_first,
                                                                 ind_last+1)]
                     psi_vals = psi[k][i](loc_times_1, kernel_param[k][i])
-                    impact_vals = impact[k][i](list_marks[i][np.arange(ind_first, ind_last+1)], impact_param[k][i])
+                    # impact_vals = impact[k][i](list_marks[i][np.arange(ind_first, ind_last+1)], impact_param[k][i])
+                    impact_vals = expected_impact_matrix[k][i]
                     residuals_k[active_ind] += np.sum(psi_vals*impact_vals)
 
             # Events of type i happening strictly before [t^k_m,t^k_{m+1}]
             if ind_prev >= 0:
                 loc_times_2 = list_times[i][np.arange(ind_prev+1)]
-                impact_vals = impact[k][i](list_marks[i][np.arange(ind_prev+1)], impact_param[k][i])
+                # impact_vals = impact[k][i](list_marks[i][np.arange(ind_prev+1)], impact_param[k][i])
+                impact_vals = expected_impact_matrix[k][i]
                 residuals_k[active_ind] += (np.sum(psi[k][i](t_m_1-loc_times_2,
                                                              kernel_param[k][i])*impact_vals)
                                             - np.sum(psi[k][i](t_m-loc_times_2,
@@ -174,11 +177,13 @@ def get_residuals_k_mtlh(k, process_path, mu_compensator, psi, impact,
 
 
 def get_residuals_mtlh(process_path, mu_compensator, psi, impact,
+                       expected_impact_matrix,
                        mu_param, kernel_param, impact_param,
                        sampling=False, sample_size=10**3, seed=1234,
                        verbose=False):
     d = process_path.d
     return [get_residuals_k_mtlh(k, process_path, mu_compensator, psi, impact,
+                                 expected_impact_matrix,
                                  mu_param, kernel_param, impact_param,
                                  sampling=sampling, sample_size=sample_size,
                                  seed=seed, verbose=verbose) for k in range(d)]

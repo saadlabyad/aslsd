@@ -8,6 +8,7 @@ import pickle
 import numpy as np
 from tqdm import tqdm
 
+from aslsd.marks.void_mark import VoidMark
 from aslsd.baselines.baseline import BaselineModel
 from aslsd.basis_baselines.basis_baseline_constant import ConstantBaseline
 from aslsd.impact_functions.impact_function import ImpactFunction
@@ -137,7 +138,7 @@ class MTLH:
     """
 
     def __init__(self, _kernel_matrix, _baselines_vec=None,
-                 _impact_matrix=None, marks_generator=None,
+                 _impact_matrix=None, vec_marks=None,
                  index_from_one=False, d=None,
                  matrix_n_param=None,
                  n_ker_param=None, ix_map=None, interval_map=None,
@@ -163,29 +164,32 @@ class MTLH:
         self.kernel_matrix = _kernel_matrix
         self.impact_matrix = _impact_matrix
 
-        marks_generator_ = self.make_marks_generator(marks_generator)
-        self.marks_generator = marks_generator_
+        vec_marks_ = self.make_marks(vec_marks)
+        self.vec_marks = vec_marks_
 
-    # Marks generation
-    def get_default_marks_gen(self):
+    # Marks
+    def make_marks(self, vec_marks):
         d = self.d
-        marks_generator = [None]*d
-        for i in range(d):
-            def func(size=1, rng=None, seed=1234):
-                return np.zeros(size)
-            marks_generator[i] = copy.deepcopy(func)
-        return marks_generator
-
-    def make_marks_generator(self, marks_generator):
-        d = self.d
-        if marks_generator is None:
-            marks_generator_ = self.get_default_marks_gen()
+        if vec_marks is None:
+            vec_marks_ = [VoidMark() for i in range(d)]
         else:
-            if uf.is_array(marks_generator):
-                marks_generator_ = copy.deepcopy(marks_generator)
+            if uf.is_array(vec_marks):
+                vec_marks_ = copy.deepcopy(vec_marks)
             else:
-                marks_generator_ = [copy.deepcopy(marks_generator) for i in range(d)]
-        return marks_generator_
+                vec_marks_ = [copy.deepcopy(vec_marks) for i in range(d)]
+        return vec_marks_
+
+    def make_expected_impact(self, impact_param):
+        d = self.d
+        if impact_param is None:
+            impact_param = self.fitted_imp_param
+            if impact_param is None:
+                raise ValueError("Missing value for Impact parameters")
+        expected_impact_matrix = np.zeros((d, d))
+        for i, j in itertools.product(range(d), range(d)):
+            impact = self._impact_matrix[i][j]
+            expected_impact_matrix[i][j] = self.vec_marks[j].get_expected_impact(impact, impact_param[i][j])
+        return expected_impact_matrix
 
     # Baselines vector
     @property
@@ -1258,7 +1262,8 @@ class MTLH:
 
     # Residuals
     def get_residuals(self, process_path, mu_param=None, kernel_param=None,
-                      impact_param=None, sampling=False, sample_size=10**3,
+                      impact_param=None, expected_impact_matrix=None,
+                      sampling=False, sample_size=10**3,
                       seed=1234, write=True, verbose=False):
         """
         Compute the residuals of the model.
@@ -1344,13 +1349,17 @@ class MTLH:
                 impact_param = self.fitted_imp_param
             else:
                 raise ValueError("impact_param must be specified.")
+        if expected_impact_matrix is None:
+            expected_impact_matrix = self.make_expected_impact(impact_param)
         residuals = gof.get_residuals_mtlh(process_path, self.mu_compensator,
                                            self.psi, self.impact,
+                                           expected_impact_matrix,
                                            mu_param, kernel_param, impact_param,
                                            sampling=sampling,
                                            sample_size=sample_size, seed=seed,
                                            verbose=verbose)
         if self.is_fitted and write:
+            self.fitted_expected_impact_matrix = expected_impact_matrix
             self.fit_residuals = residuals
         return residuals
 
@@ -1424,6 +1433,10 @@ class MTLH:
             kernel_param = self.fitted_ker_param
             if kernel_param is None:
                 raise ValueError("Missing value for Kernel parameters")
+        if impact_param is None:
+            impact_param = self.fitted_imp_param
+            if impact_param is None:
+                raise ValueError("Missing value for Impact parameters")
 
         d = self.d
         offset_gens = [[None for j in range(d)] for i in range(d)]
@@ -1446,8 +1459,8 @@ class MTLH:
         # Location of immigrants
         generations = [[self._baselines_vec[i].simulate(T_f, mu_param[i],
                                                         rng=rng)] for i in range(d)]
-        raw_marks = [[self.marks_generator[i](size=len(generations[i][0]),
-                                              rng=rng)] for i in range(d)]
+        raw_marks = [[self.vec_marks[i].simulate(size=len(generations[i][0]),
+                                                 rng=rng)] for i in range(d)]
         # generations is a list such that generations[i][ix_gen] contains
         # the times of events of type i of generation ix_gen
 
@@ -1477,8 +1490,8 @@ class MTLH:
                         generations[i][ix_gen] = np.append(generations[i][ix_gen], np.array([x for x in offspringtime if x < T_f]))
                         n_valid_kids = len(np.array([x for x in offspringtime if x < T_f]))
                         raw_marks[i][ix_gen] = np.append(raw_marks[i][ix_gen],
-                                                         self.marks_generator[i](size=n_valid_kids,
-                                                                                 rng=rng))
+                                                         self.vec_marks[i].simulate(size=n_valid_kids,
+                                                                                    rng=rng))
             ix_gen += 1
 
         if verbose:
