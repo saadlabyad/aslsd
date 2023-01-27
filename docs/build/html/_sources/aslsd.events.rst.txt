@@ -1,5 +1,6 @@
 aslsd.events package
 ====================
+This module provides classes and functions to process paths of a point process.
 
 Subpackages
 -----------

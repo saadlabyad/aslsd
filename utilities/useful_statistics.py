@@ -35,9 +35,9 @@ def sample_single_ix_stratified(strata, n_samples, rng=None, seed=None):
     return samples
 
 
-def stratified_single_ixs2times(i, T_f, list_times2end, samples):
+def stratified_single_ixs2times(i, list_times2end, samples):
     n_strata = len(samples)
-    timediff = [T_f-list_times2end[i][samples[ix_strata]]
+    timediff = [list_times2end[i][samples[ix_strata]]
                 for ix_strata in range(n_strata)]
     return timediff
 

@@ -1,5 +1,6 @@
 # License: BSD 3 clause
 
+import copy
 import itertools
 
 from matplotlib import animation, ticker
@@ -77,8 +78,11 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
     if plot_derivatives:
         fig_count = 0
         if axs is None:
+            kwargs_2 = copy.deepcopy(kwargs)
+            if 'pad' in kwargs_2.keys():
+                kwargs_2.pop('pad', None)
             fig, axs = plt.subplots(n_param, 2, sharex=True, sharey=False,
-                                    **kwargs)
+                                    **kwargs_2)
         # Mu
         for i in range(d):
             # Parameter
@@ -133,7 +137,8 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
         axs[n_param-1, 1].set(xlabel='Iteration')
 
         if "pad" in kwargs:
-            fig.tight_layout(**kwargs)
+            pad = kwargs.get('pad', 300)
+            fig.tight_layout()
 
     else:
         n_rows = (n_param // 2) + (n_param % 2)
@@ -171,7 +176,8 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
             axs[n_rows-1, 1].set(xlabel='Iteration')
 
             if "pad" in kwargs:
-                fig.tight_layout(**kwargs)
+                pad = kwargs.get('pad', 300)
+                fig.tight_layout(pad=pad)
 
         else:
             fig, axs = plt.subplots(1, 2, sharex=True, sharey=False, **kwargs)
@@ -204,7 +210,8 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
             axs[1].set(xlabel='Iteration')
 
             if "pad" in kwargs:
-                fig.tight_layout(**kwargs)
+                pad = kwargs.get('pad', 300)
+                fig.tight_layout(pad=pad)
 
     if save:
         plt.savefig(filename)
@@ -437,14 +444,15 @@ def animate_plot_sequence(ref_x, list_y, x_min=None, x_max=None, y_min=None,
     if x_min is None:
         x_min = min(ref_x)
     if x_max is None:
-        x_min = max(ref_x)
+        x_max = max(ref_x)
     if y_min is None:
         y_min = min([min(L) for L in list_y])
     if y_max is None:
         y_max = max([max(L) for L in list_y])
 
     fig = plt.figure(**kwargs)
-    ax = plt.axes(xlim=(x_min, x_max), ylim=(y_min, y_max))
+    ax = plt.axes(xlim=(x_min-10**-5*abs(x_min), x_max+10**-5*abs(x_max)),
+                  ylim=(y_min, y_max))
     line, = ax.plot([], [], lw=2, color='steelblue')
     if list_y_ref is not None:
         line2, = ax.plot([], [], lw=2, color='orange')

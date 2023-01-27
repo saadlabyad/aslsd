@@ -1,5 +1,6 @@
 aslsd.models
 ============
+This module provides classes for different point process models.
 
 Submodules
 ----------

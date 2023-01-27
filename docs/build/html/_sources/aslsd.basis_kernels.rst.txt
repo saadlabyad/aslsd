@@ -1,5 +1,6 @@
 aslsd.basis\_kernels
 ====================
+This module provides different classes of basis kernel functions for MHP.
 
 Subpackages
 -----------

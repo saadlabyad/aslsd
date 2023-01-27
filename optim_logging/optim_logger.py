@@ -50,6 +50,9 @@ class OptimLogger:
         self.n_iter = n_iter
         self.is_log_param = kwargs.get('is_log_param', False)
         self.is_log_grad = kwargs.get('is_log_grad', False)
+        self.is_log_lse = kwargs.get('is_log_lse', False)
+        self.is_log_ixs = kwargs.get('is_log_ixs', False)
+        self.is_log_allocs = kwargs.get('is_log_allocs', False)
         if self.is_log_param:
             self.param_logs = [[None for x in range(n_iter[k]+1)]
                                for k in range(d)]
@@ -66,6 +69,12 @@ class OptimLogger:
         self.estimator_logs = [None]*d
         self.mu_0 = None
         self.ker_0 = None
+        if self.is_log_lse:
+            self.lse = [None for ix in range(d)]
+        if self.is_log_ixs:
+            self.samples = [None for ix in range(d)]
+        if self.is_log_allocs:
+            self.allocs = [None for ix in range(d)]
 
     def log_param(self, k, t, x_k):
         if self.is_log_param:
@@ -91,3 +100,18 @@ class OptimLogger:
             for i, j in itertools.product(range(d), range(d)):
                 for ix in range(self.n_iter[i]):
                     self.grad_ker[i][j][ix] = self.grad_logs[i][ix][mhp.interval_map[i][j][0]:mhp.interval_map[i][j][1]]
+        if self.is_log_lse:
+            for k in range(d):
+                self.lse[k] = self.estimator_logs[k]['lse']
+        if self.is_log_ixs:
+            for k in range(d):
+                self.samples[k] = {}
+                self.samples[k]['psi'] = self.estimator_logs[k]['samples']['psi']
+                self.samples[k]['upsilonzero'] = self.estimator_logs[k]['samples']['upsilonzero']
+                self.samples[k]['phi'] = self.estimator_logs[k]['samples']['phi']
+                self.samples[k]['upsilon'] = self.estimator_logs[k]['samples']['upsilon']
+        if self.is_log_allocs:
+            for k in range(d):
+                self.allocs[k] = {}
+                self.allocs[k]['phi'] = self.estimator_logs[k]['allocs']['phi']
+                self.allocs[k]['upsilon'] = self.estimator_logs[k]['allocs']['upsilon']

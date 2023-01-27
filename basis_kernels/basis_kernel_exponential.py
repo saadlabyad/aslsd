@@ -233,7 +233,7 @@ def diff_l2_dot_exp_gauss(ix_func, ix_diff, vars_1, vars_2):
                     * uf.normal_cdf((delta_2-beta_1*beta_2**2)/beta_2))
         if ix_diff == 1:
             pass
-    elif ix_func ==2:
+    elif ix_func == 2:
         if ix_diff == 0:
             return (omega_1*beta_1
                     * np.exp(-beta_1*(delta_2-0.5*beta_1*beta_2**2))

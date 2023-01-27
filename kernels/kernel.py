@@ -273,6 +273,46 @@ class KernelModel():
                 return res
         return diff_cross_upsilon
 
+    def make_K(self):
+        def K(baseline, t, s, params_ker, params_mu):
+            res = 0.
+            n_b_ker = self.n_basis_ker
+            for ix_ker in range(n_b_ker):
+                ker_left = self.interval_map[ix_ker][0]
+                ker_right = self.interval_map[ix_ker][1]
+                res += self._basis_kernels[ix_ker].K(baseline, t, s,
+                                                     params_ker[ker_left:ker_right],
+                                                     params_mu)
+            return res
+        return K
+
+    def make_diff_K(self):
+        def diff_K(baseline, t, s, ix_func, ix_diff, params_ker, params_mu):
+            if ix_func == 1:
+                res = 0.
+                ix_ker = self.ix_map[ix_diff]['ker']
+                ix_diff_scaled = self.ix_map[ix_diff]['par']
+                ker_lft = self.interval_map[ix_ker][0]
+                ker_rgt = self.interval_map[ix_ker][1]
+                # Upsilon i, ix_ker
+                res += self._basis_kernels[ix_ker].diff_K(baseline, t, s, 1,
+                                                          ix_diff_scaled,
+                                                          params_ker[ker_lft:ker_rgt],
+                                                          params_mu)
+                return res
+            elif ix_func == 2:
+                res = 0.
+                # Upsilon ix_ker, i
+                for ix_ker in range(self.n_basis_ker):
+                    ker_lft = self.interval_map[ix_ker][0]
+                    ker_rgt = self.interval_map[ix_ker][1]
+                    res += self._basis_kernels[ix_ker].diff_K(baseline, t, s, 2,
+                                                              ix_diff,
+                                                              params_ker[ker_lft:ker_rgt],
+                                                              params_mu)
+                return res
+        return diff_K
+
     def make_kernel_functionals(self):
         phi = self.make_phi()
         self.phi = phi
@@ -294,6 +334,12 @@ class KernelModel():
 
         diff_cross_upsilon = self.make_diff_cross_upsilon()
         self.diff_cross_upsilon = diff_cross_upsilon
+
+        K = self.make_K()
+        self.K = K
+
+        diff_K = self.make_diff_K()
+        self.diff_K = diff_K
 
     # Operators overload
     def append(self, obj_2):
@@ -343,29 +389,32 @@ class KernelModel():
         branching_ratio = np.sum(vec_branching)
 
         def offset_gen(rng, N=1):
-            times = []
-            if n_basis_ker == 1:
-                while (len(times) <= N):
-                    # Generate additional random times, corresponds to
-                    # the expected number that will be needed+100.
-                    N_target = int((N+1-len(times))/(1-branching_ratio)+100)
-                    simtimes = basis_kernels[0].simu_func(rng, params,
-                                                          size=N_target)
-                    times += [x for x in simtimes if x > 0]
+            if branching_ratio == 0:
+                return []
             else:
-                vec_probas = vec_branching/branching_ratio
-                while (len(times) <= N):
-                    N_target = int((N+1-len(times))/(1-branching_ratio)+100)
-                    N_basisfunc_list = rng.binomial(n=N_target, p=vec_probas)
-                    simtimes_basisfunc = [None]*n_basis_ker
-                    for ix_ker in range(n_basis_ker):
+                times = []
+                if n_basis_ker == 1:
+                    while (len(times) <= N):
                         # Generate additional random times, corresponds to
                         # the expected number that will be needed+100.
-                        simtimes_basisfunc[ix_ker] = basis_kernels[ix_ker].simu_func(rng, params[interval_map[ix_ker][0]: interval_map[ix_ker][1]], size=N_basisfunc_list[ix_ker])
-                        times += [x for x in simtimes_basisfunc[ix_ker]
-                                  if x > 0]
-                    rng.shuffle(times)
-            return times[:N]
+                        N_target = int((N+1-len(times))/(1-branching_ratio)+100)
+                        simtimes = basis_kernels[0].simu_func(rng, params,
+                                                              size=N_target)
+                        times += [x for x in simtimes if x > 0]
+                else:
+                    vec_probas = vec_branching/branching_ratio
+                    while (len(times) <= N):
+                        N_target = int((N+1-len(times))/(1-branching_ratio)+100)
+                        N_basisfunc_list = rng.binomial(n=N_target, p=vec_probas)
+                        simtimes_basisfunc = [None]*n_basis_ker
+                        for ix_ker in range(n_basis_ker):
+                            # Generate additional random times, corresponds to
+                            # the expected number that will be needed+100.
+                            simtimes_basisfunc[ix_ker] = basis_kernels[ix_ker].simu_func(rng, params[interval_map[ix_ker][0]: interval_map[ix_ker][1]], size=N_basisfunc_list[ix_ker])
+                            times += [x for x in simtimes_basisfunc[ix_ker]
+                                      if x > 0]
+                        rng.shuffle(times)
+                return times[:N]
         return offset_gen
 
     # L1 metrics

@@ -100,6 +100,91 @@ def get_residuals(process_path, psi, mu, kernel_param, sampling=False,
                             seed=seed, verbose=verbose) for k in range(d)]
 
 
+#   MTLH
+def get_residuals_k_mtlh(k, process_path, mu_compensator, psi, impact,
+                         mu_param, kernel_param, impact_param,
+                         sampling=False, sample_size=10**3, seed=1234,
+                         verbose=False):
+    d = process_path.d
+    list_times = process_path.list_times
+    list_marks = process_path.list_marks
+    kappa = process_path.kappa
+    varpi = process_path.varpi
+    n_events = process_path.n_events
+    N_k = n_events[k]
+
+    if sampling:
+        sample_size = max(min(sample_size, N_k-2), 1)
+        residuals_k = np.zeros(sample_size)
+        rng = np.random.default_rng(seed)
+        res_indices = rng.choice(N_k-1, size=sample_size, replace=False,
+                                 p=None)
+        res_indices = list(res_indices)
+    else:
+        residuals_k = np.zeros(N_k-1)
+        res_indices = [ind for ind in range(N_k-1)]
+
+    active_ind = 0
+    for m_index in tqdm(range(len(res_indices)), disable=not verbose):
+        m = res_indices[m_index]
+        t_m = list_times[k][m]
+        t_m_1 = list_times[k][m+1]
+        residuals_k[active_ind] = mu_compensator[k](t_m_1, mu_param[k])-mu_compensator[k](t_m, mu_param[k])
+        for i in range(d):
+            # ind_prev is the index of the last event of type i happening
+            # strictly before [t^k_m,t^k_{m+1}] (if any)
+
+            # ind_first is the index of the first event of type i happening
+            # in [t^k_m,t^k_{m+1}] (if any)
+
+            # ind_last is the index of the last event of type i happening
+            # in [t^k_m,t^k_{m+1}] (if any)
+            if k == i:
+                ind_prev = m-1
+                ind_first = m
+                ind_last = m
+            else:
+                ind_prev = kappa[i][k][m]
+                if m <= kappa[k][i][-2]+1:
+                    ind_first = varpi[i][k][m]
+                    ind_last = kappa[i][k][m+1]
+                else:
+                    ind_first = -1
+
+            if ind_first > -1:
+                # Events of type i happening in [t^k_m,t^k_{m+1}]
+                t_ind_first = list_times[i][ind_first]
+                if t_ind_first < t_m_1:
+                    loc_times_1 = t_m_1-list_times[i][np.arange(ind_first,
+                                                                ind_last+1)]
+                    psi_vals = psi[k][i](loc_times_1, kernel_param[k][i])
+                    impact_vals = impact[k][i](list_marks[i][np.arange(ind_first, ind_last+1)], impact_param[k][i])
+                    residuals_k[active_ind] += np.sum(psi_vals*impact_vals)
+
+            # Events of type i happening strictly before [t^k_m,t^k_{m+1}]
+            if ind_prev >= 0:
+                loc_times_2 = list_times[i][np.arange(ind_prev+1)]
+                impact_vals = impact[k][i](list_marks[i][np.arange(ind_prev+1)], impact_param[k][i])
+                residuals_k[active_ind] += (np.sum(psi[k][i](t_m_1-loc_times_2,
+                                                             kernel_param[k][i])*impact_vals)
+                                            - np.sum(psi[k][i](t_m-loc_times_2,
+                                                               kernel_param[k][i])*impact_vals))
+        active_ind += 1
+    return residuals_k
+
+
+def get_residuals_mtlh(process_path, mu_compensator, psi, impact,
+                       mu_param, kernel_param, impact_param,
+                       sampling=False, sample_size=10**3, seed=1234,
+                       verbose=False):
+    d = process_path.d
+    return [get_residuals_k_mtlh(k, process_path, mu_compensator, psi, impact,
+                                 mu_param, kernel_param, impact_param,
+                                 sampling=sampling, sample_size=sample_size,
+                                 seed=seed, verbose=verbose) for k in range(d)]
+
+
+# Tests and plots
 def ks_test_residuals(residuals):
     return [stats.kstest(res, 'expon') for res in residuals]
 

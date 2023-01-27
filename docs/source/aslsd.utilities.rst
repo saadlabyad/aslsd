@@ -1,5 +1,6 @@
 aslsd.utilities
 ===============
+This module provides useful algorithms for data manipulation and statistical analysis.
 
 Submodules
 ----------

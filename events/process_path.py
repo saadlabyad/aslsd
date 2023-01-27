@@ -1,6 +1,7 @@
 # License: BSD 3 clause
 
 import numpy as np
+from scipy.interpolate import interp1d
 
 from aslsd.events import time_ordering
 
@@ -51,9 +52,11 @@ class ProcessPath():
 
     """
 
-    def __init__(self, list_times, T_f, d=None, n_events=None, eta=None,
+    def __init__(self, list_times, T_f, d=None, list_marks=None, n_events=None,
+                 eta=None,
                  list_times2end=None, kappa=None, varpi=None, lag_sizes=None):
         self.list_times = list_times
+        self.list_marks = list_marks
         self.T_f = T_f
         self.d = len(self.list_times)
         self.n_events = np.array([len(L) for L in self.list_times])
@@ -70,3 +73,15 @@ class ProcessPath():
             lag_sizes = time_ordering.get_lag_sizes(list_times, self.kappa,
                                                     self.varpi)
         self.lag_sizes = lag_sizes
+
+    def get_counting_process(self):
+        d = self.d
+        counting_process = [None]*d
+        for i in range(d):
+            times = self.list_times[i]
+            times = np.insert(times, 0, 0.)
+            vals = np.arange(1+len(self.list_times[i]))
+            time_func = interp1d(times, vals, kind='previous')
+            counting_process[i] = time_func
+        self.counting_process = counting_process
+        return counting_process

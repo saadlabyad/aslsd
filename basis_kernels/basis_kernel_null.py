@@ -26,19 +26,23 @@ class NullKernel(BasisKernel):
 
     # Number of parameters
     def get_n_vars(self):
-        pass
+        return 0
 
     # Bounds
     def get_var_bounds(self):
-        pass
+        return np.array([])
 
     # Param names
     def get_var_names(self):
-        pass
+        return []
 
     # Availabe interactions
     def get_interactions(self, is_reverse=False):
-        pass
+        if is_reverse:
+            return []
+        else:
+            return ['NullKernel', 'ExponentialKernel', 'GaussianKernel',
+                    'TriangularKernel', 'RayleighKernel', 'BasisKernelMC']
 
     # Kernel functionals
     def make_phi(self, t, vars_):
@@ -76,19 +80,22 @@ class NullKernel(BasisKernel):
 
     # Metrics
     def make_l1_norm(self, vars_):
-        0.
+        return 0.
 
     def make_diff_l1_norm(self, ix_diff, vars_):
-        0.
+        return 0.
 
     def make_l2_norm(self, vars_):
-        0.
+        return 0.
 
     def make_diff_l2_norm(self, ix_diff, vars_):
-        0.
+        return 0.
 
     def make_l2_dot(self, basis_kern_2, vars_1, vars_2):
-        0.
+        return 0.
+
+    def make_diff_l2_dot(self, basis_kern_2, ix_func, ix_diff, vars_1, vars_2):
+        return 0.
 
     # KL divergence
     def make_kl_divergence(self, basis_kern_2, vars_1, vars_2):

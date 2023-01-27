@@ -166,13 +166,15 @@ class AdaptiveStratified(Estimator):
         if self.is_log_lse:
             logs['lse'] = self.logged_lse
 
-        logs['samples']['psi'] = self.logged_ixs_psi
-        logs['samples']['upsilonzero'] = self.logged_ixs_upsilonzero
-        logs['samples']['phi'] = self.logged_ixs_phi
-        logs['samples']['upsilon'] = self.logged_ixs_upsilon
+        if self.is_log_ixs:
+            logs['samples']['psi'] = self.logged_ixs_psi
+            logs['samples']['upsilonzero'] = self.logged_ixs_upsilonzero
+            logs['samples']['phi'] = self.logged_ixs_phi
+            logs['samples']['upsilon'] = self.logged_ixs_upsilon
 
-        logs['allocs']['phi'] = self.logged_allocs_phi
-        logs['allocs']['upsilon'] = self.logged_allocs_upsilon
+        if self.is_log_allocs:
+            logs['allocs']['phi'] = self.logged_allocs_phi
+            logs['allocs']['upsilon'] = self.logged_allocs_upsilon
 
         return logs
 
@@ -199,8 +201,7 @@ class AdaptiveStratified(Estimator):
         if self.is_log_ixs:
             self.logged_ixs_psi[i][self.t] = samples
         # Convert indices to time differences
-        times = us.stratified_single_ixs2times(i, self.T_f,
-                                               self.list_times2end, samples)
+        times = us.stratified_single_ixs2times(i, self.list_times2end, samples)
 
         S = 0.
         for ix_strata in range(n_strata):
@@ -238,8 +239,7 @@ class AdaptiveStratified(Estimator):
         if self.is_log_ixs:
             self.logged_ixs_upsilonzero[i][self.t] = samples
         # Convert indices to times
-        times = us.stratified_single_ixs2times(i, self.T_f,
-                                               self.list_times2end, samples)
+        times = us.stratified_single_ixs2times(i, self.list_times2end, samples)
         if func:
             S = 0.
             for ix_strata in range(n_strata):
@@ -423,7 +423,7 @@ class AdaptiveStratified(Estimator):
             S = self.sum_phi[i]
             for ix_strata in range(n_nonadaptive_strata):
                 S += nonadaptive_strata_sizes[ix_strata]*np.mean(self.phi[k][i](times[ix_strata], x_ki))
-            self.sum_phi[i][ix_param] = S
+            self.sum_phi[i] = S
 
     def estimate_dphi_adaptivedom_gtarget(self, i, x_ki, rng=None, seed=None):
         pass
@@ -587,7 +587,7 @@ class AdaptiveStratified(Estimator):
         if self.is_log_lse:
             for ix_strata in range(n_adaptive_strata):
                 self.vecsum_upsilon[i][j][ix_strata] = (mean[ix_strata]*strf.adaptive_strata_sizes[ix_strata])
-            self.sum_upsilon[i] = sum(self.vecsum_upsilon[i][j])
+            self.sum_upsilon[i][j] = sum(self.vecsum_upsilon[i][j])
         # Save sampled indices if needed
         if self.is_log_ixs:
             samples = [[samples[ix_iter][ix_strata]
@@ -648,7 +648,7 @@ class AdaptiveStratified(Estimator):
             S = self.sum_upsilon[i][j]
             for ix_strata in range(n_nonadaptive_strata):
                 S += nonadaptive_strata_sizes[ix_strata]*np.mean(self.upsilon[i][j][k](times[ix_strata]['tf'], times[ix_strata]['mn'], x_ki, x_kj))
-            self.sum_upsilon[i][j][ix_param] = S
+            self.sum_upsilon[i][j] = S
 
     def estimate_dupsilon_adaptivedom_gtarget(self, i, j, x_ki, x_kj, rng=None,
                                               seed=None):

@@ -3,6 +3,7 @@
 import string
 
 import numpy as np
+import pandas as pd
 import scipy.special
 
 # Delete ambiguous variable names 'l' and 'o' following pycodestyle E741
@@ -448,6 +449,30 @@ def double_sum_exp_1D_midpoint(beta, times, T_f):
 # =============================================================================
 # List operations
 # =============================================================================
+def is_array(L):
+    return isinstance(L, (list, pd.core.series.Series, np.ndarray))
+
+def is_empty(L):
+    if L is None:
+        return True
+    elif is_array(L) or type(L) == dict:
+        return len(L) == 0
+
+
+def is_sorted(x, reverse=False, strict=False):
+    """Check if x is sorted"""
+    if not reverse:
+        if strict:
+            return (np.diff(x) > 0).all()
+        else:
+            return (np.diff(x) >= 0).all()
+    else:
+        if strict:
+            return (np.diff(x) < 0).all()
+        else:
+            return (np.diff(x) <= 0).all()
+
+
 def discretize_space(x_min, x_max, res, disc_type):
     """
     Return evenly spaced values in an interval or on a log scale.
@@ -481,6 +506,17 @@ def discretize_space(x_min, x_max, res, disc_type):
         return np.linspace(x_min, x_max, res)
 
 
+def partition_space(l_bound, r_bound, n_strata, disc_type):
+    disc = discretize_space(l_bound, r_bound, n_strata+1, disc_type)
+    disc = disc.astype(int)
+    strata = [None]*n_strata
+    strata[0] = [l_bound, disc[1]-1]
+    strata[-1] = [disc[-2], r_bound]
+    for ix in range(1, len(disc)-1):
+        strata[ix] = [disc[ix], disc[ix+1]-1]
+    return strata
+
+
 def concatenate_linspace(vec_T, vec_n_res):
     n_total = sum(vec_n_res)-(len(vec_n_res)-1)
     X = np.zeros(n_total)
@@ -492,6 +528,27 @@ def concatenate_linspace(vec_T, vec_n_res):
         X[start_index:start_index+vec_n_res[i]-1] = X[start_index-1]+W[1:]
         start_index += vec_n_res[i]-1
     return X
+
+
+def get_ix_positions(L, Q):
+    return [np.where(Q == x)[0][0] for x in L]
+
+
+def get_grid_position(x, ref_x):
+    # Get the ixs such that ref_x[ix-1] <= x < ref_x[ix]
+    ixs_grid = np.searchsorted(ref_x, x, side='right')
+    return ixs_grid
+# =============================================================================
+# Dictionary operations
+# =============================================================================
+def dict_keys2str(d):
+    s = ''
+    L = [key for key in d.keys()]
+    for ix in range(len(L)-1):
+        s += L[ix]
+        s += ', '
+    s += L[-1]+'.'
+    return s
 
 
 # =============================================================================
@@ -551,3 +608,14 @@ def finite_diff(func, x, epsilon=10**-3, diff_type='central difference',
         return (func(x+delta)-func(x))/epsilon
     if diff_type == 'backward difference':
         return (func(x)-func(x-delta))/epsilon
+
+
+def get_diff_paramfunc(param_func, n_vars, epsilon=10**-3,
+                       diff_type='central difference'):
+    def diff_func(t, ix_diff, vars_):
+        def func(y):
+            return param_func(t, y)
+        return finite_diff(func, vars_, epsilon=10**-3,
+                           diff_type='central difference',
+                           diff_index=ix_diff)
+    return diff_func

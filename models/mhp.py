@@ -149,6 +149,7 @@ class MHP:
             Matrix of kernel models.
 
         """
+        self.is_fitted = False
         self.kernel_matrix = _kernel_matrix
 
     # Kernel matrix
@@ -361,6 +362,23 @@ class MHP:
                                 for n in range(list_n[i])] for j in range(d)]
                               for i in range(d)]
         return mu_paths, kernel_param_paths
+
+    def make_xk(self, k, mu_k=None, mu=None, ker_param=None):
+        d = self.d
+        if ker_param is None:
+            ker_param = self.fitted_ker_param
+        if mu_k is None:
+            if mu is None:
+                if self.fitted_mu is None:
+                    mu = np.zeros(d)
+                else:
+                    mu = self.fitted_mu
+        else:
+            mu = np.zeros(d)
+            mu[k] = mu_k
+        x = self.matrix2tensor_params(mu, ker_param)
+        x_k = x[k]
+        return x_k
 
     # Omega
     def is_sbf(self):
@@ -617,7 +635,7 @@ class MHP:
 
         # Initialize Solvers
         if solvers is None:
-            solvers = ADAM(**kwargs)
+            solvers = [ADAM(**kwargs) for k in range(d)]
         else:
             if issubclass(type(solvers), Solver):
                 solvers = [copy.deepcopy(solvers) for k in range(d)]
@@ -638,7 +656,7 @@ class MHP:
                 g_t = estimators[k].lse_k_grad_estimate(x_k, rng)
                 logger.log_grad(k, t, g_t)
                 # Apply solver iteration then project into space of parameters
-                x_k = solvers.iterate(t, x_k, g_t)
+                x_k = solvers[k].iterate(t, x_k, g_t)
                 x_k = np.maximum(x_k, bounds_k)
                 logger.log_param(k, t+1, x_k)
             esimator_k_log = estimators[k].get_log()
@@ -937,7 +955,7 @@ class MHP:
                            **kwargs)
 
     # Simulation
-    def simulate(self, T_f, mu=None, kernel_param=None, seed=1234,
+    def simulate(self, T_f, mu=None, kernel_param=None, rng=None, seed=1234,
                  verbose=False):
         """
         Simulate a path of the MHP.
@@ -989,7 +1007,8 @@ class MHP:
                 kernel_param[i][j])
 
         adjacency = self.make_adjacency_matrix(kernel_param)
-        rng = np.random.default_rng(seed)
+        if rng is None:
+            rng = np.random.default_rng(seed)
 
         branching_ratio = self.get_branching_ratio(adjacency=adjacency)
         if branching_ratio >= 1:
@@ -1005,6 +1024,8 @@ class MHP:
         # Location of immigrants
         generations = [[rng.uniform(low=0.0, high=T_f, size=Nim[i])]
                        for i in range(d)]
+        # generations is a list such that generations[i][ix_gen] contains
+        # the times of events of type i of generation ix_gen
 
         def sum_generation(L, index):
             return sum([len(L[i][index]) for i in range(d)])
@@ -1012,7 +1033,11 @@ class MHP:
         ix_gen = 1
         #   Step 2. Fill via repeated generations
         while sum_generation(generations, ix_gen-1):
+            for k in range(d):
+                generations[k].append(np.array([]))
             for j in range(d):
+                # Simulate the offspring of the "ix_gen-1"th generation of
+                # events of type j
                 if len(generations[j][ix_gen-1]) > 0:
                     for i in range(d):
                         # Set number of offspring
@@ -1021,8 +1046,7 @@ class MHP:
                         parenttimes = generations[j][ix_gen-1].repeat(Noff)
                         offsets = offset_gens[i][j](rng, N=Noff.sum())
                         offspringtime = parenttimes + offsets
-                        generations[i] = generations[i]+[np.array([x for x in offspringtime if x < T_f])]
-
+                        generations[i][ix_gen] = np.append(generations[i][ix_gen], np.array([x for x in offspringtime if x < T_f]))
             ix_gen += 1
         list_times = [np.array(sorted([x for sublist in generations[i]
                                        for x in sublist])) for i in range(d)]

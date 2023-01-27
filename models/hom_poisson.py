@@ -168,7 +168,7 @@ class HomPoisson:
             # Number of immigrants
             Nim = rng.poisson(mu[i]*T_f)
             generations = rng.uniform(low=0., high=T_f, size=Nim)
-            np.sort(generations)
+            generations.sort()
             list_times[i] = generations
         return list_times
 
