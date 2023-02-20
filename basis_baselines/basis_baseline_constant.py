@@ -48,13 +48,6 @@ class ConstantBaseline(BasisBaseline):
         else:
             return 2.*vars_[0]
 
-    def make_K(self, basis_ker, t, s, vars_ker, vars_mu):
-        pass
-
-    def make_diff_K(self, basis_ker, t, s, ix_func, ix_diff, vars_ker,
-                    vars_mu):
-        pass
-
     # Simulatiom
     def make_compensator(self, t, vars_):
         return vars_[0]*t

@@ -40,7 +40,6 @@ class GeneralEstimator():
         self.vecsum_f_nonadaptive = np.zeros(self.stratif.n_nonadaptive_strata)
         self.sum_f_nonadaptive = 0.
         self.sum_f_exact = 0.
-        self.sum_f = 0.
 
         # Gradient
         # Total estimates

@@ -7,6 +7,7 @@ import numpy as np
 
 class DoubleIxStratification:
     def __init__(self, h_max, **kwargs):
+        self.n_exact = 0
         self.h_max = h_max
         self.n_adaptive_iters = kwargs.get('n_adaptive_iters', 1)
         self.n_samples_adaptive = kwargs.get('n_samples_adaptive', 10**4)

@@ -74,6 +74,12 @@ class NullKernel(BasisKernel):
                                     vars_2, vars_1):
         return 0.*t
 
+    def make_K(self, baseline, t, s, vars_ker, params_mu):
+        return 0.
+
+    def make_diff_K(self, baseline, t, s, ix_func, ix_diff, vars_ker, params_mu):
+        return 0.*t
+
     # Simulatiom
     def make_simu_func(self, rng, vars_, size=1):
         return np.zeros(size)

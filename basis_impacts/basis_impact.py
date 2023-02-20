@@ -220,21 +220,21 @@ class BasisImpact(ABC):
         return ix_map
 
     @abstractmethod
-    def make_impact(self, t, vars_):
+    def make_impact(self, zeta, vars_):
         pass
 
     @abstractmethod
-    def make_diff_impact(self, t, ix_diff, vars_):
+    def make_diff_impact(self, zeta, ix_diff, vars_):
         pass
 
     def make_impact_functionals(self):
-        def impact(t, params):
+        def impact(zeta, params):
             vars_ = self.make_vars(params)
-            return self.make_impact(t, vars_)
+            return self.make_impact(zeta, vars_)
         self.impact = impact
 
-        def diff_impact(t, ix_diff, params):
+        def diff_impact(zeta, ix_diff, params):
             vars_ = self.make_vars(params)
             ix_diff_scaled = self.ix_map[ix_diff]
-            return self.make_diff_impact(t, ix_diff_scaled, vars_)
+            return self.make_diff_impact(zeta, ix_diff_scaled, vars_)
         self.diff_impact = diff_impact

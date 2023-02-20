@@ -6,6 +6,9 @@ from aslsd.basis_kernels.basis_kernel import BasisKernel
 from aslsd.utilities import useful_functions as uf
 
 
+# =============================================================================
+# Upsilon
+# =============================================================================
 dict_upsilon = {}
 
 
@@ -155,7 +158,85 @@ def diff_cross_upsilon_exp_gauss(t, s, ix_func, ix_diff, vars_1, vars_2):
 
 dict_diff_cross_upsilon['GaussianKernel'] = diff_cross_upsilon_exp_gauss
 
+# =============================================================================
+# K
+# =============================================================================
+dict_K = {}
+dict_diff_K = {}
 
+
+# Constant
+def K_exp_const(t, s, vars_ker, vars_basis_mu):
+    b = vars_basis_mu[0]
+    omega, beta = vars_ker
+    return omega*b*(1.-np.exp(-beta*t))
+
+
+dict_K['ConstantBaseline'] = K_exp_const
+
+
+def diff_K_exp_const(t, s, ix_func, ix_diff, vars_ker, vars_basis_mu):
+    b = vars_basis_mu[0]
+    omega, beta = vars_ker
+    exp_t = np.exp(-beta*t)
+    # Derivatives wrt Kernel parameters
+    if ix_func == 1:
+        if ix_diff == 0:
+            # Derivative wrt Omega
+            return b*(1.-exp_t)
+        elif ix_diff == 1:
+            # Derivative wrt Beta
+            return b*omega*t*exp_t
+    # Derivatives wrt Mu parameters
+    elif ix_func == 2:
+        if ix_diff == 0:
+            # b
+            return omega*(1.-exp_t)
+
+
+dict_diff_K['ConstantBaseline'] = diff_K_exp_const
+
+
+# Linear
+def K_exp_lin(t, s, vars_ker, vars_basis_mu):
+    a, b = vars_basis_mu
+    omega, beta = vars_ker
+    omega_a_s = omega*(a*(s+1./beta)+b)
+    exp_t = np.exp(-beta*t)
+    return omega_a_s*(1.-exp_t)-omega*a*t*exp_t
+
+
+dict_K['LinearBaseline'] = K_exp_lin
+
+
+def diff_K_exp_lin(t, s, ix_func, ix_diff, vars_ker, vars_basis_mu):
+    a, b = vars_basis_mu
+    omega, beta = vars_ker
+    exp_t = np.exp(-beta*t)
+    # Derivatives wrt Kernel parameters
+    if ix_func == 1:
+        # Derivative wrt omega
+        if ix_diff == 0:
+            a_s = a*(s+1./beta)+b
+            return a_s*(1.-exp_t)-a*t*exp_t
+        # Derivative wrt beta
+        elif ix_diff == 1:
+            res = -omega*a/beta**2
+            res += omega*exp_t*(a*t**2+a*s*t+(a/beta+b)*t+a/beta**2)
+            return res
+    # Derivatives wrt Mu parameters
+    elif ix_func == 2:
+        if ix_diff == 0:
+            s_beta = s+1./beta
+            return omega*(s_beta-exp_t*(t+s_beta))
+        elif ix_diff == 1:
+            return omega*(1.-exp_t)
+
+
+dict_diff_K['LinearBaseline'] = diff_K_exp_lin
+# =============================================================================
+# L2 norm
+# =============================================================================
 dict_l2_dot = {}
 
 
@@ -245,6 +326,9 @@ def diff_l2_dot_exp_gauss(ix_func, ix_diff, vars_1, vars_2):
 dict_diff_l2_dot['GaussianKernel'] = diff_l2_dot_exp_gauss
 
 
+# =============================================================================
+# Basis Kernel Class
+# =============================================================================
 class ExponentialKernel(BasisKernel):
     """
     Class for exponential basis kernels. The associated basis function
@@ -361,6 +445,40 @@ class ExponentialKernel(BasisKernel):
     def make_diff_cross_upsilon_rev(self, basis_kern_2, t, s, ix_func, ix_diff,
                                     vars_2, vars_1):
         pass
+
+    def make_K(self, baseline, t, s, vars_ker, params_mu):
+        res = 0.
+        for ix_mu in range(baseline.n_basis_mus):
+            basis_mu = baseline._basis_mus[ix_mu]
+            mu_type = str(type(basis_mu))
+            mu_type = mu_type.split('.')[-1][:-2]
+            params_basis_mu = params_mu[baseline.interval_map[ix_mu][0]:baseline.interval_map[ix_mu][1]]
+            vars_basis_mu = basis_mu.make_vars(params_basis_mu)
+            res += dict_K[mu_type](t, s, vars_ker, vars_basis_mu)
+        return res
+
+    def make_diff_K(self, baseline, t, s, ix_func, ix_diff, vars_ker, params_mu):
+        if ix_func == 1:
+            res = 0.
+            for ix_mu in range(baseline.n_basis_mus):
+                basis_mu = baseline._basis_mus[ix_mu]
+                mu_type = str(type(basis_mu))
+                mu_type = mu_type.split('.')[-1][:-2]
+                params_basis_mu = params_mu[baseline.interval_map[ix_mu][0]:baseline.interval_map[ix_mu][1]]
+                vars_basis_mu = basis_mu.make_vars(params_basis_mu)
+                res += dict_diff_K[mu_type](t, s, ix_func, ix_diff, vars_ker,
+                                            vars_basis_mu)
+            return res
+        elif ix_func == 2:
+            ix_mu = baseline.ix_map[ix_diff]['mu']
+            ix_diff_scaled = baseline.ix_map[ix_diff]['par']
+            basis_mu = baseline._basis_mus[ix_mu]
+            mu_type = str(type(basis_mu))
+            mu_type = mu_type.split('.')[-1][:-2]
+            params_basis_mu = params_mu[baseline.interval_map[ix_mu][0]:baseline.interval_map[ix_mu][1]]
+            vars_basis_mu = basis_mu.make_vars(params_basis_mu)
+            return dict_diff_K[mu_type](t, s, ix_func, ix_diff_scaled,
+                                        vars_ker, vars_basis_mu)
 
     # Simulatiom
     def make_simu_func(self, rng, vars_, size=1):

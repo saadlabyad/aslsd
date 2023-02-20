@@ -107,18 +107,18 @@ class ImpactFunction():
 
     # Impact functionals
     def make_impact(self):
-        def impact(t, params):
+        def impact(zeta, params):
             res = 0.
             for ix_imp in range(self.n_basis_imp):
-                res += self._basis_impacts[ix_imp].impact(t, params[self.interval_map[ix_imp][0]:self.interval_map[ix_imp][1]])
+                res += self._basis_impacts[ix_imp].impact(zeta, params[self.interval_map[ix_imp][0]:self.interval_map[ix_imp][1]])
             return res
         return impact
 
     def make_diff_impact(self):
-        def diff_impact(t, ix_diff, params):
+        def diff_impact(zeta, ix_diff, params):
             ix_imp = self.ix_map[ix_diff]['imp']
             ix_diff_scaled = self.ix_map[ix_diff]['par']
-            res = self._basis_impacts[ix_imp].diff_impact(t, ix_diff_scaled,
+            res = self._basis_impacts[ix_imp].diff_impact(zeta, ix_diff_scaled,
                                                           params[self.interval_map[ix_imp][0]:self.interval_map[ix_imp][1]])
             return res
         return diff_impact

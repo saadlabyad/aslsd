@@ -496,7 +496,77 @@ class MHP:
                                           " between kernel", k, ",", i,
                                           " and kernel ", k, ",", j)
 
+    # Estimator functions
+    def init_estimator(self, estimator, k):
+        # Ixs book-keeping
+        estimator.n_param_k = 1+sum(self.matrix_n_param[k])
+        estimator.matrix_n_param = self.matrix_n_param
+        estimator.ix_map = self.ix_map
+        estimator.interval_map = self.interval_map
+        # Functionals
+        estimator.phi = self.phi
+        estimator.diff_phi = self.diff_phi
+        estimator.psi = self.psi
+        estimator.diff_psi = self.diff_psi
+        estimator.upsilon = self.upsilon
+        estimator.diff_sim_upsilon = self.diff_sim_upsilon
+        estimator.diff_cross_upsilon = self.diff_cross_upsilon
+
     # Fit
+    def init_logger(self, logger):
+        d = self.d
+        n_iter = logger.n_iter
+        n_param_k = [1+sum(self.matrix_n_param[k]) for k in range(d)]
+
+        if logger.is_log_param:
+            logger.param_logs = [np.zeros((n_iter[k]+1, n_param_k[k]))
+                                 for k in range(d)]
+            logger.mu = [np.zeros(n_iter[k]+1) for k in range(d)]
+            logger.ker = [[[None for x in range(n_iter[i]+1)] for j in range(d)]
+                          for i in range(d)]
+        if logger.is_log_grad:
+            logger.grad_logs = [np.zeros((n_iter[k], n_param_k[k]))
+                                for k in range(d)]
+            logger.grad_mu = [[None for x in range(n_iter[k])]
+                              for k in range(d)]
+            logger.grad_ker = [[[None for x in range(n_iter[i])]
+                                for j in range(d)] for i in range(d)]
+
+        logger.mu_0 = None
+        logger.ker_0 = None
+
+    def process_logs(self, logger):
+        d = self.d
+        if logger.is_log_param:
+            for i in range(d):
+                for ix in range(logger.n_iter[i]+1):
+                    logger.mu[i][ix] = logger.param_logs[i][ix][0]
+            for i, j in itertools.product(range(d), range(d)):
+                for ix in range(logger.n_iter[i]+1):
+                    logger.ker[i][j][ix] = logger.param_logs[i][ix][self.interval_map[i][j][0]:self.interval_map[i][j][1]]
+        if logger.is_log_grad:
+            for i in range(d):
+                for ix in range(logger.n_iter[i]):
+                    logger.grad_mu[i][ix] = logger.grad_logs[i][ix][0]
+            for i, j in itertools.product(range(d), range(d)):
+                for ix in range(logger.n_iter[i]):
+                    logger.grad_ker[i][j][ix] = logger.grad_logs[i][ix][self.interval_map[i][j][0]:self.interval_map[i][j][1]]
+        if logger.is_log_lse:
+            for k in range(d):
+                self.lse[k] = self.estimator_logs[k]['lse']
+        if logger.is_log_ixs:
+            for k in range(d):
+                logger.samples[k] = {}
+                logger.samples[k]['psi'] = logger.estimator_logs[k]['samples']['psi']
+                logger.samples[k]['upsilonzero'] = logger.estimator_logs[k]['samples']['upsilonzero']
+                logger.samples[k]['phi'] = logger.estimator_logs[k]['samples']['phi']
+                logger.samples[k]['upsilon'] = logger.estimator_logs[k]['samples']['upsilon']
+        if logger.is_log_allocs:
+            for k in range(d):
+                logger.allocs[k] = {}
+                logger.allocs[k]['phi'] = logger.estimator_logs[k]['allocs']['phi']
+                logger.allocs[k]['upsilon'] = logger.estimator_logs[k]['allocs']['upsilon']
+
     def clear_fit(self):
         """
         Delete all previously saved results and logs from the
@@ -642,6 +712,7 @@ class MHP:
 
         # Initialize logger
         logger = OptimLogger(d, n_iter, **kwargs)
+        self.init_logger(logger)
 
         # Scheme
         x = [None]*d
@@ -667,7 +738,7 @@ class MHP:
             self.is_fitted = True
             self.fitted_mu = fitted_mu
             self.fitted_ker_param = fitted_ker_param
-            logger.process_logs(self)
+            self.process_logs(logger)
             logger.mu_0 = mu_0
             logger.ker_0 = ker_0
             self.fit_log = logger

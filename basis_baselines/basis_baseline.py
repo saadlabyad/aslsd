@@ -325,15 +325,6 @@ class BasisBaseline(ABC):
     def make_diff_M(self, t, ix_diff, vars_):
         pass
 
-    @abstractmethod
-    def make_K(self, basis_ker, t, s, vars_ker, vars_mu):
-        pass
-
-    @abstractmethod
-    def make_diff_K(self, basis_ker, t, s, ix_func, ix_diff, vars_ker,
-                    vars_mu):
-        pass
-
     def make_baseline_functionals(self):
         """
         Set the attributes corresponding to kernel functionals and their
@@ -402,35 +393,6 @@ class BasisBaseline(ABC):
             ix_diff_scaled = self.ix_map[ix_diff]
             return self.make_diff_M(t, ix_diff_scaled, vars_)
         self.diff_M = diff_M
-
-        def K(basis_ker, t, s, params_ker, params_mu):
-            vars_ker = basis_ker.make_vars(params_ker)
-            vars_mu = self.make_vars(params_mu)
-            return self.make_K(basis_ker, t, s, vars_ker, vars_mu)
-        self.K = K
-
-        def diff_K(basis_ker, t, s, ix_func, ix_diff, params_ker, params_mu):
-            vars_ker = basis_ker.make_vars(params_ker)
-            vars_mu = self.make_vars(params_mu)
-            if ix_func == 1:
-                ix_diff_scaled = basis_ker.ix_map[ix_diff]
-            elif ix_func == 2:
-                ix_diff_scaled = self.ix_map[ix_diff]
-
-            if self.is_compatible(basis_ker, is_reverse=False):
-                return self.make_diff_K(basis_ker, t, s, ix_func,
-                                        ix_diff_scaled, vars_ker, vars_mu)
-            elif basis_ker.is_compatible(self, is_reverse=True):
-                if ix_func == 1:
-                    ix_diff_scaled = self.ix_map[ix_diff]
-                elif ix_func == 2:
-                    ix_diff_scaled = basis_ker.ix_map[ix_diff]
-                return basis_ker.make_diff_K(self, t, s, ix_func,
-                                             ix_diff_scaled, vars_ker,
-                                             vars_mu)
-            raise NotImplementedError("No available interaction between this",
-                                      "kernel and baseline.")
-        self.diff_K = diff_K
 
     # Simulatiom
     @abstractmethod

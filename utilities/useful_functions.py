@@ -512,7 +512,7 @@ def partition_space(l_bound, r_bound, n_strata, disc_type):
     strata = [None]*n_strata
     strata[0] = [l_bound, disc[1]-1]
     strata[-1] = [disc[-2], r_bound]
-    for ix in range(1, len(disc)-1):
+    for ix in range(1, len(disc)-2):
         strata[ix] = [disc[ix], disc[ix+1]-1]
     return strata
 

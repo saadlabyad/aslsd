@@ -783,6 +783,21 @@ class BasisKernelMC():
                                       "basis kernels")
         self.diff_cross_upsilon = diff_cross_upsilon
 
+        def K(baseline, t, s, params_ker, params_mu):
+            vars_ker = self.make_vars(params_ker)
+            return self.make_K(baseline, t, s, vars_ker, params_mu)
+        self.K = K
+
+        def diff_K(baseline, t, s, ix_func, ix_diff, params_ker, params_mu):
+            vars_ker = self.make_vars(params_ker)
+            if ix_func == 1:
+                ix_diff_scaled = self.ix_map[ix_diff]
+            elif ix_func == 2:
+                ix_diff_scaled = ix_diff
+            return self.make_diff_K(baseline, t, s, ix_func, ix_diff_scaled,
+                                    vars_ker, params_mu)
+        self.diff_K = diff_K
+
     # Simulatiom
     def make_simu_func(self, rng, vars_, size=1):
         return self.src_simu_func(rng, vars_[1:], size=size)

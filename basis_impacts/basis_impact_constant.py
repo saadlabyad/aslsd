@@ -21,11 +21,11 @@ class ConstantImpact(BasisImpact):
         pass
 
     # Impact functionals
-    def make_impact(self, t, vars_):
-        if uf.is_array(t):
-            return np.ones(len(t))
+    def make_impact(self, zeta, vars_):
+        if uf.is_array(zeta):
+            return np.ones(len(zeta))
         else:
             return 1.
 
-    def make_diff_impact(self, t, ix_diff, vars_):
+    def make_diff_impact(self, zeta, ix_diff, vars_):
         pass

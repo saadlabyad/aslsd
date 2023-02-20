@@ -27,7 +27,7 @@ class Mark(ABC):
         marks = self.simulate(size=n_mc, rng=rng)
         return np.mean(impact_function.impact(marks, imp_params))
 
-    def get_expected_impact(self, impact_function, imp_params, n_mc=10**5,
+    def get_expected_impact(self, impact_function, imp_params, n_mc=10**6,
                             rng=None, seed=1234):
         if self.default_exp_imp == 'estimate':
             return self.estimate_expected_impact(impact_function, imp_params,

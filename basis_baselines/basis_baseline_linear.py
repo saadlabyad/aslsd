@@ -37,20 +37,15 @@ class LinearBaseline(BasisBaseline):
                 return 1.
 
     def make_M(self, t, vars_):
-        return ((vars_[0]**2)/3.)*t**2+vars_[0]*vars_[1]*t+vars_[1]**2
+        a, b = vars_
+        return ((a**2)/3.)*t**2+a*b*t+b**2
 
     def make_diff_M(self, t, ix_diff, vars_):
+        a, b = vars_
         if ix_diff == 0:
-            return (2.*vars_[0]/3.)*t**2+vars_[1]*t
+            return (2./3.)*a*t**2+b*t
         elif ix_diff == 1:
-            return vars_[0]*t+2.*vars_[1]
-
-    def make_K(self, basis_ker, t, s, vars_ker, vars_mu):
-        pass
-
-    def make_diff_K(self, basis_ker, t, s, ix_func, ix_diff, vars_ker,
-                    vars_mu):
-        pass
+            return a*t+2.*b
 
     # Simulatiom
     def make_compensator(self, t, vars_):

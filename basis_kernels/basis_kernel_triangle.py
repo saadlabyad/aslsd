@@ -94,6 +94,12 @@ class TriangularKernel(BasisKernel):
                                     vars_2, vars_1):
         pass
 
+    def make_K(self, baseline, t, s, vars_ker, params_mu):
+        pass
+
+    def make_diff_K(self, baseline, t, s, ix_func, ix_diff, vars_ker, params_mu):
+        pass
+
     # Simulatiom
     def make_simu_func(self, rng, vars_, size=1):
         alpha = vars_[1]

@@ -27,9 +27,10 @@ class Estimator(ABC):
         self.diff_sim_upsilon = None
         self.diff_cross_upsilon = None
 
-    def initialize(self, process_path, mhp_model):
+    def initialize(self, process_path, hawkes_model):
         # Data
         self.list_times = process_path.list_times
+        self.list_marks = process_path.list_marks
         self.T_f = process_path.T_f
         self.d = process_path.d
         self.n_events = process_path.n_events
@@ -40,17 +41,8 @@ class Estimator(ABC):
         self.lag_sizes = process_path.lag_sizes
 
         # Model
-        self.n_param_k = 1+sum(mhp_model.matrix_n_param[self.k])
-        self.matrix_n_param = mhp_model.matrix_n_param
-        self.ix_map = mhp_model.ix_map
-        self.interval_map = mhp_model.interval_map
-        self.phi = mhp_model.phi
-        self.diff_phi = mhp_model.diff_phi
-        self.psi = mhp_model.psi
-        self.diff_psi = mhp_model.diff_psi
-        self.upsilon = mhp_model.upsilon
-        self.diff_sim_upsilon = mhp_model.diff_sim_upsilon
-        self.diff_cross_upsilon = mhp_model.diff_cross_upsilon
+        k = self.k
+        hawkes_model.init_estimator(self, k)
 
     @abstractmethod
     def get_log(self):

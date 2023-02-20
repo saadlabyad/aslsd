@@ -13,7 +13,7 @@ class CosineBaseline(BasisBaseline):
                  inv_kepler_args=None,
                  fixed_indices=None, fixed_vars=None, n_fixed_vars=0,
                  ix_map=None, dict_interactions=None, mu=None, diff_mu=None,
-                 M=None, diff_M=None, K=None, diff_K=None):
+                 M=None, diff_M=None):
         self.pos_min_f = 1.
         self.T_p = 2.*np.pi
         self.intercept = True
@@ -48,8 +48,7 @@ class CosineBaseline(BasisBaseline):
                                fixed_vars=fixed_vars,
                                n_fixed_vars=n_fixed_vars, ix_map=ix_map,
                                dict_interactions=dict_interactions, mu=mu,
-                               diff_mu=diff_mu, M=M, diff_M=diff_M, K=K,
-                               diff_K=diff_K)
+                               diff_mu=diff_mu, M=M, diff_M=diff_M)
 
     # Number of parameters
     def get_n_vars(self):
@@ -101,13 +100,6 @@ class CosineBaseline(BasisBaseline):
         return pmi.get_diff_M(t, ix_diff, self.T_p, self.f, self.F_q, F=self.F,
                               vars_=vars_, pos_min_f=self.pos_min_f,
                               intercept=self.intercept)
-
-    def make_K(self, basis_ker, t, s, vars_ker, vars_mu):
-        pass
-
-    def make_diff_K(self, basis_ker, t, s, ix_func, ix_diff, vars_ker,
-                    vars_mu):
-        pass
 
     # Simulatiom
     def make_compensator(self, t, vars_):

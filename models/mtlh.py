@@ -233,6 +233,7 @@ class MTLH:
                     self.ix_map_imp = ix_map_imp
                     self.interval_map_imp = interval_map_imp
                 self.make_functionals()
+                self.n_param_k = self.get_n_param_k()
 
     @baselines_vec.deleter
     def baselines_vec(self):
@@ -276,6 +277,7 @@ class MTLH:
                 self.interval_map_imp = interval_map_imp
             if hasattr(self, '_baselines_vec'):
                 self.make_functionals()
+                self.n_param_k = self.get_n_param_k()
 
     @kernel_matrix.deleter
     def kernel_matrix(self):
@@ -315,6 +317,7 @@ class MTLH:
         # General updates
         if hasattr(self, '_baselines_vec') and hasattr(self, '_impact_matrix'):
             self.make_functionals()
+            self.n_param_k = self.get_n_param_k()
 
     @impact_matrix.deleter
     def impact_matrix(self):
@@ -379,6 +382,15 @@ class MTLH:
         mat_n_param_imp = [[self._impact_matrix[i][j].n_param for j in range(d)]
                             for i in range(d)]
         return mat_n_param_imp
+
+    def get_n_param_k(self):
+        d = self.d
+        n_param_k = [None]*d
+        for k in range(d):
+            n_param_k[k] = (self.vector_n_param_mu[k]
+                            + sum(self.matrix_n_param_ker[k])
+                            + sum(self.matrix_n_param_imp[k]))
+        return n_param_k
 
     # Parameters map
     def make_maps_ker(self):
@@ -578,6 +590,34 @@ class MTLH:
                                   for j in range(d)] for i in range(d)],
                                 dtype=object)
         return mu_param, kernel_param, impact_param
+
+    def xk2matrix_params(self, k, x_k):
+        """
+        Convert the list of flat vectors of parameters to a vector of
+        background rates `mu` and a matrix of kernel parameters `kernel_param`.
+
+        Parameters
+        ----------
+        tensor_param : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        mu_param : TYPE
+            Vector of background rates.
+        kernel_param : TYPE
+            Matrix of kernel parameters.
+
+        """
+        d = self.d
+        x_mu_k = copy.deepcopy(x_k[:self.vector_n_param_mu[k]])
+        x_ker_k = np.array([x_k[self.interval_map_ker[k][i][0]:
+                                self.interval_map_ker[k][i][1]]
+                            for i in range(d)], dtype=object)
+        x_imp_k = np.array([x_k[self.interval_map_imp[k][i][0]:
+                                self.interval_map_imp[k][i][1]]
+                            for i in range(d)], dtype=object)
+        return x_mu_k, x_ker_k, x_imp_k
 
     def matrix2tensor_params(self, mu_param, kernel_param, impact_param):
         """
@@ -865,17 +905,17 @@ class MTLH:
             kernel_ki = self._kernel_matrix[k][i]
             kernel_kj = self._kernel_matrix[k][j]
             if kernel_ki.is_compatible(kernel_kj):
-                func = kernel_ki.make_upsilon()
+                func_u = kernel_ki.make_upsilon()
 
                 def upsilon(t, s, params_1, params_2):
-                    return func(kernel_kj, t, s, params_1, params_2)
+                    return func_u(kernel_kj, t, s, params_1, params_2)
                 self.upsilon[i][j][k] = upsilon
-                diff_func = kernel_ki.make_diff_cross_upsilon()
+                diff_func_u = kernel_ki.make_diff_cross_upsilon()
 
                 def diff_cross_upsilon(t, s, ix_func, ix_diff, params_1,
                                        params_2):
-                    return diff_func(kernel_kj, t, s, ix_func, ix_diff,
-                                     params_1, params_2)
+                    return diff_func_u(kernel_kj, t, s, ix_func, ix_diff,
+                                       params_1, params_2)
                 self.diff_cross_upsilon[i][j][k] = diff_cross_upsilon
             else:
                 raise NotImplementedError("No available interaction"
@@ -885,16 +925,16 @@ class MTLH:
         for i, j in itertools.product(range(d), range(d)):
             kernel = self._kernel_matrix[i][j]
             baseline = self._baselines_vec[i]
-            func = kernel.make_K()
+            func_K = kernel.make_K()
 
             def K(t, s, params_ker, params_mu):
-                return func(baseline, t, s, params_ker, params_mu)
+                return func_K(baseline, t, s, params_ker, params_mu)
             self.K[i][j] = K
-            diff_func = kernel.make_diff_K()
+            diff_func_K = kernel.make_diff_K()
 
             def diff_K(t, s, ix_func, ix_diff, params_ker, params_mu):
-                return diff_func(baseline, t, s, ix_func, ix_diff, params_ker,
-                                 params_mu)
+                return diff_func_K(baseline, t, s, ix_func, ix_diff, params_ker,
+                                   params_mu)
             self.diff_K[i][j] = diff_K
 
         # Impact
@@ -907,7 +947,100 @@ class MTLH:
             diff_impact = impact_function.make_diff_impact()
             self.diff_impact[i][j] = diff_impact
 
+    # Estimator functions
+    def init_estimator(self, estimator, k):
+        # Ixs book-keeping
+        estimator.n_param_k = self.n_param_k[k]
+        estimator.vector_n_param_mu = self.vector_n_param_mu
+        estimator.matrix_n_param_ker = self.matrix_n_param_ker
+        estimator.matrix_n_param_imp = self.matrix_n_param_imp
+        estimator.ix_map_ker = self.ix_map_ker
+        estimator.ix_map_imp = self.ix_map_imp
+        estimator.interval_map_ker = self.interval_map_ker
+        estimator.interval_map_imp = self.interval_map_imp
+        estimator.xk2matrix_params = self.xk2matrix_params
+        # Functionals
+        estimator.phi = self.phi
+        estimator.diff_phi = self.diff_phi
+        estimator.upsilon = self.upsilon
+        estimator.diff_sim_upsilon = self.diff_sim_upsilon
+        estimator.diff_cross_upsilon = self.diff_cross_upsilon
+        estimator.M = self.M
+        estimator.diff_M = self.diff_M
+        estimator.mu = self.mu
+        estimator.diff_mu = self.diff_mu
+        estimator.K = self.K
+        estimator.diff_K = self.diff_K
+        estimator.impact = self.impact
+        estimator.diff_impact = self.diff_impact
+
     # Fit
+    def init_logger(self, logger):
+        d = self.d
+        n_iter = logger.n_iter
+        n_param_k = self.n_param_k
+        if logger.is_log_param:
+            logger.param_logs = [np.zeros((n_iter[k]+1, n_param_k[k]))
+                                 for k in range(d)]
+            logger.mu = [[None for x in range(n_iter[i]+1)] for i in range(d)]
+            logger.ker = [[[None for x in range(n_iter[i]+1)] for j in range(d)]
+                          for i in range(d)]
+            logger.imp = [[[None for x in range(n_iter[i]+1)] for j in range(d)]
+                          for i in range(d)]
+        if logger.is_log_grad:
+            logger.grad_logs = [np.zeros((n_iter[k], n_param_k[k]))
+                                for k in range(d)]
+            logger.grad_mu = [[None for x in range(n_iter[i]+1)] for i in range(d)]
+            logger.grad_ker = [[[None for x in range(n_iter[i])]
+                                for j in range(d)] for i in range(d)]
+            logger.grad_imp = [[[None for x in range(n_iter[i])]
+                                for j in range(d)] for i in range(d)]
+
+        logger.mu_0 = None
+        logger.ker_0 = None
+        logger.imp_0 = None
+
+    def process_logs(self, logger):
+        d = self.d
+        if logger.is_log_param:
+            # Mu
+            for i in range(d):
+                for ix in range(logger.n_iter[i]+1):
+                    logger.mu[i][ix] = logger.param_logs[i][ix][:self.vector_n_param_mu[i]]
+
+            for i, j in itertools.product(range(d), range(d)):
+                for ix in range(logger.n_iter[i]+1):
+                    # Kernel
+                    logger.ker[i][j][ix] = logger.param_logs[i][ix][self.interval_map_ker[i][j][0]:self.interval_map_ker[i][j][1]]
+                    # Impact
+                    logger.imp[i][j][ix] = logger.param_logs[i][ix][self.interval_map_imp[i][j][0]:self.interval_map_imp[i][j][1]]
+        if logger.is_log_grad:
+            # Mu
+            for i in range(d):
+                for ix in range(logger.n_iter[i]):
+                    logger.grad_mu[i][ix] = logger.grad_logs[i][ix][:self.vector_n_param_mu[i]]
+            for i, j in itertools.product(range(d), range(d)):
+                for ix in range(logger.n_iter[i]):
+                    # Kernel
+                    logger.grad_ker[i][j][ix] = logger.grad_logs[i][ix][self.interval_map_ker[i][j][0]:self.interval_map_ker[i][j][1]]
+                    # Impact
+                    logger.grad_imp[i][j][ix] = logger.grad_logs[i][ix][self.interval_map_imp[i][j][0]:self.interval_map_imp[i][j][1]]
+        if logger.is_log_lse:
+            for k in range(d):
+                self.lse[k] = self.estimator_logs[k]['lse']
+        if logger.is_log_ixs:
+            for k in range(d):
+                logger.samples[k] = {}
+                logger.samples[k]['psi'] = logger.estimator_logs[k]['samples']['psi']
+                logger.samples[k]['upsilonzero'] = logger.estimator_logs[k]['samples']['upsilonzero']
+                logger.samples[k]['phi'] = logger.estimator_logs[k]['samples']['phi']
+                logger.samples[k]['upsilon'] = logger.estimator_logs[k]['samples']['upsilon']
+        if logger.is_log_allocs:
+            for k in range(d):
+                logger.allocs[k] = {}
+                logger.allocs[k]['phi'] = logger.estimator_logs[k]['allocs']['phi']
+                logger.allocs[k]['upsilon'] = logger.estimator_logs[k]['allocs']['upsilon']
+
     def clear_fit(self):
         """
         Delete all previously saved results and logs from the
@@ -1003,8 +1136,9 @@ class MTLH:
                                    kappa=kappa, varpi=varpi)
 
         # Model
-        mu_bnds = [10**-10 for k in range(d)]
-        bnds = self.matrix2tensor_params(mu_bnds, self.param_bounds)
+        bnds = self.matrix2tensor_params(self.mu_param_bounds,
+                                         self.ker_param_bounds,
+                                         self.imp_param_bounds)
 
         # Solver
         if not isinstance(n_iter, (list, np.ndarray)):
@@ -1012,31 +1146,41 @@ class MTLH:
 
         # Initialisation
         if x_0 is None:
-            ref_mu = kwargs.get('ref_mu', None)
+            ref_mu_param = kwargs.get('ref_mu_param', None)
             ref_ker_param = kwargs.get('ref_ker_param', None)
-            range_ref = kwargs.get('range_ref', 0.1)
+            ref_imp_param = kwargs.get('ref_imp_param', None)
+            range_ref_mu = kwargs.get('range_ref_mu', 0.1)
+            range_ref_ker = kwargs.get('range_ref_ker', 0.1)
+            range_ref_imp = kwargs.get('range_ref_imp', 0.1)
+            min_mu_param = kwargs.get('min_mu_param', None)
+            max_mu_param = kwargs.get('max_mu_param', None)
             target_bratio = kwargs.get('target_bratio', 0.6)
             max_omega = kwargs.get('max_omega', 1.)
             true_omega = kwargs.get('true_omega', None)
-            max_param = kwargs.get('max_param', 5.)
-            min_mu = kwargs.get('min_mu', 0.)
-            max_mu = kwargs.get('max_mu', None)
-            mu_0, ker_0 = self.get_random_param(ref_mu=ref_mu,
-                                                ref_ker_param=ref_ker_param,
-                                                range_ref=range_ref,
-                                                target_bratio=target_bratio,
-                                                max_omega=max_omega,
-                                                true_omega=true_omega,
-                                                max_param=max_param,
-                                                min_mu=min_mu, max_mu=max_mu,
-                                                flatten=False, rng=rng)
-            x_0 = self.matrix2tensor_params(mu_0, ker_0)
+            max_ker_param = kwargs.get('max_ker_param', 5.)
+            max_imp_param = kwargs.get('max_imp_param', 5.)
+
+            mu_0, ker_0, imp_0 = self.get_random_param(ref_mu_param=ref_mu_param,
+                                                       ref_ker_param=ref_ker_param,
+                                                       ref_imp_param=ref_imp_param,
+                                                       range_ref_mu=range_ref_mu,
+                                                       range_ref_ker=range_ref_ker,
+                                                       range_ref_imp=range_ref_imp,
+                                                       min_mu_param=min_mu_param,
+                                                       max_mu_param=max_mu_param,
+                                                       target_bratio=target_bratio,
+                                                       max_omega=max_omega,
+                                                       true_omega=true_omega,
+                                                       max_ker_param=max_ker_param,
+                                                       max_imp_param=max_imp_param,
+                                                       flatten=False, rng=rng)
+            x_0 = self.matrix2tensor_params(mu_0, ker_0, imp_0)
         else:
-            mu_0, ker_0 = self.tensor2matrix_params(x_0)
+            mu_0, ker_0, imp_0 = self.tensor2matrix_params(x_0)
 
         # Initialize Estimators
         if estimators is None:
-            estimators = [AdaptiveStratified(**kwargs) for k in range(d)]
+            estimators = [MtlhStratified(**kwargs) for k in range(d)]
         else:
             if issubclass(type(estimators), Estimator):
                 estimators = [copy.deepcopy(estimators) for k in range(d)]
@@ -1044,8 +1188,8 @@ class MTLH:
             estimators[k].k = k
             estimators[k].n_iter = n_iter[k]
             estimators[k].initialize(process_path, self)
+            estimators[k].set_stratification(list_times, **kwargs)
             estimators[k].intialize_logs()
-            estimators[k].set_stratification(**kwargs)
 
         # Initialize Solvers
         if solvers is None:
@@ -1056,6 +1200,7 @@ class MTLH:
 
         # Initialize logger
         logger = OptimLogger(d, n_iter, **kwargs)
+        self.init_logger(logger)
 
         # Scheme
         x = [None]*d
@@ -1067,7 +1212,8 @@ class MTLH:
 
             for t in tqdm(range(n_iter_k), disable=not verbose):
                 # Compute LSE gradient estimate for parameters x_k
-                g_t = estimators[k].lse_k_grad_estimate(x_k, rng)
+                g_t = estimators[k].lse_k_grad_estimate(x_k, grad_alloc=True,
+                                                        rng=rng)
                 logger.log_grad(k, t, g_t)
                 # Apply solver iteration then project into space of parameters
                 x_k = solvers[k].iterate(t, x_k, g_t)
@@ -1076,16 +1222,18 @@ class MTLH:
             esimator_k_log = estimators[k].get_log()
             logger.estimator_logs[k] = esimator_k_log
             x[k] = x_k
-        fitted_mu, fitted_ker_param = self.tensor2matrix_params(x)
+        fitted_mu, fitted_ker_param, fitted_imp_param = self.tensor2matrix_params(x)
         if write:
             self.is_fitted = True
             self.fitted_mu = fitted_mu
             self.fitted_ker_param = fitted_ker_param
-            logger.process_logs(self)
+            self.fitted_imp_param = fitted_imp_param
+            self.process_logs(logger)
             logger.mu_0 = mu_0
             logger.ker_0 = ker_0
+            logger.imp_0 = imp_0
             self.fit_log = logger
-        return fitted_mu, fitted_ker_param
+        return fitted_mu, fitted_ker_param, fitted_imp_param
 
     def make_adjacency_matrix(self, kernel_param=None):
         """
@@ -1176,74 +1324,92 @@ class MTLH:
         bratio = np.max(np.absolute(np.linalg.eigvals(adjacency)))
         return bratio
 
-    def get_random_param(self, ref_mu=None, ref_ker_param=None, range_ref=0.1,
+    def get_random_param(self, ref_mu_param=None, ref_ker_param=None,
+                         ref_imp_param=None, range_ref_mu=0.1,
+                         range_ref_ker=0.1, range_ref_imp=0.1,
+                         min_mu_param=None, max_mu_param=None,
                          target_bratio=0.6, max_omega=1., true_omega=None,
-                         max_param=5.,
-                         min_mu=0., max_mu=None, flatten=False, seed=1234,
+                         max_ker_param=5., max_imp_param=5.,
+                         flatten=False,
+                         seed=1234,
                          rng=None):
         if rng is None:
             rng = np.random.default_rng(seed)
         d = self.d
 
+        mu_bnds = self.get_mu_param_bounds()
+        ker_bnds = self.get_ker_param_bounds()
+        imp_bnds = self.get_imp_param_bounds()
+
         # Mu
-        if ref_mu is None:
-            if not isinstance(min_mu, (list, np.ndarray)):
-                min_mu = np.ones(d)*min_mu
-            if max_mu is None:
-                max_mu = max(max(min_mu), 1.)
-            if not isinstance(max_mu, (list, np.ndarray)):
-                max_mu = np.ones(d)*max_mu
-            mu = np.zeros(d)
+        if ref_mu_param is None:
+            if min_mu_param is None:
+                min_mu_param = copy.deepcopy(mu_bnds)
+            else:
+                if not uf.is_array(min_mu_param):
+                    min_mu_float = copy.deepcopy(min_mu_param)
+                    min_mu_param = [min_mu_float*np.ones(self.vector_n_param_mu[i]) for i in range(d)]
+            if max_mu_param is None:
+                max_mu_param = [1.+min_mu_param[i] for i in range(d)]
+            if not uf.is_array(max_mu_param):
+                max_mu_float = copy.deepcopy(max_mu_param)
+                max_mu_param = [max_mu_float*np.ones(self.vector_n_param_mu[i]) for i in range(d)]
+            mu_param = np.array([np.zeros(self.vector_n_param_mu[i]) for i in range(d)], dtype=object)
             for i in range(d):
-                mu[i] = rng.uniform(low=min_mu[i], high=max_mu[i], size=1)[0]
+                n_param = self.vector_n_param_mu[i]
+                for ix in range(n_param):
+                    mu_param[i][ix] = rng.uniform(low=min_mu_param[i][ix],
+                                                  high=max_mu_param[i][ix],
+                                                  size=1)[0]
         else:
-            mu = np.zeros(d)
+            dist_mu_bnds = [ref_mu_param[i]-mu_bnds[i] for i in range(d)]
+            lower_mu_params = [ref_mu_param[i]-range_ref_mu*dist_mu_bnds[i] for i in range(d)]
+            upper_mu_params = [ref_mu_param[i] for i in range(d)]
+
+            mu_param = np.array([np.zeros(self.vector_n_param_mu[i]) for i in range(d)], dtype=object)
             for i in range(d):
-                mu[i] = rng.uniform(low=max(0., (1.-range_ref)*ref_mu[i]),
-                                    high=(1+range_ref)*ref_mu[i], size=1)[0]
+                mu_param[i][ix] = rng.uniform(low=lower_mu_params[i][ix],
+                                              high=upper_mu_params[i][ix],
+                                              size=1)[0]
 
         # Kernels
         kernel_param = np.array([[None for j in range(d)]
                                  for i in range(d)], dtype=object)
         if ref_ker_param is None:
-            if not isinstance(max_param, (list, np.ndarray)):
-                float_max = max_param
-                max_param = [[[None for x
-                               in range(self._kernel_matrix[i][j].n_param)]
-                              for j in range(d)] for i in range(d)]
+            if not isinstance(max_ker_param, (list, np.ndarray)):
+                float_max = copy.deepcopy(max_ker_param)
+                max_ker_param = [[[None for x
+                                   in range(self.matrix_n_param_ker[i][j])]
+                                  for j in range(d)] for i in range(d)]
                 for i, j in itertools.product(range(d), range(d)):
-                    n_param = self._kernel_matrix[i][j].n_param
+                    n_param = self.matrix_n_param_ker[i][j]
                     vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
-                    bnds = self.param_bounds[i][j]
                     for x in range(n_param):
                         if x in vec_ix_omega:
-                            max_param[i][j][x] = max_omega
+                            max_ker_param[i][j][x] = max_omega
                         else:
-                            max_param[i][j][x] = max(float_max, bnds[x])
+                            max_ker_param[i][j][x] = max(float_max, ker_bnds[i][j][x])
 
             for i, j in itertools.product(range(d), range(d)):
-                kernel_param[i][j] = []
-                n_param = self._kernel_matrix[i][j].n_param
-                vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
-                bnds = self.param_bounds[i][j]
-                for x in range(n_param):
-                    val = rng.uniform(low=bnds[x], high=max_param[i][j][x],
+                n_param = self.matrix_n_param_ker[i][j]
+                kernel_param[i][j] = np.zeros(n_param)
+                for ix in range(n_param):
+                    val = rng.uniform(low=ker_bnds[i][j][ix],
+                                      high=max_ker_param[i][j][ix],
                                       size=1)[0]
-                    kernel_param[i][j].append(val)
+                    kernel_param[i][j][ix] = val
         else:
+            dist_ker_bnds = [[ref_ker_param[i][j]-ker_bnds[i][j] for j in range(d)] for i in range(d)]
+            lower_ker_params = [[ref_ker_param[i][j]-range_ref_ker*dist_ker_bnds[i][j] for j in range(d)] for i in range(d)]
+            upper_ker_params = [[ref_ker_param[i][j]+range_ref_ker*dist_ker_bnds[i][j] for j in range(d)] for i in range(d)]
             for i, j in itertools.product(range(d), range(d)):
-                kernel_param[i][j] = []
-                n_param = self._kernel_matrix[i][j].n_param
-                bnds = self.param_bounds[i][j]
-                for x in range(n_param):
-                    val = rng.uniform(low=max(bnds[x],
-                                              (1.-range_ref)
-                                              * ref_ker_param[i][j][x]),
-                                      high=(1.+range_ref)
-                                      * ref_ker_param[i][j][x],
+                n_param = self.matrix_n_param_ker[i][j]
+                kernel_param[i][j] = np.zeros(n_param)
+                for ix in range(n_param):
+                    val = rng.uniform(low=lower_ker_params[i][j][ix],
+                                      high=upper_ker_params[i][j][ix],
                                       size=1)[0]
-                    kernel_param[i][j].append(val)
-
+                    kernel_param[i][j][ix] = val
         # Rescaling
         branching_ratio = self.get_branching_ratio(kernel_param=kernel_param)
         if branching_ratio > 0.:
@@ -1254,11 +1420,47 @@ class MTLH:
                 vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
                 kernel_param[i][j][vec_ix_omega] = (scaling*kernel_param[i][j][vec_ix_omega])
 
+        # Impacts
+        impact_param = np.array([[None for j in range(d)]
+                                 for i in range(d)], dtype=object)
+        if ref_imp_param is None:
+            if not uf.is_array(max_imp_param):
+                float_max = copy.deepcopy(max_imp_param)
+                max_imp_param = [[[None for x
+                                   in range(self.matrix_n_param_imp[i][j])]
+                                  for j in range(d)] for i in range(d)]
+                for i, j in itertools.product(range(d), range(d)):
+                    n_param = self.matrix_n_param_imp[i][j]
+                    for ix in range(n_param):
+                        max_imp_param[i][j][ix] = max(float_max, imp_bnds[i][j][ix])
+
+            for i, j in itertools.product(range(d), range(d)):
+                n_param = self.matrix_n_param_imp[i][j]
+                impact_param[i][j] = np.zeros(n_param)
+                for ix in range(n_param):
+                    val = rng.uniform(low=imp_bnds[i][j][ix],
+                                      high=max_ker_param[i][j][ix],
+                                      size=1)[0]
+                    impact_param[i][j][ix] = val
+        else:
+            dist_imp_bnds = [[ref_imp_param[i][j]-imp_bnds[i][j] for j in range(d)] for i in range(d)]
+            lower_imp_params = [[ref_imp_param[i][j]-range_ref_imp*dist_imp_bnds[i][j] for j in range(d)] for i in range(d)]
+            upper_imp_params = [[ref_imp_param[i][j]+range_ref_imp*dist_imp_bnds[i][j] for j in range(d)] for i in range(d)]
+            for i, j in itertools.product(range(d), range(d)):
+                n_param = self.matrix_n_param_imp[i][j]
+                impact_param[i][j] = np.zeros(n_param)
+                for ix in range(n_param):
+                    val = rng.uniform(low=lower_imp_params[i][j][ix],
+                                      high=upper_imp_params[i][j][ix],
+                                      size=1)[0]
+                    impact_param[i][j][ix] = val
+
         # Flatten
         if flatten:
-            return self.matrix2tensor_params(mu, kernel_param)
+            return self.matrix2tensor_params(mu_param, kernel_param,
+                                             impact_param)
         else:
-            return mu, kernel_param
+            return mu_param, kernel_param, impact_param
 
     # Residuals
     def get_residuals(self, process_path, mu_param=None, kernel_param=None,
@@ -1482,7 +1684,7 @@ class MTLH:
                         parent_marks = raw_marks[j][ix_gen-1]
                         parent_impacts = self._impact_matrix[i][j].impact(parent_marks,
                                                                           impact_param[i][j])
-                        Noff = rng.poisson(adjacency[i][j],
+                        Noff = rng.poisson(adjacency[i][j]*parent_impacts,
                                            size=len(generations[j][ix_gen-1]))
                         parenttimes = generations[j][ix_gen-1].repeat(Noff)
                         offsets = offset_gens[i][j](rng, N=Noff.sum())

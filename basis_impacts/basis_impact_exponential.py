@@ -22,13 +22,13 @@ class ExponentialImpact(BasisImpact):
         return [beta]
 
     # Impact functionals
-    def make_impact(self, t, vars_):
-        return vars_[0]*np.exp(-vars_[0]*t)
+    def make_impact(self, zeta, vars_):
+        return vars_[0]*np.exp(-vars_[0]*zeta)
 
-    def make_diff_impact(self, t, ix_diff, vars_):
+    def make_diff_impact(self, zeta, ix_diff, vars_):
         # Derivative wrt \beta
         if ix_diff == 0:
-            return np.exp(-vars_[0]*t)*(1.-vars_[0]*t)
+            return np.exp(-vars_[0]*zeta)*(1.-vars_[0]*zeta)
         else:
             raise ValueError("The argument ix_diff = ", ix_diff, "is not a ",
                              "valid differentiation index for basis impacts",

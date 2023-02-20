@@ -10,7 +10,7 @@ class GeneralStratification:
         self.n = len(data)
 
         # Exact
-        # m_spec is the index of the term starting from which we evalue
+        # m_spec is the index of the term starting from which we evaluate
         # functions at all indices
         self.start_exact_reverse = kwargs.get('start_exact_reverse', True)
         self.n_exact = kwargs.get('n_exact', None)
