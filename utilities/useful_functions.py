@@ -191,6 +191,36 @@ def normal_cdf(t):
     return scipy.special.ndtr(t)
 
 
+def inverse_normal_cdf(u):
+    """
+    Cumulative distribution function (cdf) of a normal random variable.
+
+    | The cdf :math:`F_{\\mathcal{N}}` of a normal random variable is defined for all :math:`t \\in \\mathbb{R}` by
+
+    .. math::
+        F_{\\mathcal{N}}(t) := \\frac{1}{\\sqrt{2\\pi}}\\int_{(-\\infty, t]}\\exp\\bigg(-\\frac{u^2}{2}\\bigg) du.
+
+
+    Parameters
+    ----------
+    t : `float` or `numpy.ndarray`
+        Float or vector of floats at which to evaluate the cdf.
+
+    Returns
+    -------
+    `float` or `numpy.ndarray`
+        Value or vector of values taken by the cdf.
+
+    Notes
+    ------
+    In the current version of the aslsd package, we use the implementation
+    of this function in scipy, before potentially moving to our own
+    implementation.
+
+    """
+    return scipy.special.ndtri(u)
+
+
 def gaussian_int(start, end):
     """
     Integral :math:`I` of the normal pdf on an interval :math:`[t_0, t_1]`.
