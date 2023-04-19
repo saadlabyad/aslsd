@@ -8,6 +8,15 @@ from numpy.random import default_rng
 
 
 # =============================================================================
+# RNG
+# =============================================================================
+def make_rng(rng=None, seed=1234):
+    if rng is None:
+        rng = np.random.default_rng(seed)
+    return rng
+
+
+# =============================================================================
 # Sampling single indices
 # =============================================================================
 def sample_single_ix_stratum(m_inf, m_sup, n_samples, rng=None, seed=1234):

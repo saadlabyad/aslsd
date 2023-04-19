@@ -567,8 +567,7 @@ def make_heatmap(data, row_labels, col_labels, ax=None, cbar_kw={},
     **kwargs
         All other arguments are forwarded to `imshow`.
     """
-
-    if not ax:
+    if ax is None:
         ax = plt.gca()
 
     # Plot the heatmap
