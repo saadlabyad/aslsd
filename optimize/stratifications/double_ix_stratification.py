@@ -1,7 +1,5 @@
 # License: BSD 3 clause
 
-import copy as copy
-
 import numpy as np
 
 
@@ -36,8 +34,8 @@ class DoubleIxStratification:
             if len(self.adaptive_rel_alloc_0) != self.n_adaptive_strata:
                 raise ValueError("Incompatible lengths between adaptive ",
                                  "stratification and absolute allocation")
-        self.guess_rel_alloc = copy.deepcopy(self.adaptive_rel_alloc_0)
-        self.adaptive_rel_alloc = copy.deepcopy(self.adaptive_rel_alloc_0)
+        self.guess_rel_alloc = 0+self.adaptive_rel_alloc_0
+        self.adaptive_rel_alloc = 0+self.adaptive_rel_alloc_0
         # Non-adaptive domain
         if self.nonadaptive_strata is None:
             self.nonadaptive_strata = self.get_default_nonadaptive_strata()

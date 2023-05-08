@@ -1,7 +1,5 @@
 # License: BSD 3 clause
 
-import copy
-
 import numpy as np
 from tqdm import tqdm
 
@@ -46,6 +44,7 @@ def refine_inversion_refs(ref_theta, ref_y, func, f_args=None, n_res=10**2):
 
 
 def initialise_grid(y, L_theta, L_y, start_type='middle', rng=None, seed=1234):
+    L_theta = np.array(L_theta)
     # Get the ixs such that ref_x[ix-1] <= x < ref_x[ix]
     ixs_grid = np.searchsorted(L_y, y, side='right')
     # Deal with the right bound case
@@ -53,9 +52,9 @@ def initialise_grid(y, L_theta, L_y, start_type='middle', rng=None, seed=1234):
     if start_type == 'middle':
         return 0.5*(L_theta[ixs_grid-1]+L_theta[ixs_grid])
     elif start_type == 'left':
-        return copy.deepcopy(L_theta[ixs_grid-1])
+        return 0.+L_theta[ixs_grid-1]
     elif start_type == 'right':
-        return copy.deepcopy(L_theta[ixs_grid])
+        return 0.+L_theta[ixs_grid]
     elif start_type == 'random':
         if rng is None:
             rng = np.random.default_rng(seed)
@@ -98,10 +97,10 @@ def get_newton(y, ratio_func=None, error_func=None, theta_0=None,
     if not uf.is_array(theta_0):
         theta_0 = theta_0*np.ones(len_y)
 
-    theta = theta_0
+    theta = theta_0+0.
     active_ixs = np.arange(len_y)
     for n in tqdm(range(n_iter), disable=not verbose):
-        theta_prev = copy.deepcopy(theta)
+        theta_prev = theta+0.
         theta[active_ixs] = theta[active_ixs]-ratio_func(y[active_ixs],
                                                          theta[active_ixs],
                                                          **kwargs)

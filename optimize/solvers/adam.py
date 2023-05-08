@@ -54,11 +54,11 @@ class ADAM(Solver):
         self.momentum_term_1 = m_t_new
 
         v_t = self.momentum_term_2
-        v_t_new = self.momentum_2*v_t+(1.-self.momentum_2)*np.power(grad, 2)
+        v_t_new = self.momentum_2*v_t+(1.-self.momentum_2)*grad**2
         self.momentum_term_2 = v_t_new
 
-        m_hat_t = m_t_new/(1.-np.power(self.momentum_1, t+1))
-        v_hat_t = v_t_new/(1.-np.power(self.momentum_2, t+1))
+        m_hat_t = m_t_new/(1.-self.momentum_1**(t+1))
+        v_hat_t = v_t_new/(1.-self.momentum_2**(t+1))
 
         rate = self.learning_rate(t)
 

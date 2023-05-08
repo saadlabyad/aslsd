@@ -447,6 +447,14 @@ class KernelModel():
         diff_l1_norm = self.make_diff_l1_norm()
         self.diff_l1_norm = diff_l1_norm
 
+    def get_l1_perbasis(self, params):
+        interval_map = copy.deepcopy(self.interval_map)
+        basis_kernels = copy.deepcopy(self._basis_kernels)
+        l1_per_basis = np.zeros(self.n_basis_ker)
+        for ix_ker in range(self.n_basis_ker):
+            l1_per_basis[ix_ker] = basis_kernels[ix_ker].l1_norm(params[interval_map[ix_ker][0]:interval_map[ix_ker][1]])
+        return l1_per_basis
+
     # L2 metrics
     def make_l2_norm(self):
         interval_map = copy.deepcopy(self.interval_map)

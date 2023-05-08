@@ -1,6 +1,5 @@
 # License: BSD 3 clause
 
-import copy
 import itertools
 
 import numpy as np
@@ -274,9 +273,9 @@ class AdaptiveStratified(Estimator):
         n_adaptive_iters = strf.n_adaptive_iters
         rel_alloc = (strf.ema_weight*strf.adaptive_rel_alloc
                      + (1.-strf.ema_weight)*strf.guess_rel_alloc)
-        default_rel_alloc = copy.deepcopy(rel_alloc)
+        default_rel_alloc = 0+rel_alloc  # Deepcopy of the array
         # Save initial guess
-        strf.guess_rel_alloc = copy.deepcopy(rel_alloc)
+        strf.guess_rel_alloc = 0+rel_alloc  # Deepcopy of the array
 
         mean = np.zeros(n_adaptive_strata)
         std = np.zeros(n_adaptive_strata)
@@ -360,9 +359,9 @@ class AdaptiveStratified(Estimator):
             else:
                 rel_alloc = default_rel_alloc
         # Save relative allocation
-        strf.adaptive_rel_alloc = copy.deepcopy(rel_alloc)
+        strf.adaptive_rel_alloc = 0+rel_alloc  # Deepcopy of the array
         if self.is_log_allocs:
-            self.logged_allocs_phi[i][self.t] = copy.deepcopy(rel_alloc)
+            self.logged_allocs_phi[i][self.t] = 0+rel_alloc  # Deepcopy of the array
 
         # Compute all sums of derivatives
         for ix_param in range(n_param_ki):
@@ -452,9 +451,9 @@ class AdaptiveStratified(Estimator):
         n_adaptive_iters = strf.n_adaptive_iters
         rel_alloc = (strf.ema_weight*strf.adaptive_rel_alloc
                      + (1.-strf.ema_weight)*strf.guess_rel_alloc)
-        default_rel_alloc = copy.deepcopy(rel_alloc)
+        default_rel_alloc = 0+rel_alloc  # Deepcopy of the array
         # Save initial guess
-        strf.guess_rel_alloc = copy.deepcopy(rel_alloc)
+        strf.guess_rel_alloc = 0+rel_alloc  # Deepcopy of the array
 
         mean = np.zeros(n_adaptive_strata)
         std = np.zeros(n_adaptive_strata)
@@ -504,10 +503,7 @@ class AdaptiveStratified(Estimator):
             rel_alloc = rel_alloc/sum_rel_alloc
         else:
             rel_alloc = default_rel_alloc
-        # print('rel_alloc', rel_alloc)
-        # print('Sum rel alloc upsilon', np.sum(rel_alloc))
-        # print('x_ki', x_ki)
-        # print('x_kj', x_kj)
+
         # General iterations
         for ix in range(1, n_adaptive_iters):
             nsamples_step = [min(strf.adaptive_strata_sizes[ix_strata], max(1, (int(rel_alloc[ix_strata]*(n_adaptive_strata+strf.n_samples_adaptive[ix]))))) for ix_strata in range(n_adaptive_strata)]
@@ -565,9 +561,9 @@ class AdaptiveStratified(Estimator):
             else:
                 rel_alloc = default_rel_alloc
         # Save relative allocation
-        strf.adaptive_rel_alloc = copy.deepcopy(rel_alloc)
+        strf.adaptive_rel_alloc = 0+rel_alloc  # Deepcopy of the array
         if self.is_log_allocs:
-            self.logged_allocs_upsilon[i][j][self.t] = copy.deepcopy(rel_alloc)
+            self.logged_allocs_upsilon[i][j][self.t] = 0+rel_alloc  # Deepcopy of the array
 
         # Compute all sums of derivatives
         if i == j:

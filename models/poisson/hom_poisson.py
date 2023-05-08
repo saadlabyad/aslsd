@@ -1,11 +1,13 @@
 # License: BSD 3 clause
-
+import copy
 import itertools
+import pickle
 
 import numpy as np
 
 from aslsd.stats.residual_analysis import goodness_of_fit as gof
-
+import aslsd.utilities.useful_functions as uf
+from aslsd.utilities import useful_statistics as us
 
 class HomPoisson:
     """
@@ -45,6 +47,26 @@ class HomPoisson:
         if mu_names is None:
             self.mu_names = self.get_param_names(index_from_one=index_from_one)
 
+        intensity = self.make_intensity()
+        self.intensity = intensity
+
+    # Intensity
+    def make_intensity(self):
+        d = self.d
+        intensity = [None]*d
+        for i in range(d):
+            def make_f(i):
+                def f(t, mu_param=None):
+                    mu_param = self.load_param(mu_param=mu_param)
+                    if uf.is_array(t):
+                        return mu_param[i][0]*np.ones(len(t))
+                    else:
+                        return mu_param[i][0]
+                return f
+            f = make_f(i)
+            intensity[i] = copy.deepcopy(f)
+        return intensity
+
     # Param names
     def get_param_names(self, index_from_one=False):
         """
@@ -68,15 +90,23 @@ class HomPoisson:
                     for i in range(d)]
         return mu_names
 
+    # Parameters operations
+    def load_param(self, mu_param=None):
+        if mu_param is None:
+            mu_param = self.fitted_mu_param
+            if mu_param is None:
+                raise ValueError("Missing value for Mu")
+        return mu_param
+
+    # Fit
     def clear_fit(self):
         self.is_fitted = False
         self.fitted_mu = None
-        self.fitted_ker_param = None
         self.fit_residuals = None
-        self.fitted_adjacency = None
         self.fit_log = None
 
-    def fit(self, list_times, T_f, clear=True, write=True):
+    def fit(self, process_path=None, n_iter=None, clear=True, write=True,
+            **kwargs):
         """
         Fit the Homoegeneous Poisson model to some observations.
 
@@ -122,16 +152,18 @@ class HomPoisson:
             Fitted baselines.
 
         """
+        list_times = process_path.list_times
+        T_f = process_path.T_f
         if clear:
             self.clear_fit()
-        fitted_mu = np.array([len(L) for L in list_times])/T_f
+        fitted_mu_param = [process_path.eta[i:i+1] for i in range(self.d)]
         if write:
             self.is_fitted = True
-            self.fitted_mu = fitted_mu
-        return fitted_mu
+            self.fitted_mu_param = fitted_mu_param
+        return fitted_mu_param
 
     # Simulation
-    def simulate(self, T_f, mu=None, seed=1234):
+    def simulate(self, T_f, mu=None, rng=None, seed=1234):
         """
         Simulate a path of the homogeneous Poisson model.
 
@@ -163,7 +195,8 @@ class HomPoisson:
                 raise ValueError("Missing value for Mu")
         d = self.d
         list_times = [None]*d
-        rng = np.random.default_rng(seed)
+        # RNG
+        rng = us.make_rng(rng=rng, seed=seed)
         for i in range(d):
             # Number of immigrants
             Nim = rng.poisson(mu[i]*T_f)
@@ -173,7 +206,7 @@ class HomPoisson:
         return list_times
 
     # Evaluation
-    def get_residuals(self,  list_times, mu=None, write=True):
+    def get_residuals(self,  process_path=None, mu_param=None, write=True):
         """
         Compute the residuals of the model.
 
@@ -209,15 +242,10 @@ class HomPoisson:
             List of residuals per dimension.
 
         """
-        if mu is None:
-            if self.is_fitted:
-                mu = self.fitted_mu
-            else:
-                raise ValueError("Mu must be specified.")
-
+        mu_param = self.load_param(mu_param=mu_param)
         d = self.d
-        ia_times = [list_times[i][1:]-list_times[i][:-1] for i in range(d)]
-        residuals = [mu[i]*ia_times[i] for i in range(d)]
+        ia_times = process_path.get_inter_arrival_times()
+        residuals = [mu_param[i][0]*ia_times[i] for i in range(d)]
         if self.is_fitted and write:
             self.fit_residuals = residuals
         return residuals
@@ -238,3 +266,43 @@ class HomPoisson:
                            display_line45=display_line45, log_scale=log_scale,
                            ax=ax, save=save,
                            filename=filename, show=show, **kwargs)
+
+    # Serialization
+    def save(self, file, **kwargs):
+        if file.endswith('.pickle'):
+            file_mu = file+'_fitted_mu.pickle'
+        else:
+            file_mu = file+'_fitted_mu'
+        pickle_out = open(file_mu, "wb", **kwargs)
+        pickle.dump(self.fitted_mu_param, pickle_out)
+        pickle_out.close()
+
+        if file.endswith('.pickle'):
+            file_residuals = file+'_fitted_residuals.pickle'
+        else:
+            file_residuals = file+'_fitted_residuals'
+        file_residuals = file+'_fitted_residuals'
+        pickle_out = open(file_residuals, "wb", **kwargs)
+        pickle.dump(self.fit_residuals, pickle_out)
+        pickle_out.close()
+
+    def load(self, file, **kwargs):
+        if file.endswith('.pickle'):
+            file_mu = file+'_fitted_mu.pickle'
+        else:
+            file_mu = file+'_fitted_mu'
+        pickle_in = open(file_mu, "rb")
+        fitted_mu_param = pickle.load(pickle_in)
+
+        if file.endswith('.pickle'):
+            file_residuals = file+'_fitted_residuals.pickle'
+        else:
+            file_residuals = file+'_fitted_residuals'
+        pickle_in = open(file_residuals, "rb")
+        fitted_residuals = pickle.load(pickle_in)
+
+        self.clear_fit()
+
+        self.is_fitted = True
+        self.fitted_mu_param = fitted_mu_param
+        self.fit_residuals = fitted_residuals

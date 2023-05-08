@@ -8,6 +8,7 @@ from tqdm import tqdm
 
 from aslsd.functionals.baselines.basis_baseline import BasisBaseline
 from aslsd.stats.residual_analysis import goodness_of_fit as gof
+import aslsd.utilities.useful_functions as uf
 
 
 class BaselineModel():
@@ -48,7 +49,7 @@ class BaselineModel():
 
     @basis_mus.setter
     def basis_mus(self, L):
-        if isinstance(L, (list, np.ndarray)):
+        if uf.is_array(L):
             self.n_basis_mus = len(L)
         else:
             self.n_basis_mus = 1

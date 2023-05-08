@@ -114,3 +114,19 @@ class ProcessPath():
         return ProcessPath(censored_times, self.T_f, d=d,
                            list_marks=censored_marks,
                            book_keeping=book_keeping)
+
+    # Data processing
+    def get_events_rate(self, interval_bounds):
+        rate = [None]*self.d
+        for i in range(self.d):
+            interval_sizes = interval_bounds[1:]-interval_bounds[:-1]
+            rate[i] = np.histogram(self.times[i],
+                                   interval_bounds[i])[0]/interval_sizes
+        return rate
+
+    def get_inter_arrival_times(self):
+        list_times = self.list_times
+        ia_times = [None]*self.d
+        for i in range(self.d):
+            ia_times[i] = list_times[i][1:]-list_times[i][:-1]
+        return ia_times

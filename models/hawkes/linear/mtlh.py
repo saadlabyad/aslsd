@@ -974,7 +974,7 @@ class MTLH:
         estimator.impact = self.impact
         estimator.diff_impact = self.diff_impact
 
-    # Fit
+    # Logging
     def init_logger(self, logger):
         d = self.d
         n_iter = logger.n_iter
@@ -1041,6 +1041,7 @@ class MTLH:
                 logger.allocs[k]['phi'] = logger.estimator_logs[k]['allocs']['phi']
                 logger.allocs[k]['upsilon'] = logger.estimator_logs[k]['allocs']['upsilon']
 
+    # Fit
     def clear_fit(self):
         """
         Delete all previously saved results and logs from the
@@ -1135,7 +1136,7 @@ class MTLH:
         process_path = ProcessPath(list_times, T_f, list_marks=list_marks,
                                    kappa=kappa, varpi=varpi)
 
-        # Model
+        # Model bounds
         bnds = self.matrix2tensor_params(self.mu_param_bounds,
                                          self.ker_param_bounds,
                                          self.imp_param_bounds)
@@ -1222,10 +1223,10 @@ class MTLH:
             esimator_k_log = estimators[k].get_log()
             logger.estimator_logs[k] = esimator_k_log
             x[k] = x_k
-        fitted_mu, fitted_ker_param, fitted_imp_param = self.tensor2matrix_params(x)
+        fitted_mu_param, fitted_ker_param, fitted_imp_param = self.tensor2matrix_params(x)
         if write:
             self.is_fitted = True
-            self.fitted_mu = fitted_mu
+            self.fitted_mu_param = fitted_mu_param
             self.fitted_ker_param = fitted_ker_param
             self.fitted_imp_param = fitted_imp_param
             self.process_logs(logger)
@@ -1233,7 +1234,7 @@ class MTLH:
             logger.ker_0 = ker_0
             logger.imp_0 = imp_0
             self.fit_log = logger
-        return fitted_mu, fitted_ker_param, fitted_imp_param
+        return fitted_mu_param, fitted_ker_param, fitted_imp_param
 
     def make_adjacency_matrix(self, kernel_param=None):
         """

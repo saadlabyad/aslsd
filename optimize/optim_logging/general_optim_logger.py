@@ -79,8 +79,10 @@ class GeneralOptimLogger:
     def process_logs(self, mhp):
         d = self.d
         for k in range(d):
-            self.grad_logs[k] = np.array(self.grad_logs[k])
-            self.param_logs[k] = np.array(self.param_logs[k])
+            if self.is_log_grad:
+                self.grad_logs[k] = np.array(self.grad_logs[k])
+            if self.is_log_param:
+                self.param_logs[k] = np.array(self.param_logs[k])
         # if self.is_log_loss:
         #     for k in range(d):
         #         self.loss[k] = self.estimator_logs[k]['loss']

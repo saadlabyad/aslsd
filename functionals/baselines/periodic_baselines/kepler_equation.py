@@ -1,6 +1,4 @@
 # License: BSD 3 clause
-import copy
-
 import numpy as np
 from scipy.special import jv
 from tqdm import tqdm
@@ -27,7 +25,7 @@ def extend_inv_kepler_func(inv_kepler_func, **kwargs):
         mask_2pi3pi = np.where((y >= 2.*np.pi) & (y < 3.*np.pi))[0]
 
         if len(mask_0pi) > 0:
-            y_vals = copy.deepcopy(y[mask_0pi])
+            y_vals = y[mask_0pi]+0.
             theta[mask_0pi] = inv_kepler_func(y_vals, epsilon=epsilon,
                                               **kwargs)
         if len(mask_pi2pi) > 0:
@@ -162,10 +160,10 @@ def get_inv_kepler_kapetyn(y, epsilon=.5, prefactors=None,
         return_float = True
     len_y = len(y)
 
-    theta = copy.deepcopy(y)
+    theta = y+0.
     active_ixs = np.arange(len_y)
     for n in tqdm(range(1, n_iter+1), disable=not verbose):
-        # theta_prev = copy.deepcopy(theta)
+        # theta_prev = theta+0.
         theta[active_ixs] += prefactors[n]*np.sin(n*y[active_ixs])
         # active_ixs = np.where((error_func(theta, theta_prev) >= tol))[0]
         # if uf.is_empty(active_ixs):

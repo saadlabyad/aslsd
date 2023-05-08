@@ -618,7 +618,7 @@ class MHP:
         self.fitted_adjacency = None
         self.fit_log = None
 
-    def fit(self, list_times, T_f, kappa=None, varpi=None, x_0=None,
+    def fit(self, process_path=None, kappa=None, varpi=None, x_0=None,
             n_iter=1000, solvers=None, estimators=None, logger=None, seed=1234,
             verbose=False, clear=True, write=True, **kwargs):
         """
@@ -694,7 +694,8 @@ class MHP:
 
         # Data
         d = self.d
-        process_path = ProcessPath(list_times, T_f, kappa=kappa, varpi=varpi)
+        list_times = process_path.list_times
+        T_f = process_path.T_f
 
         # Model
         mu_bnds = [10**-10 for k in range(d)]

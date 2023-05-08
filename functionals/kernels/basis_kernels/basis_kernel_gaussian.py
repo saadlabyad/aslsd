@@ -535,9 +535,10 @@ class GaussianKernel(BasisKernel):
 
     # Simulatiom
     def make_simu_func(self, rng, vars_, size=1):
-        beta = vars_[1]
-        delta = vars_[2]
-        return rng.normal(loc=delta, scale=beta, size=size)
+        beta, delta = vars_[1:]
+        U = rng.uniform(size=size)
+        f_ratio = uf.normal_cdf(delta/beta)
+        return delta+beta*uf.inverse_normal_cdf(1.-f_ratio*U)
 
     # Metrics
     def make_l1_norm(self, vars_):

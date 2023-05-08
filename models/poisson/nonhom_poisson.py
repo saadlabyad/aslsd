@@ -2,6 +2,7 @@
 
 import copy
 import itertools
+import pickle
 
 import numpy as np
 from tqdm import tqdm
@@ -12,6 +13,7 @@ from aslsd.optimize.solvers.adam import ADAM
 from aslsd.optimize.solvers.solver import Solver
 from aslsd.stats.residual_analysis import goodness_of_fit as gof
 import aslsd.utilities.useful_functions as uf
+import aslsd.utilities.useful_statistics as us
 
 
 class NonHomPoisson:
@@ -47,7 +49,7 @@ class NonHomPoisson:
     """
 
     def __init__(self, baselines, d=None, index_from_one=False, mu_names=None,
-                 is_fitted=False, fitted_mu=None, fit_residuals=None):
+                 is_fitted=False, fitted_mu_param=None, fit_residuals=None):
         if uf.is_array(baselines):
             vec_baselines = copy.deepcopy(baselines)
         else:
@@ -60,6 +62,25 @@ class NonHomPoisson:
         if mu_names is None:
             mu_names = self.get_param_names(index_from_one=index_from_one)
         self.mu_names = mu_names
+        self.is_fitted = False
+        self.fitted_mu_param = fitted_mu_param
+
+        intensity = self.make_intensity()
+        self.intensity = intensity
+
+    # Intensity
+    def make_intensity(self):
+        d = self.d
+        intensity = [None]*d
+        for i in range(d):
+            def make_f(i):
+                def f(t, mu_param=None):
+                    mu_param = self.load_param(mu_param=mu_param)
+                    return self.baselines[i].mu(t, mu_param[i])
+                return f
+            f = make_f(i)
+            intensity[i] = copy.deepcopy(f)
+        return intensity
 
     # Param names
     def get_param_names(self, index_from_one=False):
@@ -82,6 +103,14 @@ class NonHomPoisson:
         d = self.d
         mu_names = [self.baselines[i].get_vec_param_names() for i in range(d)]
         return mu_names
+
+    # Parameters operations
+    def load_param(self, mu_param=None):
+        if mu_param is None:
+            mu_param = self.fitted_mu_param
+            if mu_param is None:
+                raise ValueError("Missing value for Mu")
+        return mu_param
 
     # Fit
     # Exact evaluation
@@ -122,15 +151,17 @@ class NonHomPoisson:
                                                  base_param_k)
         return grad
 
+    # Fit
     def clear_fit(self):
         self.is_fitted = False
-        self.fitted_base_param = None
+        self.fitted_mu_param = None
         self.fit_residuals = None
         self.fit_log = None
 
-    def fit(self, list_times, T_f, x_0=None, n_iter=1000, solvers=None,
+    def fit(self, process_path=None, x_0=None, n_iter=1000, solvers=None,
             estimators=None, rng=None, seed=None, verbose=False, clear=True,
-            write=True, grad_alloc=False, strf_args = None, estim_args = None,
+            poisson_sol=False,
+            write=True, grad_alloc=False, strf_args=None, estim_args=None,
             log_args=None,
             **kwargs):
         """
@@ -181,6 +212,18 @@ class NonHomPoisson:
         if rng is None:
             rng = np.random.default_rng(seed)
         d = self.d
+        list_times = process_path.list_times
+        T_f = process_path.T_f
+        # Poisson Solution if activated
+        if poisson_sol:
+            x = [None]*d
+            for i in range(d):
+                x[i] = self.baselines[i].basis_mus[0].get_events_rate(
+                    list_times[i])
+            if write:
+                self.is_fitted = True
+                self.fitted_mu_param = x
+            return x
 
         # Stratification arguments
         if strf_args is None:
@@ -276,13 +319,13 @@ class NonHomPoisson:
 
         if write:
             self.is_fitted = True
-            self.fitted_base_param = x
+            self.fitted_mu_param = x
             logger.process_logs(self)
             self.fit_log = logger
         return x
 
     # Simulation
-    def simulate(self, T_f, base_param=None, seed=1234):
+    def simulate(self, T_f, mu_param=None, rng=None, seed=1234):
         """
         Simulate a path of the homogeneous Poisson model.
 
@@ -308,23 +351,21 @@ class NonHomPoisson:
             List of jump times per dimension.
 
         """
-        if base_param is None:
-            base_param = self.fitted_base_param
-            if base_param is None:
-                raise ValueError("Missing value for base_param")
+        rng = us.make_rng(rng=rng, seed=seed)
+        if mu_param is None:
+            mu_param = self.fitted_mu_param
+            if mu_param is None:
+                raise ValueError("Missing value for mu_param")
         d = self.d
         list_times = [None]*d
         rng = np.random.default_rng(seed)
         for i in range(d):
-            # Number of immigrants
-            Nim = rng.poisson(mu[i]*T_f)
-            generations = rng.uniform(low=0., high=T_f, size=Nim)
-            np.sort(generations)
-            list_times[i] = generations
+            list_times[i] = self.baselines[i].simulate(T_f, mu_param[i],
+                                                           rng=rng)
         return list_times
 
     # Evaluation
-    def get_residuals(self,  list_times, mu=None, write=True):
+    def get_residuals(self,  process_path, mu_param=None, write=True):
         """
         Compute the residuals of the model.
 
@@ -360,15 +401,18 @@ class NonHomPoisson:
             List of residuals per dimension.
 
         """
-        if mu is None:
+        d = self.d
+        residuals = [None]*d
+        if mu_param is None:
             if self.is_fitted:
-                mu = self.fitted_mu
+                mu_param = self.fitted_mu_param
             else:
                 raise ValueError("Mu must be specified.")
 
         d = self.d
-        ia_times = [list_times[i][1:]-list_times[i][:-1] for i in range(d)]
-        residuals = [mu[i]*ia_times[i] for i in range(d)]
+        resdiuals = [None]*d
+        for i in range(d):
+            residuals[i] = self.baselines[i].get_residuals(process_path.list_times[i], mu_param[i])
         if self.is_fitted and write:
             self.fit_residuals = residuals
         return residuals
@@ -389,3 +433,43 @@ class NonHomPoisson:
                            display_line45=display_line45, log_scale=log_scale,
                            ax=ax, save=save,
                            filename=filename, show=show, **kwargs)
+
+    # Serialization
+    def save(self, file, **kwargs):
+        if file.endswith('.pickle'):
+            file_mu = file+'_fitted_mu.pickle'
+        else:
+            file_mu = file+'_fitted_mu'
+        pickle_out = open(file_mu, "wb", **kwargs)
+        pickle.dump(self.fitted_mu_param, pickle_out)
+        pickle_out.close()
+
+        if file.endswith('.pickle'):
+            file_residuals = file+'_fitted_residuals.pickle'
+        else:
+            file_residuals = file+'_fitted_residuals'
+        file_residuals = file+'_fitted_residuals'
+        pickle_out = open(file_residuals, "wb", **kwargs)
+        pickle.dump(self.fit_residuals, pickle_out)
+        pickle_out.close()
+
+    def load(self, file, **kwargs):
+        if file.endswith('.pickle'):
+            file_mu = file+'_fitted_mu.pickle'
+        else:
+            file_mu = file+'_fitted_mu'
+        pickle_in = open(file_mu, "rb")
+        fitted_mu_param = pickle.load(pickle_in)
+
+        if file.endswith('.pickle'):
+            file_residuals = file+'_fitted_residuals.pickle'
+        else:
+            file_residuals = file+'_fitted_residuals'
+        pickle_in = open(file_residuals, "rb")
+        fitted_residuals = pickle.load(pickle_in)
+
+        self.clear_fit()
+
+        self.is_fitted = True
+        self.fitted_mu_param = fitted_mu_param
+        self.fit_residuals = fitted_residuals
