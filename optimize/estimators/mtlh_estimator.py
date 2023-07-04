@@ -1044,8 +1044,8 @@ class MtlhStratified(Estimator):
             data_samples[0] = {'t': self.list_times2end[i][ix_samples_stratum],
                                's': t_m}
             # Imp samples, ix_f = 1
-            zeta_m = self.list_marks[i][ix_samples_stratum]
-            data_samples[1] = {'zeta': zeta_m}
+            xi_m = self.list_marks[i][ix_samples_stratum]
+            data_samples[1] = {'xi': xi_m}
             return data_samples
 
         def get_n_samples(ix_samples_stratum):
@@ -1094,8 +1094,8 @@ class MtlhStratified(Estimator):
             data_samples[0] = {'t': self.list_times2end[i][ix_samples_stratum],
                                's': 0.}
             # Imp samples, ix_f = 1
-            zeta = self.list_marks[i][ix_samples_stratum]
-            data_samples[1] = {'zeta': zeta}
+            xi = self.list_marks[i][ix_samples_stratum]
+            data_samples[1] = {'xi': xi}
             return data_samples
 
         def get_n_samples(ix_samples_stratum):
@@ -1103,13 +1103,13 @@ class MtlhStratified(Estimator):
             return n_samples
 
         # Impact function
-        def mixed_impact(zeta, params):
-            imp = self.impact[k][i](zeta, params)
+        def mixed_impact(xi, params):
+            imp = self.impact[k][i](xi, params)
             return imp**2
 
-        def diff_mixed_impact(zeta, ix_diff, params):
-            imp = self.impact[k][i](zeta, params)
-            diff_imp = self.diff_impact[k][i](zeta, ix_diff, params)
+        def diff_mixed_impact(xi, ix_diff, params):
+            imp = self.impact[k][i](xi, params)
+            diff_imp = self.diff_impact[k][i](xi, ix_diff, params)
             return 2.*imp*diff_imp
 
         log_name = 'upsilonzero_'+str(i)
@@ -1165,8 +1165,8 @@ class MtlhStratified(Estimator):
             t_n = self.list_times[i][ixs_n]
             data_samples[0] = {'t': t_m-t_n}
             # Imp samples, ix_f = 1
-            zeta_n = self.list_marks[i][ixs_n]
-            data_samples[1] = {'zeta': zeta_n}
+            xi_n = self.list_marks[i][ixs_n]
+            data_samples[1] = {'xi': xi_n}
             return data_samples
 
         def get_n_samples(ix_samples_stratum):
@@ -1223,9 +1223,9 @@ class MtlhStratified(Estimator):
             data_samples[0] = {'t': self.list_times2end[i][ixs_m],
                                's': t_m-t_n}
             # Imp samples, ix_f = 1
-            zeta_m = self.list_marks[i][ixs_m]
-            zeta_n = self.list_marks[j][ixs_n]
-            data_samples[1] = {'zeta_1': zeta_m, 'zeta_2': zeta_n}
+            xi_m = self.list_marks[i][ixs_m]
+            xi_n = self.list_marks[j][ixs_n]
+            data_samples[1] = {'xi_1': xi_m, 'xi_2': xi_n}
             return data_samples
 
         def get_n_samples(ix_samples_stratum):
@@ -1234,20 +1234,20 @@ class MtlhStratified(Estimator):
             return n_samples
 
         # Impact function
-        def mixed_impact(zeta_1, zeta_2, params_1, params_2):
-            imp_1 = self.impact[k][i](zeta_1, params_1)
-            imp_2 = self.impact[k][j](zeta_2, params_2)
+        def mixed_impact(xi_1, xi_2, params_1, params_2):
+            imp_1 = self.impact[k][i](xi_1, params_1)
+            imp_2 = self.impact[k][j](xi_2, params_2)
             return imp_1*imp_2
 
-        def diff_mixed_impact(zeta_1, zeta_2, ix_func, ix_diff, params_1,
+        def diff_mixed_impact(xi_1, xi_2, ix_func, ix_diff, params_1,
                               params_2):
             if ix_func == 1:
-                diff_imp_1 = self.diff_impact[k][i](zeta_1, ix_diff, params_1)
-                imp_2 = self.impact[k][j](zeta_2, params_2)
+                diff_imp_1 = self.diff_impact[k][i](xi_1, ix_diff, params_1)
+                imp_2 = self.impact[k][j](xi_2, params_2)
                 return diff_imp_1*imp_2
             elif ix_func == 1:
-                imp_1 = self.impact[k][i](zeta_1, params_1)
-                diff_imp_2 = self.diff_impact[k][j](zeta_2, ix_diff, params_2)
+                imp_1 = self.impact[k][i](xi_1, params_1)
+                diff_imp_2 = self.diff_impact[k][j](xi_2, ix_diff, params_2)
                 return imp_1*diff_imp_2
 
         log_name = 'upsilon_'+str(i)+'_'+str(j)
@@ -1305,9 +1305,9 @@ class MtlhStratified(Estimator):
             data_samples[0] = {'t': self.list_times2end[i][ixs_m],
                                's': t_m-t_n}
             # Imp samples, ix_f = 1
-            zeta_m = self.list_marks[i][ixs_m]
-            zeta_n = self.list_marks[i][ixs_n]
-            data_samples[1] = {'zeta_1': zeta_m, 'zeta_2': zeta_n}
+            xi_m = self.list_marks[i][ixs_m]
+            xi_n = self.list_marks[i][ixs_n]
+            data_samples[1] = {'xi_1': xi_m, 'xi_2': xi_n}
             return data_samples
 
         def get_n_samples(ix_samples_stratum):
@@ -1316,16 +1316,16 @@ class MtlhStratified(Estimator):
             return n_samples
 
         # Impact function
-        def mixed_impact(zeta_1, zeta_2, params):
-            imp_1 = self.impact[k][i](zeta_1, params)
-            imp_2 = self.impact[k][i](zeta_2, params)
+        def mixed_impact(xi_1, xi_2, params):
+            imp_1 = self.impact[k][i](xi_1, params)
+            imp_2 = self.impact[k][i](xi_2, params)
             return imp_1*imp_2
 
-        def diff_mixed_impact(zeta_1, zeta_2, ix_diff, params):
-            imp_1 = self.impact[k][i](zeta_1, params)
-            imp_2 = self.impact[k][i](zeta_2, params)
-            diff_imp_1 = self.diff_impact[k][i](zeta_1, ix_diff, params)
-            diff_imp_2 = self.diff_impact[k][i](zeta_2, ix_diff, params)
+        def diff_mixed_impact(xi_1, xi_2, ix_diff, params):
+            imp_1 = self.impact[k][i](xi_1, params)
+            imp_2 = self.impact[k][i](xi_2, params)
+            diff_imp_1 = self.diff_impact[k][i](xi_1, ix_diff, params)
+            diff_imp_2 = self.diff_impact[k][i](xi_2, ix_diff, params)
             return imp_1*diff_imp_2+diff_imp_1*imp_2
 
         list_f = [self.upsilon[i][i][k], mixed_impact]

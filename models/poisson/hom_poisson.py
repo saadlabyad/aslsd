@@ -250,6 +250,14 @@ class HomPoisson:
             self.fit_residuals = residuals
         return residuals
 
+    def ks_test_residuals(self, residuals=None):
+        if residuals is None:
+            if self.fit_residuals is not None:
+                residuals = self.fit_residuals
+            else:
+                raise ValueError("residuals must be specified.")
+        return gof.ks_test_residuals(residuals)
+
     def qq_plot(self, i, residuals=None, labels=None, style='exponential',
                 substract_yx=False, normalize=False, max_points=None,
                 display_line45=True, log_scale=False,

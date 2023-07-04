@@ -17,8 +17,7 @@ class NumpyMark(Mark):
             for ix in range(len(param_names)):
                 dict_params[param_names[ix]] = mark_params[ix]
         self.dict_params = dict_params
-        Mark.__init__(self, mark_params=mark_params,
-                      default_exp_imp=default_exp_imp)
+        Mark.__init__(self, default_exp_imp=default_exp_imp)
 
     def simulate(self, size=1, rng=None, seed=1234):
         if rng is None:
@@ -26,6 +25,5 @@ class NumpyMark(Mark):
         generator = getattr(rng, self.rv_name)
         return generator(size=size, **self.dict_params)
 
-    def exact_expected_basis_impact(self, basis_impact, mark_params,
-                                    imp_params):
+    def exact_expected_basis_impact(self, basis_impact, basis_imp_params):
         pass

@@ -1,6 +1,7 @@
 # License: BSD 3 clause
 
 import numpy as np
+from scipy.stats import wasserstein_distance
 from tqdm import tqdm
 
 from aslsd.utilities import useful_functions as uf
@@ -114,3 +115,13 @@ def get_newton(y, ratio_func=None, error_func=None, theta_0=None,
         return theta[0]
     else:
         return theta
+
+
+# =============================================================================
+# Metrics
+# =============================================================================
+def wass(f, g, x):
+    y_f = f(x)
+    y_g = g(x)
+    return wasserstein_distance(x, x, y_f, y_g)
+

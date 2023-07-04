@@ -18,7 +18,11 @@ from aslsd.stats.residual_analysis import goodness_of_fit as gof
 from aslsd.stats.events.process_path import ProcessPath
 from aslsd.utilities import graphic_tools as gt
 from aslsd.utilities import useful_functions as uf
+from aslsd.utilities import useful_numerics as un
 from aslsd.utilities import useful_statistics as us
+from aslsd.functionals.baselines.baseline import BaselineModel
+from aslsd.functionals.baselines.\
+    basis_baselines.basis_baseline_constant import ConstantBaseline
 
 
 class MHP:
@@ -183,7 +187,7 @@ class MHP:
         self.mu_names = param_names['mu']
         self.ker_param_names = param_names['kernels']
         self.param_bounds = self.get_param_bounds()
-        self.make_kernel_functionals()
+        self.make_functionals()
 
     @kernel_matrix.deleter
     def kernel_matrix(self):
@@ -464,8 +468,28 @@ class MHP:
         return param_names
 
     # Kernel functionals
-    def make_kernel_functionals(self):
+    def make_functionals(self):
         d = self.d
+        # Baselines
+        self.baselines_vec = [BaselineModel([ConstantBaseline()])
+                              for i in range(d)]
+        self.mu_compensator = [self.baselines_vec[i].compensator for i in range(d)]
+        self.mu = [None for i in range(d)]
+        self.diff_mu = [None for i in range(d)]
+        self.M = [None for i in range(d)]
+        self.diff_M = [None for i in range(d)]
+        for i in range(d):
+            baseline = self.baselines_vec[i]
+            mu = baseline.make_mu()
+            self.mu[i] = mu
+            diff_mu = baseline.make_diff_mu()
+            self.diff_mu[i] = diff_mu
+            M = baseline.make_M()
+            self.M[i] = M
+            diff_M = baseline.make_diff_M()
+            self.diff_M[i] = diff_M
+
+        # Kernels
         self.phi = [[None for j in range(d)] for i in range(d)]
         self.diff_phi = [[None for j in range(d)] for i in range(d)]
         self.psi = [[None for j in range(d)] for i in range(d)]
@@ -476,6 +500,7 @@ class MHP:
                                  for i in range(d)]
         self.diff_cross_upsilon = [[[None for k in range(d)]
                                     for j in range(d)] for i in range(d)]
+        # Single Kernel functionals
         for i, j in itertools.product(range(d), range(d)):
             kernel = self._kernel_matrix[i][j]
             phi = kernel.make_phi()
@@ -488,7 +513,7 @@ class MHP:
             self.diff_psi[i][j] = diff_psi
             diff_sim_upsilon = kernel.make_diff_sim_upsilon()
             self.diff_sim_upsilon[i][j] = diff_sim_upsilon
-
+        # Kernel interaction functionals
         for i, j, k in itertools.product(range(d), range(d), range(d)):
             kernel_ki = self._kernel_matrix[k][i]
             kernel_kj = self._kernel_matrix[k][j]
@@ -511,14 +536,12 @@ class MHP:
                                           " and kernel ", k, ",", j)
 
     # Statistics
-    def get_intensity(self, list_times=None, T_f=None, process_path=None,
-                      mu=None, kernel_param=None, verbose=False):
+    def get_intensity(self, process_path, mu=None, kernel_param=None,
+                      verbose=False):
         d = self.d
         # Prepare parameters
         mu, kernel_param = self.load_param(mu=mu, kernel_param=kernel_param)
-        # Data
-        if process_path is None:
-            process_path = ProcessPath(list_times, T_f)
+
         # Compute
         intensity = [mu[i]+np.zeros(process_path.n_events[i])
                      for i in range(d)]
@@ -531,7 +554,9 @@ class MHP:
                           disable=not verbose):
                 t_m = process_path.list_times[i][m]
                 t_n = process_path.list_times[j][:process_path.kappa[j][i][m]+1]
-                intensity[i][m] += np.sum(self.phi[i][j](t_m-t_n, kernel_param[i][j]))
+                t_diff = t_m-t_n
+                intensity[i][m] += np.sum(self.phi[i][j](t_diff,
+                                                         kernel_param[i][j]))
         return intensity
 
     # Estimator functions
@@ -618,7 +643,7 @@ class MHP:
         self.fitted_adjacency = None
         self.fit_log = None
 
-    def fit(self, process_path=None, kappa=None, varpi=None, x_0=None,
+    def fit(self, process_path, kappa=None, varpi=None, x_0=None,
             n_iter=1000, solvers=None, estimators=None, logger=None, seed=1234,
             verbose=False, clear=True, write=True, **kwargs):
         """
@@ -1360,7 +1385,7 @@ class MHP:
         return list_Tf, list_paths
 
     # Metrics
-    # L2 projection
+    # L2
     def get_l2_projection(self, mhp_2, param_2, n_iter=1000, try_sbf=True,
                           solver=None, log_error=False, rng=None,
                           seed=1234,
@@ -1418,6 +1443,68 @@ class MHP:
                 l2_err_log[i][j] = copy.deepcopy(res_ij['log'])
         res = {'params': param_1, 'log': l2_err_log}
         return res
+
+    def get_l2_dist(self, mhp_2, ker_param_1=None, ker_param_2=None,
+                    weights=None):
+        if ker_param_1 is None:
+            ker_param_1 = self.fitted_ker_param
+        if ker_param_2 is None:
+            ker_param_2 = mhp_2.fitted_ker_param
+        adjacency_1 = self.make_adjacency_matrix(kernel_param=ker_param_1)
+        adjacency_2 = mhp_2.make_adjacency_matrix(kernel_param=ker_param_2)
+        d = self.d
+        matrix_l2 = np.zeros((d, d))
+        # Compute matrix of Wasserstein distances
+        for i in range(1, d):
+            for j in range(i):
+                if adjacency_1[i][j] > 0. and adjacency_2[i][j] > 0.:
+                    kernel_1 = self._kernel_matrix[i][j]
+                    kernel_2 = mhp_2._kernel_matrix[i][j]
+                    matrix_l2[i][j] = kernel_1.l2_dist(kernel_2,
+                                                       ker_param_1[i][j],
+                                                       ker_param_2[i][j])
+        matrix_l2 = matrix_l2+matrix_l2.T
+        # Linear weights
+        if weights is None:
+            weights = np.ones((d, d))
+        Q = weights*matrix_l2
+        return np.sum(Q)
+
+    # Wasserstein
+    def get_wass_dist(self, mhp_2, ker_param_1=None, ker_param_2=None,
+                      weights=None, wass_grid=None):
+        if ker_param_1 is None:
+            ker_param_1 = self.fitted_ker_param
+        if ker_param_2 is None:
+            ker_param_2 = mhp_2.fitted_ker_param
+        adjacency_1 = self.make_adjacency_matrix(kernel_param=ker_param_1)
+        adjacency_2 = mhp_2.make_adjacency_matrix(kernel_param=ker_param_2)
+        d = self.d
+        matrix_wass = np.zeros((d, d))
+        if wass_grid is None:
+            wass_grid = np.linspace(0., 50, 10**4)
+        # Compute matrix of Wasserstein distances
+        for i in range(1, d):
+            for j in range(i):
+                if adjacency_1[i][j] > 0. and adjacency_2[i][j] > 0.:
+                    def make_funcs():
+                        def tilde_phi_1(t):
+                            phi_vals = self.phi[i][j](t, ker_param_1[i][j])
+                            return phi_vals/adjacency_1[i][j]
+
+                        def tilde_phi_2(t):
+                            phi_vals = mhp_2.phi[i][j](t, ker_param_1[i][j])
+                            return phi_vals/adjacency_2[i][j]
+                        return tilde_phi_1, tilde_phi_2
+                    tilde_phi_1, tilde_phi_2 = make_funcs()
+                    matrix_wass[i][j] = un.wass(tilde_phi_1, tilde_phi_2,
+                                                wass_grid)
+        matrix_wass = matrix_wass+matrix_wass.T
+        # Linear weights
+        if weights is None:
+            weights = np.ones((d, d))
+        Q = weights*matrix_wass
+        return np.sum(Q)
 
     # Plots
     def plot_kernels(self, kernel_param=None, t_min=0., t_max=10.,

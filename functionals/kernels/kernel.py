@@ -538,6 +538,14 @@ class KernelModel():
         diff_l2_dot = self.make_diff_l2_dot()
         self.diff_l2_dot = diff_l2_dot
 
+        def l2_dist(kernel_2, params_1, params_2):
+            norm_1 = self.l2_norm(params_1)
+            norm_2 = kernel_2.l2_norm(params_2)
+            dot_prod = self.l2_dot(kernel_2, params_1, params_2)
+            res = norm_1+norm_2-2.*dot_prod
+            return res
+        self.l2_dist = l2_dist
+
     # L2 projection
     def get_l2_projection_loss(self, params, kernel_2, ker_param_2,
                                sbf=False, Q=None, c=None):

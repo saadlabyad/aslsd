@@ -7,6 +7,8 @@ from matplotlib import animation, ticker
 import matplotlib.pyplot as plt
 import numpy as np
 
+import aslsd.utilities.useful_functions as uf
+
 standard_colors = ['steelblue', 'darkorange', 'limegreen', 'firebrick',
                    'mediumorchid']
 
@@ -542,7 +544,9 @@ def annotate_subplots(axes, row_names=None, col_names=None, row_pad=1,
 # =============================================================================
 # Heatmaps
 # =============================================================================
-def make_heatmap(data, row_labels, col_labels, ax=None, cbar_kw={},
+def make_heatmap(data, row_labels=None, col_labels=None, white_grid=True,
+                 row_ticks='all', col_ticks='all',
+                 ax=None, cbar_kw={},
                  cbarlabel="", **kwargs):
     """
     Create a heatmap from a numpy array and two lists of labels.
@@ -577,29 +581,42 @@ def make_heatmap(data, row_labels, col_labels, ax=None, cbar_kw={},
     cbar = ax.figure.colorbar(im, ax=ax, **cbar_kw)
     cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom")
 
-    # We want to show all ticks...
-    ax.set_xticks(np.arange(data.shape[1]))
-    ax.set_yticks(np.arange(data.shape[0]))
+    # We want to show all ticks: Columns
+    if uf.is_array(col_ticks):
+        ax.set_xticks(col_ticks)
+    elif col_ticks == 'all':
+        ax.set_xticks(np.arange(data.shape[1]))
+
+    # We want to show all ticks: Rows
+    if uf.is_array(row_ticks):
+        ax.set_yticks(row_ticks)
+    elif row_ticks == 'all':
+        ax.set_yticks(np.arange(data.shape[0]))
+
     # ... and label them with the respective list entries.
-    ax.set_xticklabels(col_labels)
-    ax.set_yticklabels(row_labels)
+    if col_labels is not None:
+        ax.set_xticklabels(col_labels)
+        # Rotate the tick labels and set their alignment.
+        plt.setp(ax.get_xticklabels(), rotation=-30, ha="right",
+                 rotation_mode="anchor")
+    if row_labels is not None:
+        ax.set_yticklabels(row_labels)
 
     # Let the horizontal axes labeling appear on top.
     ax.tick_params(top=True, bottom=False,
                    labeltop=True, labelbottom=False)
 
-    # Rotate the tick labels and set their alignment.
-    plt.setp(ax.get_xticklabels(), rotation=-30, ha="right",
-             rotation_mode="anchor")
+
 
     # Turn spines off and create white grid.
-    for edge, spine in ax.spines.items():
-        spine.set_visible(False)
-
-    ax.set_xticks(np.arange(data.shape[1]+1)-.5, minor=True)
-    ax.set_yticks(np.arange(data.shape[0]+1)-.5, minor=True)
-    ax.grid(which="minor", color="w", linestyle='-', linewidth=3)
-    ax.tick_params(which="minor", bottom=False, left=False)
+    if white_grid:
+        for edge, spine in ax.spines.items():
+            spine.set_visible(False)
+    
+        ax.set_xticks(np.arange(data.shape[1]+1)-.5, minor=True)
+        ax.set_yticks(np.arange(data.shape[0]+1)-.5, minor=True)
+        ax.grid(which="minor", color="w", linestyle='-', linewidth=3)
+        ax.tick_params(which="minor", bottom=False, left=False)
 
     return im, cbar
 

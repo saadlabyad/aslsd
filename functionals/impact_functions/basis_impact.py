@@ -44,8 +44,7 @@ class BasisImpact(ABC):
 
     """
 
-    def __init__(self, fixed_indices=None, fixed_vars=None, n_fixed_vars=0,
-                 ix_map=None, impact=None, diff_impact=None):
+    def __init__(self, fixed_indices=None, fixed_vars=None):
         """
         Initialize BasisKernel.
 
@@ -220,21 +219,21 @@ class BasisImpact(ABC):
         return ix_map
 
     @abstractmethod
-    def make_impact(self, zeta, vars_):
+    def make_impact(self, xi, vars_):
         pass
 
     @abstractmethod
-    def make_diff_impact(self, zeta, ix_diff, vars_):
+    def make_diff_impact(self, xi, ix_diff, vars_):
         pass
 
     def make_impact_functionals(self):
-        def impact(zeta, params):
+        def impact(xi, params):
             vars_ = self.make_vars(params)
-            return self.make_impact(zeta, vars_)
+            return self.make_impact(xi, vars_)
         self.impact = impact
 
-        def diff_impact(zeta, ix_diff, params):
+        def diff_impact(xi, ix_diff, params):
             vars_ = self.make_vars(params)
             ix_diff_scaled = self.ix_map[ix_diff]
-            return self.make_diff_impact(zeta, ix_diff_scaled, vars_)
+            return self.make_diff_impact(xi, ix_diff_scaled, vars_)
         self.diff_impact = diff_impact

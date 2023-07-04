@@ -6,18 +6,18 @@ import numpy as np
 
 
 class Mark(ABC):
-    def __init__(self, mark_params=None, default_exp_imp='estimate'):
-        self.mark_params = mark_params
+    def __init__(self, default_exp_imp='estimate'):
         self.default_exp_imp = default_exp_imp
 
     # Expected Impact
     def exact_expected_impact(self, impact_function, imp_params):
-        mark_params = self.mark_params
         res = 0.
         for ix_imp in range(impact_function.n_basis_imp):
             basis_imp = impact_function._basis_impacts[ix_imp]
-            res += self.exact_expected_basis_impact(basis_imp, mark_params,
-                                                    imp_params[basis_imp.interval_map[ix_imp][0]:basis_imp.interval_map[ix_imp][1]])
+            basis_imp_params = imp_params[basis_imp.interval_map[ix_imp][0]
+                                          :basis_imp.interval_map[ix_imp][1]]
+            res += self.exact_expected_basis_impact(basis_imp,
+                                                    basis_imp_params)
         return res
 
     def estimate_expected_impact(self, impact_function, imp_params, n_mc=10**5,
@@ -40,6 +40,5 @@ class Mark(ABC):
         pass
 
     @abstractmethod
-    def exact_expected_basis_impact(self, basis_impact, mark_params,
-                                    imp_params):
+    def exact_expected_basis_impact(self, basis_impact, basis_imp_params):
         pass

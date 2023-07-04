@@ -64,6 +64,7 @@ class NonHomPoisson:
         self.mu_names = mu_names
         self.is_fitted = False
         self.fitted_mu_param = fitted_mu_param
+        self.fit_residuals = fit_residuals
 
         intensity = self.make_intensity()
         self.intensity = intensity
@@ -158,7 +159,7 @@ class NonHomPoisson:
         self.fit_residuals = None
         self.fit_log = None
 
-    def fit(self, process_path=None, x_0=None, n_iter=1000, solvers=None,
+    def fit(self, process_path, x_0=None, n_iter=1000, solvers=None,
             estimators=None, rng=None, seed=None, verbose=False, clear=True,
             poisson_sol=False,
             write=True, grad_alloc=False, strf_args=None, estim_args=None,
@@ -416,6 +417,14 @@ class NonHomPoisson:
         if self.is_fitted and write:
             self.fit_residuals = residuals
         return residuals
+
+    def ks_test_residuals(self, residuals=None):
+        if residuals is None:
+            if self.fit_residuals is not None:
+                residuals = self.fit_residuals
+            else:
+                raise ValueError("residuals must be specified.")
+        return gof.ks_test_residuals(residuals)
 
     def qq_plot(self, i, residuals=None, labels=None, style='exponential',
                 substract_yx=False, normalize=False, max_points=None,
