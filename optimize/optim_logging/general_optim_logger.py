@@ -48,6 +48,7 @@ class GeneralOptimLogger:
     def __init__(self, d, n_iter, **kwargs):
         self.d = d
         self.n_iter = n_iter
+        self.fit_args = kwargs
         self.is_log_param = kwargs.get('is_log_param', False)
         self.is_log_grad = kwargs.get('is_log_grad', False)
         self.is_log_loss = kwargs.get('is_log_loss', False)

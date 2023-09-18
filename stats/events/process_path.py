@@ -1,5 +1,7 @@
 # License: BSD 3 clause
+
 import copy
+import pickle
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -63,15 +65,15 @@ class ProcessPath():
         self.d = len(self.list_times)
         self.n_events = np.array([len(L) for L in self.list_times])
         self.eta = self.n_events/T_f
-        
+        self.book_keeping = book_keeping
         if book_keeping:
             self.list_times2end = [T_f - L for L in list_times]
-            
+
             if kappa is None or varpi is None:
                 kappa, varpi = time_ordering.get_kappa_varpi(list_times, T_f)
             self.kappa = kappa
             self.varpi = varpi
-    
+
             if lag_sizes is None:
                 lag_sizes = time_ordering.get_lag_sizes(list_times, self.kappa,
                                                         self.varpi)
@@ -130,3 +132,38 @@ class ProcessPath():
         for i in range(self.d):
             ia_times[i] = list_times[i][1:]-list_times[i][:-1]
         return ia_times
+
+    # Get stats functions
+
+    # Serialization
+    def save(self, file, **kwargs):
+        dict_attr = {'list_times': self.list_times,
+                     'list_marks': self.list_marks, 'T_f': self.T_f,
+                     'd': self.d, 'n_events': self.n_events,
+                     'eta': self.eta, 'book_keeping': self.book_keeping}
+        if self.book_keeping:
+            dict_attr['list_times2end'] = self.list_times2end
+            dict_attr['kappa'] = self.kappa
+            dict_attr['varpi'] = self.varpi,
+            dict_attr['lag_sizes'] = self.lag_sizes
+
+        pickle_out = open(file, "wb", **kwargs)
+        pickle.dump(dict_attr, pickle_out)
+        pickle_out.close()
+
+    def load(self, file, **kwargs):
+        saving_file = open(file, "rb")
+        dict_attr = pickle.load(saving_file)
+        saving_file.close()
+        self.list_times = dict_attr['list_times']
+        self.list_marks = dict_attr['list_marks']
+        self.T_f = dict_attr['T_f']
+        self.d = dict_attr['d']
+        self.n_events = dict_attr['n_events']
+        self.eta = dict_attr['eta']
+        self.book_keeping = dict_attr['book_keeping']
+        if self.book_keeping:
+            self.list_times2end = dict_attr['list_times2end']
+            self.kappa = dict_attr['kappa']
+            self.varpi = dict_attr['varpi']
+            self.lag_sizes = dict_attr['lag_sizes']

@@ -21,6 +21,7 @@ from aslsd.stats.events.process_path import ProcessPath
 from aslsd.stats.marks.void_mark import VoidMark
 from aslsd.stats.residual_analysis import goodness_of_fit as gof
 from aslsd.utilities import useful_functions as uf
+from aslsd.utilities import useful_statistics as us
 from aslsd.utilities import graphic_tools as gt
 
 
@@ -139,15 +140,7 @@ class MTLH:
 
     def __init__(self, _kernel_matrix, _baselines_vec=None,
                  _impact_matrix=None, vec_marks=None,
-                 index_from_one=False, d=None,
-                 matrix_n_param=None,
-                 n_ker_param=None, ix_map=None, interval_map=None,
-                 mu_names=None, ker_param_names=None,
-                 param_bounds=None, phi=None, diff_phi=None, psi=None,
-                 diff_psi=None, upsilon=None, diff_sim_upsilon=None,
-                 diff_cross_upsilon=None, is_fitted=False,
-                 fitted_mu=None, fitted_ker_param=None,
-                 fit_residuals=None, fitted_adjacency=None, fit_log=None):
+                 index_from_one=False):
         """
         Constructor of objects of class MHP.
 
@@ -157,6 +150,7 @@ class MTLH:
             Matrix of kernel models.
 
         """
+        self.clear_fit()
         self.d = len(_kernel_matrix)
         self.is_fitted = False
         self.index_from_one = index_from_one
@@ -179,7 +173,7 @@ class MTLH:
                 vec_marks_ = [copy.deepcopy(vec_marks) for i in range(d)]
         return vec_marks_
 
-    def make_expected_impact(self, impact_param):
+    def make_expected_impact(self, impact_param=None):
         d = self.d
         if impact_param is None:
             impact_param = self.fitted_imp_param
@@ -219,7 +213,8 @@ class MTLH:
         # Parameters names
         self.mu_param_names = self.get_mu_param_names(index_from_one=self.index_from_one)
         # Parameters bounds
-        self.mu_param_bounds = self.get_mu_param_bounds()
+        self.mu_param_lower_bounds = self.get_mu_param_lower_bounds()
+        self.mu_param_upper_bounds = self.get_mu_param_upper_bounds()
 
         # General updates
         if hasattr(self, '_kernel_matrix'):
@@ -234,6 +229,7 @@ class MTLH:
                     self.interval_map_imp = interval_map_imp
                 self.make_functionals()
                 self.n_param_k = self.get_n_param_k()
+                self.n_param = sum(self.n_param_k)
 
     @baselines_vec.deleter
     def baselines_vec(self):
@@ -267,7 +263,8 @@ class MTLH:
         # Parameters names
         self.ker_param_names = self.get_ker_param_names(index_from_one=self.index_from_one)
         # Parameters bounds
-        self.ker_param_bounds = self.get_ker_param_bounds()
+        self.ker_param_lower_bounds = self.get_ker_param_lower_bounds()
+        self.ker_param_upper_bounds = self.get_ker_param_upper_bounds()
 
         # General updates
         if hasattr(self, '_impact_matrix'):
@@ -278,6 +275,7 @@ class MTLH:
             if hasattr(self, '_baselines_vec'):
                 self.make_functionals()
                 self.n_param_k = self.get_n_param_k()
+                self.n_param = sum(self.n_param_k)
 
     @kernel_matrix.deleter
     def kernel_matrix(self):
@@ -312,12 +310,14 @@ class MTLH:
         # Parameters names
         self.imp_param_names = self.get_imp_param_names(index_from_one=self.index_from_one)
         # Parameters bounds
-        self.imp_param_bounds = self.get_imp_param_bounds()
+        self.imp_param_lower_bounds = self.get_imp_param_lower_bounds()
+        self.imp_param_upper_bounds = self.get_imp_param_upper_bounds()
 
         # General updates
         if hasattr(self, '_baselines_vec') and hasattr(self, '_impact_matrix'):
             self.make_functionals()
             self.n_param_k = self.get_n_param_k()
+            self.n_param = sum(self.n_param_k)
 
     @impact_matrix.deleter
     def impact_matrix(self):
@@ -561,36 +561,6 @@ class MTLH:
                     x += 1
         return ix_map_imp, interval_map_imp
 
-    def tensor2matrix_params(self, tensor_param):
-        """
-        Convert the list of flat vectors of parameters to a vector of
-        background rates `mu` and a matrix of kernel parameters `kernel_param`.
-
-        Parameters
-        ----------
-        tensor_param : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        mu_param : TYPE
-            Vector of background rates.
-        kernel_param : TYPE
-            Matrix of kernel parameters.
-
-        """
-        d = self.d
-        mu_param = np.array([tensor_param[i][:self.vector_n_param_mu[i]] for i in range(d)])
-        kernel_param = np.array([[tensor_param[i][self.interval_map_ker[i][j][0]:
-                                                  self.interval_map_ker[i][j][1]]
-                                  for j in range(d)] for i in range(d)],
-                                dtype=object)
-        impact_param = np.array([[tensor_param[i][self.interval_map_imp[i][j][0]:
-                                                  self.interval_map_imp[i][j][1]]
-                                  for j in range(d)] for i in range(d)],
-                                dtype=object)
-        return mu_param, kernel_param, impact_param
-
     def xk2matrix_params(self, k, x_k):
         """
         Convert the list of flat vectors of parameters to a vector of
@@ -610,14 +580,63 @@ class MTLH:
 
         """
         d = self.d
-        x_mu_k = copy.deepcopy(x_k[:self.vector_n_param_mu[k]])
-        x_ker_k = np.array([x_k[self.interval_map_ker[k][i][0]:
-                                self.interval_map_ker[k][i][1]]
+        # Mu terms
+        x_mu_k = np.zeros(self.vector_n_param_mu[k])
+        for ix in range(self.vector_n_param_mu[k]):
+            x_mu_k[ix] = x_k[ix]
+
+        # Kernel terms
+        x_ker_k = np.array([np.zeros(self.matrix_n_param_ker[k][i])
                             for i in range(d)], dtype=object)
-        x_imp_k = np.array([x_k[self.interval_map_imp[k][i][0]:
-                                self.interval_map_imp[k][i][1]]
+        for i in range(d):
+            for ix in range(self.matrix_n_param_ker[k][i]):
+                ix_mod = self.interval_map_ker[k][i][0]+ix
+                x_ker_k[i][ix] = x_k[ix_mod]
+
+        # Impact terms
+        x_imp_k = np.array([np.zeros(self.matrix_n_param_imp[k][i])
                             for i in range(d)], dtype=object)
+        for i in range(d):
+            for ix in range(self.matrix_n_param_imp[k][i]):
+                ix_mod = self.interval_map_imp[k][i][0]+ix
+                x_imp_k[i][ix] = x_k[ix_mod]
+        # Result
         return x_mu_k, x_ker_k, x_imp_k
+
+    def tensor2matrix_params(self, tensor_param):
+        """
+        Convert the list of flat vectors of parameters to a vector of
+        background rates `mu` and a matrix of kernel parameters `kernel_param`.
+
+        Parameters
+        ----------
+        tensor_param : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        mu_param : TYPE
+            Vector of background rates.
+        kernel_param : TYPE
+            Matrix of kernel parameters.
+
+        """
+        d = self.d
+        mu_param = [None for i in range(d)]
+        kernel_param = [None for i in range(d)]
+        impact_param = [None for i in range(d)]
+
+        for k in range(d):
+            x_mu_k, x_ker_k, x_imp_k = self.xk2matrix_params(k,
+                                                             tensor_param[k])
+            mu_param[k] = 0+x_mu_k
+            kernel_param[k] = 0+x_ker_k
+            impact_param[k] = 0+x_imp_k
+
+        mu_param = np.array(mu_param, dtype=object)
+        kernel_param = np.array(kernel_param, dtype=object)
+        impact_param = np.array(impact_param, dtype=object)
+        return mu_param, kernel_param, impact_param
 
     def matrix2tensor_params(self, mu_param, kernel_param, impact_param):
         """
@@ -638,35 +657,53 @@ class MTLH:
 
         """
         d = self.d
-        x = [None]*d
+        x = [np.zeros(self.n_param_k[k]) for k in range(d)]
         for k in range(d):
-            x_k = []
             # mu parameters
-            x_k.extend(copy.deepcopy(mu_param[k]))
+            x[k][:self.vector_n_param_mu[k]] = 0+mu_param[k]
             # kernel parameters
+            start = self.vector_n_param_mu[k]
             for i in range(d):
-                x_k.extend(copy.deepcopy(kernel_param[k][i]))
+                end = start+len(kernel_param[k][i])-1
+                x[k][start:end+1] = 0+kernel_param[k][i]
+                start = end+1
             # Impact parameters
             for i in range(d):
-                x_k.extend(copy.deepcopy(impact_param[k][i]))
-            x[k] = np.array(copy.deepcopy(x_k), dtype=object)
-        return np.array(x)
+                end = start+len(impact_param[k][i])-1
+                x[k][start:end+1] = 0+impact_param[k][i]
+                start = end+1
+        return np.array(x, dtype=object)
 
-    def tensor2matrix_solverpaths(self, tensor_paths):
+    def tensor2matrix_solverpaths(self, x_paths):
         #   Convert the list of parameters
-        #   tensor_paths is a tensor of paths of solvers per parameters
+        #   x_paths is a tensor of paths of solvers per parameters
         d = self.d
-        list_n = [len(tensor_paths[k]) for k in range(d)]
-        mu_param_paths = [[tensor_paths[k][n][:self.vector_n_param_mu[k]] for n in range(list_n[k])]
+        list_n = [len(x_paths[k]) for k in range(d)]
+        # Mu
+        mu_param_paths = [np.zeros((list_n[k],
+                                    self.vector_n_param_mu[k]))
                           for k in range(d)]
-        kernel_param_paths = [[[tensor_paths[i][n][self.interval_map_ker[i][j][0]:
-                                                   self.interval_map_ker[i][j][1]]
-                                for n in range(list_n[i])] for j in range(d)]
-                              for i in range(d)]
-        impact_param_paths = [[[tensor_paths[i][n][self.interval_map_imp[i][j][0]:
-                                                   self.interval_map_imp[i][j][1]]
-                                for n in range(list_n[i])] for j in range(d)]
-                              for i in range(d)]
+        for k in range(d):
+            mu_param_paths[k] = np.array([x_paths[k][n][:self.vector_n_param_mu[k]]
+                                          for n in range(list_n[k])])
+        # Kernels
+        kernel_param_paths = [[np.zeros((list_n[i],
+                                         self.matrix_n_param_ker[i][j]))
+                               for j in range(d)] for i in range(d)]
+        for i, j in itertools.product(range(d), range(d)):
+            for ix in range(self.matrix_n_param_ker[i][j]):
+                ix_param = self.interval_map_ker[i][j][0]+ix
+                kernel_param_paths[i][j][:, ix_param] = np.array([x_paths[i][n][ix_param]
+                                                                  for n in range(list_n[i])])
+        # Impacts
+        impact_param_paths = [[np.zeros((list_n[i],
+                                         self.matrix_n_param_imp[i][j]))
+                               for j in range(d)] for i in range(d)]
+        for i, j in itertools.product(range(d), range(d)):
+            for ix in range(self.matrix_n_param_imp[i][j]):
+                ix_param = self.interval_map_imp[i][j][0]+ix
+                impact_param_paths[i][j][:, ix_param] = np.array([x_paths[i][n][ix_param]
+                                                                  for n in range(list_n[i])])
         return mu_param_paths, kernel_param_paths, impact_param_paths
 
     def make_xk(self, k, mu_param=None, kernel_param=None, impact_param=None):
@@ -692,20 +729,39 @@ class MTLH:
         return True
 
     # Bounds
-    def get_mu_param_bounds(self):
+    def get_mu_param_lower_bounds(self):
         d = self.d
-        mu_bnds = [self._baselines_vec[i].get_param_bounds() for i in range(d)]
+        mu_bnds = [self._baselines_vec[i].get_param_lower_bounds()
+                   for i in range(d)]
         return mu_bnds
 
-    def get_ker_param_bounds(self):
+    def get_mu_param_upper_bounds(self):
         d = self.d
-        ker_bnds = [[self._kernel_matrix[i][j].get_param_bounds()
+        mu_bnds = [self._baselines_vec[i].get_param_upper_bounds()
+                   for i in range(d)]
+        return mu_bnds
+
+    def get_ker_param_lower_bounds(self):
+        d = self.d
+        ker_bnds = [[self._kernel_matrix[i][j].get_param_lower_bounds()
                      for j in range(d)] for i in range(d)]
         return ker_bnds
 
-    def get_imp_param_bounds(self):
+    def get_ker_param_upper_bounds(self):
         d = self.d
-        imp_bnds = [[self._impact_matrix[i][j].get_param_bounds()
+        ker_bnds = [[self._kernel_matrix[i][j].get_param_upper_bounds()
+                     for j in range(d)] for i in range(d)]
+        return ker_bnds
+
+    def get_imp_param_lower_bounds(self):
+        d = self.d
+        imp_bnds = [[self._impact_matrix[i][j].get_param_lower_bounds()
+                     for j in range(d)] for i in range(d)]
+        return imp_bnds
+
+    def get_imp_param_upper_bounds(self):
+        d = self.d
+        imp_bnds = [[self._impact_matrix[i][j].get_param_upper_bounds()
                      for j in range(d)] for i in range(d)]
         return imp_bnds
 
@@ -737,7 +793,9 @@ class MTLH:
                 if mu.n_basis_mus == 1:
                     mu_param_names[0][ix_param] = vec_names[ix_basis][ix_2]
                 else:
-                    mu_param_names[0][ix_param] = (vec_names[ix_basis][ix_2][:-1] + '_{'+str(ix_basis+int(index_from_one))+'}$')
+                    sub = str(ix_basis+int(index_from_one))
+                    s = vec_names[ix_basis][ix_2]
+                    mu_param_names[0][ix_param] = uf.add_subscript(s, sub)
 
         else:
             for i in range(d):
@@ -749,12 +807,16 @@ class MTLH:
                     for ix_param in range(n_param):
                         ix_basis = mu.ix_map[ix_param]['mu']
                         ix_2 = mu.ix_map[ix_param]['par']
-                        mu_param_names[i][ix_param] = vec_names[ix_basis][ix_2][:-1] + '_{'+str(i+int(index_from_one))+'}$'
+                        sub = str(i+int(index_from_one))
+                        s = vec_names[ix_basis][ix_2]
+                        mu_param_names[i][ix_param] = uf.add_subscript(s, sub)
                 else:
                     for ix_param in range(n_param):
                         ix_basis = mu.ix_map[ix_param]['mu']
                         ix_2 = mu.ix_map[ix_param]['par']
-                        mu_param_names[i][ix_param] = vec_names[ix_basis][ix_2][:-1] + '_{'+str(i+int(index_from_one))+','+str(ix_basis+int(index_from_one))+'}$'
+                        sub = str(i+int(index_from_one))+','+str(ix_basis+int(index_from_one))+','
+                        s = vec_names[ix_basis][ix_2]
+                        mu_param_names[i][ix_param] = uf.add_subscript(s, sub)
         return mu_param_names
 
     def get_ker_param_names(self, index_from_one=False):
@@ -785,7 +847,9 @@ class MTLH:
                 if kernel.n_basis_ker == 1:
                     ker_param_names[0][0][ix_param] = vec_names[ix_ker][ix_2]
                 else:
-                    ker_param_names[0][0][ix_param] = (vec_names[ix_ker][ix_2][:-1] + '_{'+str(ix_ker+int(index_from_one))+'}$')
+                    sub = str(ix_ker+int(index_from_one))
+                    s = vec_names[ix_ker][ix_2]
+                    ker_param_names[0][0][ix_param] = uf.add_subscript(s, sub)
         else:
             ker_param_names = [[None for j in range(d)] for i in range(d)]
             for i, j in itertools.product(range(d), range(d)):
@@ -797,12 +861,16 @@ class MTLH:
                     for ix_param in range(n_param):
                         ix_ker = kernel.ix_map[ix_param]['ker']
                         ix_2 = kernel.ix_map[ix_param]['par']
-                        ker_param_names[i][j][ix_param] = vec_names[ix_ker][ix_2][:-1]+ '_{'+str(i+int(index_from_one))+','+str(j+int(index_from_one))+'}$'
+                        sub = str(i+int(index_from_one))+','+str(j+int(index_from_one))
+                        s = vec_names[ix_ker][ix_2]
+                        ker_param_names[i][j][ix_param] = uf.add_subscript(s, sub)
                 else:
                     for ix_param in range(n_param):
                         ix_ker = kernel.ix_map[ix_param]['ker']
                         ix_2 = kernel.ix_map[ix_param]['par']
-                        ker_param_names[i][j][ix_param] = vec_names[ix_ker][ix_2][:-1]+ '_{'+str(i+int(index_from_one))+','+str(j+int(index_from_one))+','+str(ix_ker+int(index_from_one))+'}$'
+                        sub = str(i+int(index_from_one))+','+str(j+int(index_from_one))+','+str(ix_ker+int(index_from_one))
+                        s = vec_names[ix_ker][ix_2]
+                        ker_param_names[i][j][ix_param] = uf.add_subscript(s, sub)
         return ker_param_names
 
     def get_imp_param_names(self, index_from_one=False):
@@ -833,7 +901,9 @@ class MTLH:
                 if impact.n_basis_imp == 1:
                     imp_param_names[0][0][ix_param] = vec_names[ix_imp][ix_2]
                 else:
-                    imp_param_names[0][0][ix_param] = (vec_names[ix_imp][ix_2][:-1] + '_{'+str(ix_imp+int(index_from_one))+'}$')
+                    sub = str(ix_imp+int(index_from_one))
+                    s = vec_names[ix_imp][ix_2]
+                    imp_param_names[0][0][ix_param] = uf.add_subscript(s, sub)
         else:
             imp_param_names = [[None for j in range(d)] for i in range(d)]
             for i, j in itertools.product(range(d), range(d)):
@@ -845,12 +915,16 @@ class MTLH:
                     for ix_param in range(n_param):
                         ix_imp = impact.ix_map[ix_param]['imp']
                         ix_2 = impact.ix_map[ix_param]['par']
-                        imp_param_names[i][j][ix_param] = vec_names[ix_imp][ix_2][:-1] + '_{'+str(i+int(index_from_one))+','+str(j+int(index_from_one))+'}$'
+                        sub = str(i+int(index_from_one))+','+str(j+int(index_from_one))
+                        s = vec_names[ix_imp][ix_2]
+                        imp_param_names[i][j][ix_param] = uf.add_subscript(s, sub)
                 else:
                     for ix_param in range(n_param):
                         ix_imp = impact.ix_map[ix_param]['imp']
                         ix_2 = impact.ix_map[ix_param]['par']
-                        imp_param_names[i][j][ix_param] = vec_names[ix_imp][ix_2][:-1] + '_{'+str(i+int(index_from_one))+','+str(j+int(index_from_one))+','+str(ix_imp+int(index_from_one))+'}$'
+                        sub = str(i+int(index_from_one))+','+str(j+int(index_from_one))+','+str(ix_imp+int(index_from_one))
+                        s = vec_names[ix_imp][ix_2]
+                        imp_param_names[i][j][ix_param] = uf.add_subscript(s, sub)
         return imp_param_names
 
     # Kernel functionals
@@ -933,8 +1007,8 @@ class MTLH:
             diff_func_K = kernel.make_diff_K()
 
             def diff_K(t, s, ix_func, ix_diff, params_ker, params_mu):
-                return diff_func_K(baseline, t, s, ix_func, ix_diff, params_ker,
-                                   params_mu)
+                return diff_func_K(baseline, t, s, ix_func, ix_diff,
+                                   params_ker, params_mu)
             self.diff_K[i][j] = diff_K
 
         # Impact
@@ -1011,9 +1085,11 @@ class MTLH:
             for i, j in itertools.product(range(d), range(d)):
                 for ix in range(logger.n_iter[i]+1):
                     # Kernel
-                    logger.ker[i][j][ix] = logger.param_logs[i][ix][self.interval_map_ker[i][j][0]:self.interval_map_ker[i][j][1]]
+                    if self.matrix_n_param_ker[i][j] > 0:
+                        logger.ker[i][j][ix] = logger.param_logs[i][ix][self.interval_map_ker[i][j][0]:self.interval_map_ker[i][j][1]]
                     # Impact
-                    logger.imp[i][j][ix] = logger.param_logs[i][ix][self.interval_map_imp[i][j][0]:self.interval_map_imp[i][j][1]]
+                    if self.matrix_n_param_imp[i][j] > 0:
+                        logger.imp[i][j][ix] = logger.param_logs[i][ix][self.interval_map_imp[i][j][0]:self.interval_map_imp[i][j][1]]
         if logger.is_log_grad:
             # Mu
             for i in range(d):
@@ -1022,9 +1098,11 @@ class MTLH:
             for i, j in itertools.product(range(d), range(d)):
                 for ix in range(logger.n_iter[i]):
                     # Kernel
-                    logger.grad_ker[i][j][ix] = logger.grad_logs[i][ix][self.interval_map_ker[i][j][0]:self.interval_map_ker[i][j][1]]
+                    if self.matrix_n_param_ker[i][j] > 0:
+                        logger.grad_ker[i][j][ix] = logger.grad_logs[i][ix][self.interval_map_ker[i][j][0]:self.interval_map_ker[i][j][1]]
                     # Impact
-                    logger.grad_imp[i][j][ix] = logger.grad_logs[i][ix][self.interval_map_imp[i][j][0]:self.interval_map_imp[i][j][1]]
+                    if self.matrix_n_param_imp[i][j] > 0:
+                        logger.grad_imp[i][j][ix] = logger.grad_logs[i][ix][self.interval_map_imp[i][j][0]:self.interval_map_imp[i][j][1]]
         if logger.is_log_lse:
             for k in range(d):
                 self.lse[k] = self.estimator_logs[k]['lse']
@@ -1056,8 +1134,7 @@ class MTLH:
         self.fitted_adjacency = None
         self.fit_log = None
 
-    def fit(self, list_times, T_f, list_marks=None, kappa=None, varpi=None,
-            x_0=None,
+    def fit(self, process_path, kappa=None, varpi=None, x_0=None,
             n_iter=1000, solvers=None, estimators=None, logger=None, seed=1234,
             verbose=False, clear=True, write=True, **kwargs):
         """
@@ -1133,13 +1210,16 @@ class MTLH:
 
         # Data
         d = self.d
-        process_path = ProcessPath(list_times, T_f, list_marks=list_marks,
-                                   kappa=kappa, varpi=varpi)
+        list_times = process_path.list_times
+        T_f = process_path.T_f
 
         # Model bounds
-        bnds = self.matrix2tensor_params(self.mu_param_bounds,
-                                         self.ker_param_bounds,
-                                         self.imp_param_bounds)
+        lower_bnds = self.matrix2tensor_params(self.mu_param_lower_bounds,
+                                               self.ker_param_lower_bounds,
+                                               self.imp_param_lower_bounds)
+        upper_bnds = self.matrix2tensor_params(self.mu_param_upper_bounds,
+                                               self.ker_param_upper_bounds,
+                                               self.imp_param_upper_bounds)
 
         # Solver
         if not isinstance(n_iter, (list, np.ndarray)):
@@ -1208,7 +1288,8 @@ class MTLH:
         for k in range(d):
             x_k = x_0[k]
             logger.log_param(k, 0, x_k)
-            bounds_k = bnds[k]
+            lower_bounds_k = lower_bnds[k]
+            upper_bounds_k = upper_bnds[k]
             n_iter_k = n_iter[k]
 
             for t in tqdm(range(n_iter_k), disable=not verbose):
@@ -1216,9 +1297,10 @@ class MTLH:
                 g_t = estimators[k].lse_k_grad_estimate(x_k, grad_alloc=True,
                                                         rng=rng)
                 logger.log_grad(k, t, g_t)
-                # Apply solver iteration then project into space of parameters
+                # Apply solver iteration
                 x_k = solvers[k].iterate(t, x_k, g_t)
-                x_k = np.maximum(x_k, bounds_k)
+                # Project into space of parameters
+                x_k = np.clip(x_k, lower_bounds_k, upper_bounds_k)
                 logger.log_param(k, t+1, x_k)
             esimator_k_log = estimators[k].get_log()
             logger.estimator_logs[k] = esimator_k_log
@@ -1338,14 +1420,17 @@ class MTLH:
             rng = np.random.default_rng(seed)
         d = self.d
 
-        mu_bnds = self.get_mu_param_bounds()
-        ker_bnds = self.get_ker_param_bounds()
-        imp_bnds = self.get_imp_param_bounds()
+        mu_lower_bnds = self.get_mu_param_lower_bounds()
+        mu_upper_bnds = self.get_mu_param_upper_bounds()
+        ker_lower_bnds = self.get_ker_param_lower_bounds()
+        ker_upper_bnds = self.get_ker_param_upper_bounds()
+        imp_lower_bnds = self.get_imp_param_lower_bounds()
+        imp_upper_bnds = self.get_imp_param_upper_bounds()
 
         # Mu
         if ref_mu_param is None:
             if min_mu_param is None:
-                min_mu_param = copy.deepcopy(mu_bnds)
+                min_mu_param = copy.deepcopy(mu_lower_bnds)
             else:
                 if not uf.is_array(min_mu_param):
                     min_mu_float = copy.deepcopy(min_mu_param)
@@ -1363,7 +1448,7 @@ class MTLH:
                                                   high=max_mu_param[i][ix],
                                                   size=1)[0]
         else:
-            dist_mu_bnds = [ref_mu_param[i]-mu_bnds[i] for i in range(d)]
+            dist_mu_bnds = [ref_mu_param[i]-mu_lower_bnds[i] for i in range(d)]
             lower_mu_params = [ref_mu_param[i]-range_ref_mu*dist_mu_bnds[i] for i in range(d)]
             upper_mu_params = [ref_mu_param[i] for i in range(d)]
 
@@ -1389,18 +1474,19 @@ class MTLH:
                         if x in vec_ix_omega:
                             max_ker_param[i][j][x] = max_omega
                         else:
-                            max_ker_param[i][j][x] = max(float_max, ker_bnds[i][j][x])
+                            max_ker_param[i][j][x] = max(float_max,
+                                                         ker_lower_bnds[i][j][x])
 
             for i, j in itertools.product(range(d), range(d)):
                 n_param = self.matrix_n_param_ker[i][j]
                 kernel_param[i][j] = np.zeros(n_param)
                 for ix in range(n_param):
-                    val = rng.uniform(low=ker_bnds[i][j][ix],
+                    val = rng.uniform(low=ker_lower_bnds[i][j][ix],
                                       high=max_ker_param[i][j][ix],
                                       size=1)[0]
                     kernel_param[i][j][ix] = val
         else:
-            dist_ker_bnds = [[ref_ker_param[i][j]-ker_bnds[i][j] for j in range(d)] for i in range(d)]
+            dist_ker_bnds = [[ref_ker_param[i][j]-ker_lower_bnds[i][j] for j in range(d)] for i in range(d)]
             lower_ker_params = [[ref_ker_param[i][j]-range_ref_ker*dist_ker_bnds[i][j] for j in range(d)] for i in range(d)]
             upper_ker_params = [[ref_ker_param[i][j]+range_ref_ker*dist_ker_bnds[i][j] for j in range(d)] for i in range(d)]
             for i, j in itertools.product(range(d), range(d)):
@@ -1419,7 +1505,9 @@ class MTLH:
             kernel_param[i][j] = np.array(kernel_param[i][j])
             if branching_ratio > 0.:
                 vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
-                kernel_param[i][j][vec_ix_omega] = (scaling*kernel_param[i][j][vec_ix_omega])
+                if len(vec_ix_omega) > 0:
+                    kernel_param[i][j][vec_ix_omega] = (scaling
+                                                        * kernel_param[i][j][vec_ix_omega])
 
         # Impacts
         impact_param = np.array([[None for j in range(d)]
@@ -1433,27 +1521,32 @@ class MTLH:
                 for i, j in itertools.product(range(d), range(d)):
                     n_param = self.matrix_n_param_imp[i][j]
                     for ix in range(n_param):
-                        max_imp_param[i][j][ix] = max(float_max, imp_bnds[i][j][ix])
+                        max_imp_param[i][j][ix] = max(float_max,
+                                                      imp_lower_bnds[i][j][ix])
 
             for i, j in itertools.product(range(d), range(d)):
                 n_param = self.matrix_n_param_imp[i][j]
                 impact_param[i][j] = np.zeros(n_param)
                 for ix in range(n_param):
-                    val = rng.uniform(low=imp_bnds[i][j][ix],
-                                      high=max_ker_param[i][j][ix],
-                                      size=1)[0]
+                    lo_lim = imp_lower_bnds[i][j][ix]
+                    hi_lim = min(max_imp_param[i][j][ix],
+                                 imp_upper_bnds[i][j][ix])
+                    hi_lim = max(hi_lim, lo_lim)
+                    val = rng.uniform(low=lo_lim, high=hi_lim, size=1)[0]
                     impact_param[i][j][ix] = val
         else:
-            dist_imp_bnds = [[ref_imp_param[i][j]-imp_bnds[i][j] for j in range(d)] for i in range(d)]
+            dist_imp_bnds = [[ref_imp_param[i][j]-imp_lower_bnds[i][j] for j in range(d)] for i in range(d)]
             lower_imp_params = [[ref_imp_param[i][j]-range_ref_imp*dist_imp_bnds[i][j] for j in range(d)] for i in range(d)]
             upper_imp_params = [[ref_imp_param[i][j]+range_ref_imp*dist_imp_bnds[i][j] for j in range(d)] for i in range(d)]
             for i, j in itertools.product(range(d), range(d)):
                 n_param = self.matrix_n_param_imp[i][j]
                 impact_param[i][j] = np.zeros(n_param)
                 for ix in range(n_param):
-                    val = rng.uniform(low=lower_imp_params[i][j][ix],
-                                      high=upper_imp_params[i][j][ix],
-                                      size=1)[0]
+                    lo_lim = lower_imp_params[i][j][ix]
+                    hi_lim = min(upper_imp_params[i][j][ix],
+                                 imp_upper_bnds[i][j][ix])
+                    hi_lim = max(hi_lim, lo_lim)
+                    val = rng.uniform(low=lo_lim, high=hi_lim, size=1)[0]
                     impact_param[i][j][ix] = val
 
         # Flatten
@@ -1466,8 +1559,9 @@ class MTLH:
     # Residuals
     def get_residuals(self, process_path, mu_param=None, kernel_param=None,
                       impact_param=None, expected_impact_matrix=None,
-                      sampling=False, sample_size=10**3,
-                      seed=1234, write=True, verbose=False):
+                      cutoff=False, cutoff_ixlag=200, sampling=False,
+                      sample_size=10**3, rng=None, seed=1234, verbose=False,
+                      write=True):
         """
         Compute the residuals of the model.
 
@@ -1555,12 +1649,13 @@ class MTLH:
         if expected_impact_matrix is None:
             expected_impact_matrix = self.make_expected_impact(impact_param)
         residuals = gof.get_residuals_mtlh(process_path, self.mu_compensator,
-                                           self.psi, self.impact,
-                                           expected_impact_matrix,
-                                           mu_param, kernel_param, impact_param,
+                                           self.psi, expected_impact_matrix,
+                                           mu_param, kernel_param,
+                                           impact_param, cutoff=cutoff,
+                                           cutoff_ixlag=cutoff_ixlag,
                                            sampling=sampling,
-                                           sample_size=sample_size, seed=seed,
-                                           verbose=verbose)
+                                           sample_size=sample_size,
+                                           rng=rng, seed=seed, verbose=verbose)
         if self.is_fitted and write:
             self.fitted_expected_impact_matrix = expected_impact_matrix
             self.fit_residuals = residuals
@@ -1648,8 +1743,8 @@ class MTLH:
                 kernel_param[i][j])
 
         adjacency = self.make_adjacency_matrix(kernel_param)
-        if rng is None:
-            rng = np.random.default_rng(seed)
+        # RNG
+        rng = us.make_rng(rng=rng, seed=seed)
 
         branching_ratio = self.get_branching_ratio(adjacency=adjacency)
         if branching_ratio >= 1:
@@ -1692,9 +1787,16 @@ class MTLH:
                         offspringtime = parenttimes + offsets
                         generations[i][ix_gen] = np.append(generations[i][ix_gen], np.array([x for x in offspringtime if x < T_f]))
                         n_valid_kids = len(np.array([x for x in offspringtime if x < T_f]))
-                        raw_marks[i][ix_gen] = np.append(raw_marks[i][ix_gen],
-                                                         self.vec_marks[i].simulate(size=n_valid_kids,
-                                                                                    rng=rng))
+                        if n_valid_kids > 0:
+                            if len(raw_marks[i][ix_gen]) > 0:
+                                raw_marks[i][ix_gen] = np.append(raw_marks[i][ix_gen],
+                                                                 self.vec_marks[i].simulate(size=n_valid_kids,
+                                                                                            rng=rng),
+                                                                 axis=0)
+                            else:
+                                raw_marks[i][ix_gen] = self.vec_marks[i].simulate(size=n_valid_kids,
+                                                                                            rng=rng)
+
             ix_gen += 1
 
         if verbose:
@@ -1706,6 +1808,9 @@ class MTLH:
 
         list_marks = [np.array([x for _, x in sorted(zip(list_times_[i], list_marks_[i]))]) for i in range(d)]
         list_times = [np.array(sorted(list_times_[i])) for i in range(d)]
+        for i in range(d):
+            list_marks[i] = list_marks[i].reshape((len(list_times[i]),
+                                                   self.vec_marks[i].get_mark_dim()))
         if verbose:
             n_tot = sum([len(L) for L in list_times])
             print('Simulation Complete, ', n_tot, ' events simulated.')
@@ -1747,7 +1852,8 @@ class MTLH:
         if rng is None:
             rng = np.random.default_rng(seed)
         # Model
-        bnds = self.param_bounds
+        lower_bnds = self.param_lower_bounds
+        upper_bnds = self.param_upper_bounds
 
         # Initialisation
         ref_mu = kwargs.get('ref_mu', None)
@@ -1861,12 +1967,13 @@ class MTLH:
 
     # Serialization
     def save(self, file, **kwargs):
+        # Parameters
         if file.endswith('.pickle'):
             file_mu = file+'_fitted_mu.pickle'
         else:
             file_mu = file+'_fitted_mu'
         pickle_out = open(file_mu, "wb", **kwargs)
-        pickle.dump(self.fitted_mu, pickle_out)
+        pickle.dump(self.fitted_mu_param, pickle_out)
         pickle_out.close()
 
         if file.endswith('.pickle'):
@@ -1878,10 +1985,18 @@ class MTLH:
         pickle_out.close()
 
         if file.endswith('.pickle'):
+            file_imp = file+'_fitted_imp.pickle'
+        else:
+            file_imp = file+'_fitted_imp'
+        pickle_out = open(file_imp, "wb", **kwargs)
+        pickle.dump(self.fitted_imp_param, pickle_out)
+        pickle_out.close()
+
+        # Residuals
+        if file.endswith('.pickle'):
             file_residuals = file+'_fitted_residuals.pickle'
         else:
             file_residuals = file+'_fitted_residuals'
-        file_residuals = file+'_fitted_residuals'
         pickle_out = open(file_residuals, "wb", **kwargs)
         pickle.dump(self.fit_residuals, pickle_out)
         pickle_out.close()
@@ -1890,18 +2005,26 @@ class MTLH:
             file_adjacency = file+'_fitted_adj.pickle'
         else:
             file_adjacency = file+'_fitted_adj'
-        file_adjacency = file+'_fitted_adj'
         pickle_out = open(file_adjacency, "wb", **kwargs)
         pickle.dump(self.fitted_adjacency, pickle_out)
         pickle_out.close()
 
+        if file.endswith('.pickle'):
+            file_fit_log = file+'_fit_log.pickle'
+        else:
+            file_fit_log = file+'_fit_log'
+        pickle_out = open(file_fit_log, "wb", **kwargs)
+        pickle.dump(self.fit_log, pickle_out)
+        pickle_out.close()
+
     def load(self, file, **kwargs):
+        # Parameters
         if file.endswith('.pickle'):
             file_mu = file+'_fitted_mu.pickle'
         else:
             file_mu = file+'_fitted_mu'
         pickle_in = open(file_mu, "rb")
-        fitted_mu = pickle.load(pickle_in)
+        fitted_mu_param = pickle.load(pickle_in)
 
         if file.endswith('.pickle'):
             file_ker = file+'_fitted_ker.pickle'
@@ -1909,8 +2032,17 @@ class MTLH:
             file_ker = file+'_fitted_ker'
         file_ker = file+'_fitted_ker'
         pickle_in = open(file_ker, "rb")
-        fitted_ker = pickle.load(pickle_in)
+        fitted_ker_param = pickle.load(pickle_in)
 
+        if file.endswith('.pickle'):
+            file_imp = file+'_fitted_imp.pickle'
+        else:
+            file_imp = file+'_fitted_imp'
+        file_imp = file+'_fitted_imp'
+        pickle_in = open(file_imp, "rb")
+        fitted_imp_param = pickle.load(pickle_in)
+
+        # Residuals
         if file.endswith('.pickle'):
             file_residuals = file+'_fitted_residuals.pickle'
         else:
@@ -1925,10 +2057,19 @@ class MTLH:
         pickle_in = open(file_adjacency, "rb")
         fitted_adjacency = pickle.load(pickle_in)
 
+        if file.endswith('.pickle'):
+            file_fit_log = file+'_fit_log.pickle'
+        else:
+            file_fit_log = file+'_fit_log'
+        pickle_in = open(file_fit_log, "rb")
+        fit_log = pickle.load(pickle_in)
+
         self.clear_fit()
 
         self.is_fitted = True
-        self.fitted_mu = fitted_mu
-        self.fitted_ker_param = fitted_ker
+        self.fitted_mu_param = fitted_mu_param
+        self.fitted_ker_param = fitted_ker_param
+        self.fitted_imp_param = fitted_imp_param
         self.fit_residuals = fitted_residuals
         self.fitted_adjacency = fitted_adjacency
+        self.fit_log = fit_log

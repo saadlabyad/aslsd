@@ -7,7 +7,8 @@ from aslsd.utilities import useful_functions as uf
 dict_ker = {}
 dict_ker['n_vars'] = 2
 dict_ker['var_names'] = ['$\u03C9$', '$\u03B2$', '$\u03B4$']
-dict_ker['var_bounds'] = np.array([10**-10, 10**-10, 10**-10])
+dict_ker['var_lower_bounds'] = np.array([10**-10, 10**-10, 10**-10])
+dict_ker['var_upper_bounds'] = np.array([np.inf, np.inf, np.inf])
 
 
 def tphi_func(t, vars_):
@@ -16,6 +17,16 @@ def tphi_func(t, vars_):
 
 
 dict_ker['tphi_func'] = tphi_func
+
+
+def tpsi_func(t, vars_):
+    beta, delta = vars_
+    F_t = uf.normal_cdf((t-delta)/beta)
+    F_par = uf.normal_cdf(delta/beta)
+    return 1.+(F_t-1.)/F_par
+
+
+dict_ker['tpsi_func'] = tpsi_func
 
 
 def diff_log_tphi_func(t, ix_diff, vars_):

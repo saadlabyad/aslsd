@@ -5,7 +5,8 @@ import numpy as np
 dict_ker = {}
 dict_ker['n_vars'] = 1
 dict_ker['var_names'] = ['$\u03C9$', '$\u03B2$']
-dict_ker['var_bounds'] = np.array([10**-10, 10**-10])
+dict_ker['var_lower_bounds'] = np.array([10**-10, 10**-10])
+dict_ker['var_upper_bounds'] = np.array([np.inf, np.inf])
 
 
 def tphi_func(t, vars_):
@@ -13,6 +14,13 @@ def tphi_func(t, vars_):
 
 
 dict_ker['tphi_func'] = tphi_func
+
+
+def tpsi_func(t, vars_):
+    return 1.-np.exp(-vars_[0]*t)
+
+
+dict_ker['tpsi_func'] = tpsi_func
 
 
 def diff_tphi_func(t, ix_diff, vars_):

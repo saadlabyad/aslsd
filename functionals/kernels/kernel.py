@@ -97,12 +97,11 @@ class KernelModel():
                 ix_param += 1
                 i += 1
         interval_map = [None]*self.n_basis_ker
-        ix_left = 0
-        ix_right = self.vec_n_param[0]
+        ix_right = 0
         for ix_ker in range(self.n_basis_ker):
-            interval_map[ix_ker] = [ix_left, ix_right]
             ix_left = ix_right
-            ix_right += self.vec_n_param[ix_ker]
+            ix_right = ix_left+self.vec_n_param[ix_ker]
+            interval_map[ix_ker] = [ix_left, ix_right]
         return ix_map, interval_map
 
     # Null
@@ -121,7 +120,13 @@ class KernelModel():
         # and therefore the spectral radius of the adjacency matrix of the
         # MHP. In the context of random initialization of an MHP, this allows
         # to avoid parameter values that make the MHP unstable.
-        return [x[0] for x in self.interval_map]
+        vec_ix_omega = []
+        ix_ref = 0
+        for ix_ker in range(self.n_basis_ker):
+            if 0 not in self._basis_kernels[ix_ker].fixed_indices:
+                vec_ix_omega.append(ix_ref)
+            ix_ref += self._basis_kernels[ix_ker].get_n_param()
+        return vec_ix_omega
 
     def is_sbf(self):
         for ix_ker in range(self.n_basis_ker):
@@ -132,12 +137,20 @@ class KernelModel():
         return True
 
     # Bounds
-    def get_param_bounds(self):
-        bnds = [None]*self.n_param
+    def get_param_lower_bounds(self):
+        bnds = np.zeros(self.n_param)
         for i in range(self.n_param):
             ix_ker = self.ix_map[i]['ker']
             ix_param = self.ix_map[i]['par']
-            bnds[i] = self._basis_kernels[ix_ker].get_param_bounds()[ix_param]
+            bnds[i] = self._basis_kernels[ix_ker].get_param_lower_bounds()[ix_param]
+        return bnds
+
+    def get_param_upper_bounds(self):
+        bnds = np.zeros(self.n_param)
+        for i in range(self.n_param):
+            ix_ker = self.ix_map[i]['ker']
+            ix_param = self.ix_map[i]['par']
+            bnds[i] = self._basis_kernels[ix_ker].get_param_upper_bounds()[ix_param]
         return bnds
 
     # Param names

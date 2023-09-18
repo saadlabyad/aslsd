@@ -15,29 +15,29 @@ class CategoricalMark(Mark):
         if probas is None:
             if data is None:
                 probas = (1./J)*np.zeros(J)
-                probas[-1] = 1.-np.sum(probas[:-1])
             else:
                 probas = self.estimate_mark_probas(data)
-        else:
-            probas[-1] = 1.-np.sum(probas[:-1])
-
+        probas[-1] = 1.-np.sum(probas[:-1])
         self.probas = np.array(probas)
         # Initialise Abstract class
         Mark.__init__(self, default_exp_imp='exact')
+
+    def get_mark_dim(self):
+        return 1
 
     def simulate(self, size=1, rng=None, seed=1234):
         # RNG
         rng = us.make_rng(rng=rng, seed=seed)
         # Generation
-        marks = rng.choice(self.marks_set, size=size, replace=True,
-                           p=self.probas)
-        return marks
+        xi = rng.choice(self.marks_set, size=size, replace=True, p=self.probas)
+        if type(size) != tuple:
+            xi = xi.reshape((size, self.get_mark_dim()))
+        return xi
 
     def exact_expected_basis_impact(self, basis_impact, imp_params):
         # Compute beta
-        vec_beta = np.zeros(self.J)
-        vec_beta[:-1] = 0.+imp_params
-        vec_beta[-1] = 1.-np.sum(imp_params)
+        vec_beta = np.ones(self.J)
+        vec_beta[1:] = 0.+imp_params
         # Compute expectation
         mean = np.sum(self.probas*vec_beta)
         return mean

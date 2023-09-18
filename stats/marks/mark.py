@@ -11,11 +11,11 @@ class Mark(ABC):
 
     # Expected Impact
     def exact_expected_impact(self, impact_function, imp_params):
+        interval_map = impact_function.interval_map
         res = 0.
         for ix_imp in range(impact_function.n_basis_imp):
             basis_imp = impact_function._basis_impacts[ix_imp]
-            basis_imp_params = imp_params[basis_imp.interval_map[ix_imp][0]
-                                          :basis_imp.interval_map[ix_imp][1]]
+            basis_imp_params = imp_params[interval_map[ix_imp][0]:interval_map[ix_imp][1]]
             res += self.exact_expected_basis_impact(basis_imp,
                                                     basis_imp_params)
         return res
@@ -34,6 +34,10 @@ class Mark(ABC):
                                                  n_mc=n_mc, rng=rng, seed=seed)
         elif self.default_exp_imp == 'exact':
             return self.exact_expected_impact(impact_function, imp_params)
+
+    @abstractmethod
+    def get_mark_dim(self):
+        pass
 
     @abstractmethod
     def simulate(self, size=1, rng=None, seed=1234):

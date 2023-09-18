@@ -55,8 +55,11 @@ class CosineBaseline(BasisBaseline):
     def get_n_vars(self):
         return 4
 
-    def get_var_bounds(self):
+    def get_var_lower_bounds(self):
         return np.array([10**-5, 10**(-10), 0., 10**(-10)])
+
+    def get_var_upper_bounds(self):
+        return np.array([np.inf, np.inf, self.T_p, np.inf])
 
     def get_var_names(self):
         return ['$\u03B1$', 'a', 'b', '$\u03B4$']

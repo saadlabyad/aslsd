@@ -363,8 +363,11 @@ class ExponentialKernel(BasisKernel):
         return 2
 
     # Bounds
-    def get_var_bounds(self):
+    def get_var_lower_bounds(self):
         return np.array([10**-10, 10**-10])
+
+    def get_var_upper_bounds(self):
+        return np.array([np.inf, np.inf])
 
     # Param names
     def get_var_names(self):

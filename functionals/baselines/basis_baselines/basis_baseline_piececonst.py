@@ -38,6 +38,7 @@ class PieceConstBaseline(BasisBaseline):
                         b, self.interval_sizes)
                     return np.digitize(y, cum_weighted_intervals)
             else:
+                cum_weighted_intervals = cum_weighted_intervals.astype('float')
                 return np.digitize(y, cum_weighted_intervals)
         self.inv_G = inv_G
         BasisBaseline.__init__(self, fixed_indices=fixed_indices,
@@ -58,6 +59,7 @@ class PieceConstBaseline(BasisBaseline):
         return Q
 
     def get_cum_weighted_intervals(self, b, interval_sizes):
+        b = b.astype('float')
         weighted_sizes = b*interval_sizes
         # cum_weighted_intervals = np.zeros(len(weighted_sizes)+1)
         # cum_weighted_intervals[1:] = np.cumsum(weighted_sizes)
@@ -87,8 +89,11 @@ class PieceConstBaseline(BasisBaseline):
     def get_n_vars(self):
         return self.n_int
 
-    def get_var_bounds(self):
+    def get_var_lower_bounds(self):
         return 10**-10*np.ones(self.n_int)
+
+    def get_var_upper_bounds(self):
+        return np.inf*np.ones(self.n_int)
 
     def get_var_names(self):
         return ['$b_{'+str(ix)+'}$' for ix in range(self.n_int)]

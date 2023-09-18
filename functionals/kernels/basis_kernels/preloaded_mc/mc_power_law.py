@@ -5,7 +5,8 @@ import numpy as np
 dict_ker = {}
 dict_ker['n_vars'] = 2
 dict_ker['var_names'] = ['$\u03C9$', '$\u03B1$', '$\u03B2$']
-dict_ker['var_bounds'] = 10**-10*np.ones(3)
+dict_ker['var_lower_bounds'] = (10**-10)*np.ones(3)
+dict_ker['var_upper_bounds'] = np.inf*np.ones(3)
 
 
 def tphi_func(t, vars_):

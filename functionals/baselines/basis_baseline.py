@@ -148,10 +148,14 @@ class BasisBaseline(ABC):
 
     # Bounds
     @abstractmethod
-    def get_var_bounds(self):
+    def get_var_lower_bounds(self):
         pass
 
-    def get_param_bounds(self):
+    @abstractmethod
+    def get_var_upper_bounds(self):
+        pass
+
+    def get_param_lower_bounds(self):
         """
         Get the list of lower bounds of the domain of each parameter of the
         basis kernel.
@@ -171,9 +175,37 @@ class BasisBaseline(ABC):
             By parameters, we mean the non-fixed paramters.
 
         """
-        bnds = self.get_var_bounds()
-        n_vars = len(bnds)
-        return [bnds[i] for i in range(n_vars) if i not in self.fixed_indices]
+        var_bnds = self.get_var_lower_bounds()
+        n_vars = len(var_bnds)
+        param_bnds = np.array([var_bnds[i] for i in range(n_vars)
+                               if i not in self.fixed_indices])
+        return param_bnds
+
+    def get_param_upper_bounds(self):
+        """
+        Get the list of lower bounds of the domain of each parameter of the
+        basis kernel.
+
+        Let :math:`\\vartheta:=(\\vartheta_1, \\dots, \\vartheta_{n_{\\textrm{param}}})` denote the parameters of the basis kernel. 
+        Each parameter :math:`\\vartheta_i` lives in a half-open interval :math:`[b_i, +\\infty)`.
+        This method returns the vector :math:`(b_1, \\dots, b_{n_{\\textrm{param}}})`.
+
+        Returns
+        -------
+        `list`
+            List of lower bounds of the domain of each parameter of the
+            basis kernel.
+
+        Notes
+        ------
+            By parameters, we mean the non-fixed paramters.
+
+        """
+        var_bnds = self.get_var_upper_bounds()
+        n_vars = len(var_bnds)
+        param_bnds = np.array([var_bnds[i] for i in range(n_vars)
+                               if i not in self.fixed_indices])
+        return param_bnds
 
     # Parameter names
     @abstractmethod

@@ -44,7 +44,7 @@ class MtlhStratified(Estimator):
             log_name = 'K_'+str(i)
             if K_stratif[i] is None:
                 n_events_i = self.n_events[i]
-                K_stratif[i] = GeneralStratification(list_times[k], **kwargs)
+                K_stratif[i] = GeneralStratification(list_times[i], **kwargs)
             self.stratif[log_name] = K_stratif[i]
 
         # upsilonzero
@@ -54,7 +54,7 @@ class MtlhStratified(Estimator):
             log_name = 'upsilonzero_'+str(i)
             if upsilonzero_stratif[i] is None:
                 n_events_i = self.n_events[i]
-                upsilonzero_stratif[i] = GeneralStratification(list_times[k], **kwargs)
+                upsilonzero_stratif[i] = GeneralStratification(list_times[i], **kwargs)
             self.stratif[log_name] = upsilonzero_stratif[i]
 
     def set_doublesum_estimation(self, **kwargs):
@@ -375,7 +375,6 @@ class MtlhStratified(Estimator):
         # Iteration 1
         # This step is treated apart because of the batch formula for the std
         samples[0] = sampling_func(adaptive_strata, n_samples, rng=rng)
-        
 
         for ix_strata in range(n_adaptive_strata):
             n_samples_iter = get_n_samples(samples[0][ix_strata])
@@ -402,7 +401,8 @@ class MtlhStratified(Estimator):
                     if is_ix_func[ix_f]:
                         for ix_func in [1, 2]:
                             for ix_param in range(list_n_param[ix_f][ix_func]):
-                                diff_f_args = dict(list_diff_f_args[ix_f], **data_samples[ix_f])
+                                diff_f_args = dict(list_diff_f_args[ix_f],
+                                                   **data_samples[ix_f])
                                 diff_f_args['ix_diff'] = ix_param
                                 diff_f_args['ix_func'] = ix_func
                                 diff_f_vals = coeff*list_diff_f[ix_f](**diff_f_args)*local_prod
@@ -574,10 +574,6 @@ class MtlhStratified(Estimator):
             samples = [[samples[ix_iter][ix_strata]
                         for ix_iter in range(n_adaptive_iters)]
                        for ix_strata in range(n_adaptive_strata)]
-            # for ix_strata in range(n_adaptive_strata):
-            #     print('ix_strata', ix_strata)
-            #     print('samples[ix_strata]', samples[ix_strata])
-            #     samples[ix_strata] = np.concatenate(samples[ix_strata])
             self.logged_ixs[log_name]['adaptive'][self.t] = samples
 
     def estimate_sum_nonadaptivedom(self, strf, sampling_func, ixs_transform,
@@ -948,15 +944,15 @@ class MtlhStratified(Estimator):
 
         # Derivative with respect to kernel parameters
         for p in range(d):
-            for ix_param in range(self.interval_map_ker[k][p][0],
-                                  self.interval_map_ker[k][p][1]):
+            for ix in range(self.matrix_n_param_ker[k][p]):
+                ix_param = self.interval_map_ker[k][p][0]+ix
                 r = self.ix_map_ker[k][ix_param]['par']
                 grad[ix_param] = self.recombine_diff_lse_theta_kpr_kernel(p, r)
 
         # Derivative with respect to impact parameters
         for p in range(d):
-            for ix_param in range(self.interval_map_imp[k][p][0],
-                                  self.interval_map_imp[k][p][1]):
+            for ix in range(self.matrix_n_param_imp[k][p]):
+                ix_param = self.interval_map_imp[k][p][0]+ix
                 r = self.ix_map_imp[k][ix_param]['par']
                 grad[ix_param] = self.recombine_diff_lse_theta_kpr_impact(p, r)
 
@@ -1040,9 +1036,8 @@ class MtlhStratified(Estimator):
         def ixs_transform(ix_samples_stratum):
             data_samples = [None]*2
             # phi samples, ix_f = 0
-            t_m = self.list_times[i][ix_samples_stratum]
             data_samples[0] = {'t': self.list_times2end[i][ix_samples_stratum],
-                               's': t_m}
+                               's': self.list_times[i][ix_samples_stratum]}
             # Imp samples, ix_f = 1
             xi_m = self.list_marks[i][ix_samples_stratum]
             data_samples[1] = {'xi': xi_m}
@@ -1245,7 +1240,7 @@ class MtlhStratified(Estimator):
                 diff_imp_1 = self.diff_impact[k][i](xi_1, ix_diff, params_1)
                 imp_2 = self.impact[k][j](xi_2, params_2)
                 return diff_imp_1*imp_2
-            elif ix_func == 1:
+            elif ix_func == 2:
                 imp_1 = self.impact[k][i](xi_1, params_1)
                 diff_imp_2 = self.diff_impact[k][j](xi_2, ix_diff, params_2)
                 return imp_1*diff_imp_2
@@ -1443,80 +1438,3 @@ class MtlhStratified(Estimator):
             self.logged_lse[self.t] = lse
 
         return grad
-
-# =============================================================================
-# True Optimal allocations
-# =============================================================================
-    def get_true_allocation_phi(self, i, x_ki):
-        k = self.k
-        n_param_ki = self.matrix_n_param[k][i]
-
-        strf = self.phi_stratif[i]
-        adaptive_strata = strf.adaptive_strata
-        n_adaptive_strata = strf.n_adaptive_strata
-        strata_sizes = strf.adaptive_strata_sizes
-
-        alloc = np.zeros(n_adaptive_strata)
-        std = np.zeros(n_adaptive_strata)
-        for ix_strata in range(n_adaptive_strata):
-            h_inf = adaptive_strata[ix_strata][0]
-            h_sup = adaptive_strata[ix_strata][1]
-            phi_vals = np.zeros(strata_sizes[ix_strata])
-            ix_start = 0
-            ix_end = 0
-            for h in range(h_inf, h_sup+1):
-                ix_start = ix_end
-                times_m = self.list_times[k][self.varpi[k][i][h]:self.event_counts[k]]
-                times_n = self.list_times[i][[self.kappa[i][k][m]+1-h for m in range(self.varpi[k][i][h], self.event_counts[k])]]
-                ix_end = ix_start+self.n_events[k]-self.varpi[k][i][h]
-                phi_vals[ix_start:ix_end] = self.phi[k][i](times_m-times_n, x_ki)
-
-            # Initialize satistics
-            std[ix_strata] = np.std(phi_vals)
-            # Adapt allocation
-            alloc[ix_strata] = (strata_sizes[ix_strata]
-                                * strf.adaptive_strata_fpop[ix_strata]
-                                * std[ix_strata])
-        alloc = alloc/np.sum(alloc)
-        return alloc
-
-    def get_true_allocation_upsilon(self, i, j, x_ki, x_kj):
-        k = self.k
-        T_f = self.TT_f
-        n_param_ki = self.matrix_n_param[k][i]
-        n_param_kj = self.matrix_n_param[k][j]
-        list_n_param = [None, 1, 2]
-
-        strf = self.phi_stratif[i]
-        adaptive_strata = strf.adaptive_strata
-        n_adaptive_strata = strf.n_adaptive_strata
-        strata_sizes = strf.adaptive_strata_sizes
-
-        alloc = np.zeros(n_adaptive_strata)
-        std = np.zeros(n_adaptive_strata)
-        for ix_strata in range(n_adaptive_strata):
-            h_inf = adaptive_strata[ix_strata][0]
-            h_sup = adaptive_strata[ix_strata][1]
-            upsilon_vals = np.zeros(strata_sizes[ix_strata])
-            ix_start = 0
-            ix_end = 0
-            for h in range(h_inf, h_sup+1):
-                ix_start = ix_end
-                times_m = self.list_times[k][self.varpi[k][i][h]:
-                                             self.event_counts[k]]
-                times_n = self.list_times[i][[self.kappa[i][k][m]+1-h
-                                              for m in range(self.varpi[k][i][h], self.event_counts[k])]]
-                ix_end = ix_start+self.n_events[k]-self.varpi[k][i][h]
-                if self.is_grad_target:
-                    pass
-                else:
-                    upsilon_vals[ix_start:ix_end] = self.upsilon[i][j][k](T_f-times_m, times_m-times_n, x_ki, x_kj)
-
-            # Initialize satistics
-            std[ix_strata] = np.std(upsilon_vals)
-            # Adapt allocation
-            alloc[ix_strata] = (strata_sizes[ix_strata]
-                                * strf.adaptive_strata_fpop[ix_strata]
-                                * std[ix_strata])
-        alloc = alloc/np.sum(alloc)
-        return alloc

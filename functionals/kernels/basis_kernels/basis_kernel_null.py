@@ -29,7 +29,10 @@ class NullKernel(BasisKernel):
         return 0
 
     # Bounds
-    def get_var_bounds(self):
+    def get_var_lower_bounds(self):
+        return np.array([])
+
+    def get_var_upper_bounds(self):
         return np.array([])
 
     # Param names
@@ -61,24 +64,24 @@ class NullKernel(BasisKernel):
         return 0.*t
 
     def make_upsilon_rev(self, basis_kern_2, t, s, vars_2, vars_1):
-        return 0.*t
+        return 0.*t+0.*s
 
     def make_diff_sim_upsilon(self, t, s, ix_diff, vars_):
-        return 0.*t
+        return 0.*t+0.*s
 
     def make_diff_cross_upsilon(self, basis_kern_2, t, s, ix_func, ix_diff,
                                 vars_1, vars_2):
-        return 0.*t
+        return 0.*t+0.*s
 
     def make_diff_cross_upsilon_rev(self, basis_kern_2, t, s, ix_func, ix_diff,
                                     vars_2, vars_1):
-        return 0.*t
+        return 0.*t+0.*s
 
     def make_K(self, baseline, t, s, vars_ker, params_mu):
-        return 0.
+        return 0.*t+0.*s
 
     def make_diff_K(self, baseline, t, s, ix_func, ix_diff, vars_ker, params_mu):
-        return 0.*t
+        return 0.*t+0.*s
 
     # Simulatiom
     def make_simu_func(self, rng, vars_, size=1):

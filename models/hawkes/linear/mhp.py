@@ -15,7 +15,6 @@ from aslsd.optimize.optim_logging.optim_logger import OptimLogger
 from aslsd.optimize.solvers.adam import ADAM
 from aslsd.optimize.solvers.solver import Solver
 from aslsd.stats.residual_analysis import goodness_of_fit as gof
-from aslsd.stats.events.process_path import ProcessPath
 from aslsd.utilities import graphic_tools as gt
 from aslsd.utilities import useful_functions as uf
 from aslsd.utilities import useful_numerics as un
@@ -138,14 +137,7 @@ class MHP:
 
     """
 
-    def __init__(self, _kernel_matrix, d=None, matrix_n_param=None,
-                 n_ker_param=None, ix_map=None, interval_map=None,
-                 mu_names=None, ker_param_names=None,
-                 param_bounds=None, phi=None, diff_phi=None, psi=None,
-                 diff_psi=None, upsilon=None, diff_sim_upsilon=None,
-                 diff_cross_upsilon=None, is_fitted=False,
-                 fitted_mu=None, fitted_ker_param=None,
-                 fit_residuals=None, fitted_adjacency=None, fit_log=None):
+    def __init__(self, _kernel_matrix):
         """
         Constructor of objects of class MHP.
 
@@ -155,7 +147,7 @@ class MHP:
             Matrix of kernel models.
 
         """
-        self.is_fitted = False
+        self.clear_fit()
         self.kernel_matrix = _kernel_matrix
 
     # Kernel matrix
@@ -186,7 +178,8 @@ class MHP:
         param_names = self.get_param_names()
         self.mu_names = param_names['mu']
         self.ker_param_names = param_names['kernels']
-        self.param_bounds = self.get_param_bounds()
+        self.param_lower_bounds = self.get_param_lower_bounds()
+        self.param_upper_bounds = self.get_param_upper_bounds()
         self.make_functionals()
 
     @kernel_matrix.deleter
@@ -407,9 +400,15 @@ class MHP:
         return True
 
     # Bounds
-    def get_param_bounds(self):
+    def get_param_lower_bounds(self):
         d = self.d
-        bnds = [[self._kernel_matrix[i][j].get_param_bounds()
+        bnds = [[self._kernel_matrix[i][j].get_param_lower_bounds()
+                 for j in range(d)] for i in range(d)]
+        return bnds
+
+    def get_param_upper_bounds(self):
+        d = self.d
+        bnds = [[self._kernel_matrix[i][j].get_param_upper_bounds()
                  for j in range(d)] for i in range(d)]
         return bnds
 
@@ -723,8 +722,12 @@ class MHP:
         T_f = process_path.T_f
 
         # Model
-        mu_bnds = [10**-10 for k in range(d)]
-        bnds = self.matrix2tensor_params(mu_bnds, self.param_bounds)
+        mu_lower_bnds = np.array([10**-10 for k in range(d)])
+        mu_upper_bnds = np.array([np.inf for k in range(d)])
+        lower_bnds = self.matrix2tensor_params(mu_lower_bnds,
+                                               self.param_lower_bounds)
+        upper_bnds = self.matrix2tensor_params(mu_upper_bnds,
+                                               self.param_uppwer_bounds)
 
         # Solver
         if not isinstance(n_iter, (list, np.ndarray)):
@@ -783,16 +786,18 @@ class MHP:
         for k in range(d):
             x_k = x_0[k]
             logger.log_param(k, 0, x_k)
-            bounds_k = bnds[k]
+            lower_bounds_k = lower_bnds[k]
+            upper_bounds_k = upper_bnds[k]
             n_iter_k = n_iter[k]
 
             for t in tqdm(range(n_iter_k), disable=not verbose):
                 # Compute LSE gradient estimate for parameters x_k
                 g_t = estimators[k].lse_k_grad_estimate(x_k, rng)
                 logger.log_grad(k, t, g_t)
-                # Apply solver iteration then project into space of parameters
+                # Apply solver iteration
                 x_k = solvers[k].iterate(t, x_k, g_t)
-                x_k = np.maximum(x_k, bounds_k)
+                # Project into space of parameters
+                x_k = np.clip(x_k, lower_bounds_k, upper_bounds_k)
                 logger.log_param(k, t+1, x_k)
             esimator_k_log = estimators[k].get_log()
             logger.estimator_logs[k] = esimator_k_log
@@ -935,7 +940,7 @@ class MHP:
                 for i, j in itertools.product(range(d), range(d)):
                     n_param = self._kernel_matrix[i][j].n_param
                     vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
-                    bnds = self.param_bounds[i][j]
+                    bnds = self.param_lower_bounds[i][j]
                     for x in range(n_param):
                         if x in vec_ix_omega:
                             max_param[i][j][x] = max_omega
@@ -946,7 +951,7 @@ class MHP:
                 kernel_param[i][j] = []
                 n_param = self._kernel_matrix[i][j].n_param
                 vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
-                bnds = self.param_bounds[i][j]
+                bnds = self.param_lower_bounds[i][j]
                 for x in range(n_param):
                     val = rng.uniform(low=bnds[x], high=max_param[i][j][x],
                                       size=1)[0]
@@ -955,7 +960,7 @@ class MHP:
             for i, j in itertools.product(range(d), range(d)):
                 kernel_param[i][j] = []
                 n_param = self._kernel_matrix[i][j].n_param
-                bnds = self.param_bounds[i][j]
+                bnds = self.param_lower_bounds[i][j]
                 for x in range(n_param):
                     val = rng.uniform(low=max(bnds[x],
                                               (1.-range_ref)
@@ -1384,6 +1389,127 @@ class MHP:
                                     for index_dim in range(d)]
         return list_Tf, list_paths
 
+    def simulate_one_step(self, T_f, T_i=0., history=None, mu=None,
+                          kernel_param=None, rng=None, seed=1234,
+                          verbose=False):
+        """
+        Simulate a path of the MHP up to the first jump.
+
+        Parameters
+        ----------
+        T_f : `float`
+            Terminal time.
+        mu : `numpy.ndarray`, optional
+            Vector of baseline parameters. The default is None, in that case
+            fitted baseline parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        kernel_param : `numpy.ndarray`, optional
+            Matrix of kernel parameters. The default is None, in that case
+            fitted kernel parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        seed : `int`, optional
+            Seed for the random number generator. The default is 1234.
+        verbose : `bool`, optional
+            If True, print progression information. The default is False.
+
+        Raises
+        ------
+        ValueError
+            Raise an error if the baseline or the kernel parameters are not
+            specified and there is no fitted baseline or kernel parameters
+            saved as an atrribute.
+
+        Returns
+        -------
+        list_times : `list` of `numpy.ndarray`
+            List of simulated jump times for each dimension.
+
+        """
+        d = self.d
+        # RNG
+        rng = us.make_rng(rng=rng, seed=seed)
+        # Prepare parameters
+        mu, kernel_param = self.load_param(mu=mu, kernel_param=kernel_param)
+        # Adjacency matrix
+        adjacency = self.make_adjacency_matrix(kernel_param)
+        branching_ratio = self.get_branching_ratio(adjacency=adjacency)
+        if branching_ratio >= 1:
+            raise ValueError("Cannot simulate from unstable MHP: ",
+                             "The branching ratio of this MHP is ",
+                             branching_ratio, " > 1.")
+        # Offset generators
+        offset_gens = [[None for j in range(d)] for i in range(d)]
+        for i, j in itertools.product(range(d), range(d)):
+            offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
+                kernel_param[i][j])
+
+        # Adjust history
+        if history is None:
+            history = [[] for i in range(d)]
+
+        # Start simulation
+        if verbose:
+            print('Simulating events...')
+        # Step 0. Intialise Generations
+        # generations is a list such that generations[i][ix_gen] contains
+        # the times of events of type i of generation ix_gen
+        generations = [None]*d
+        for i in range(d):
+            if len(history[i]) > 0:
+                generations[i] = [copy.deepcopy(np.array(history[i]))]
+            else:
+                generations[i] = [[]]
+
+        # Step 1. Generate immigrants
+        # Number of immigrants
+        Nim = rng.poisson(mu*(T_f-T_i))
+
+        # Location of immigrants
+        immigrants = [None]*d
+        for i in range(d):
+            immigrants[i] = rng.uniform(low=T_i, high=T_f, size=Nim[i])
+            if len(generations[i][0]) == 0:
+                generations[i][0] = copy.deepcopy(immigrants[i])
+            else:
+                generations[i][0] = np.concatenate((generations[i][0],
+                                                    immigrants[i]))
+
+        #   Step 2. Fill for one generation
+
+        for k in range(d):
+            generations[k].append(np.array([]))
+        for j in range(d):
+            # Simulate the offspring of the 0th generation of
+            # events of type j
+            if len(generations[j][0]) > 0:
+                for i in range(d):
+                    # Set number of offspring
+                    Noff = rng.poisson(adjacency[i][j],
+                                       size=len(generations[j][0]))
+                    parenttimes = generations[j][0].repeat(Noff)
+                    offsets = offset_gens[i][j](rng, N=Noff.sum())
+                    offspringtime = parenttimes + offsets
+                    generations[i][1] = np.append(generations[i][1], np.array([x for x in offspringtime if (x < T_f) and (x > T_i)]))
+
+        list_times = [np.array(sorted([x for sublist in generations[i]
+                                       for x in sublist])) for i in range(d)]
+        # Filtering
+        for i in range(d):
+            list_times[i] = list_times[i][list_times[i] > T_i]
+        # Pick comparison candidate
+        t_next = np.inf
+        dim_next = 0
+        for i in range(d):
+            if len(list_times[i]) > 0:
+                if list_times[i][0] < t_next:
+                    t_next = list_times[i][0]
+                    dim_next = i
+
+        # Simulation complete
+        if verbose:
+            print('Simulation Complete.')
+        return dim_next, t_next
+
     # Metrics
     # L2
     def get_l2_projection(self, mhp_2, param_2, n_iter=1000, try_sbf=True,
@@ -1394,7 +1520,7 @@ class MHP:
         if rng is None:
             rng = np.random.default_rng(seed)
         # Model
-        bnds = self.param_bounds
+        bnds = self.param_lower_bounds
 
         # Initialisation
         ref_mu = kwargs.get('ref_mu', None)
@@ -1591,7 +1717,6 @@ class MHP:
             file_residuals = file+'_fitted_residuals.pickle'
         else:
             file_residuals = file+'_fitted_residuals'
-        file_residuals = file+'_fitted_residuals'
         pickle_out = open(file_residuals, "wb", **kwargs)
         pickle.dump(self.fit_residuals, pickle_out)
         pickle_out.close()
@@ -1600,9 +1725,16 @@ class MHP:
             file_adjacency = file+'_fitted_adj.pickle'
         else:
             file_adjacency = file+'_fitted_adj'
-        file_adjacency = file+'_fitted_adj'
         pickle_out = open(file_adjacency, "wb", **kwargs)
         pickle.dump(self.fitted_adjacency, pickle_out)
+        pickle_out.close()
+
+        if file.endswith('.pickle'):
+            file_fit_log = file+'_fit_log.pickle'
+        else:
+            file_fit_log = file+'_fit_log'
+        pickle_out = open(file_fit_log, "wb", **kwargs)
+        pickle.dump(self.fit_log, pickle_out)
         pickle_out.close()
 
     def load(self, file, **kwargs):
@@ -1642,3 +1774,14 @@ class MHP:
         self.fitted_ker_param = fitted_ker
         self.fit_residuals = fitted_residuals
         self.fitted_adjacency = fitted_adjacency
+        if file.endswith('.pickle'):
+            file_fit_log = file+'_fit_log.pickle'
+        else:
+            file_fit_log = file+'_fit_log'
+
+        try:
+            pickle_in = open(file_fit_log, "rb")
+            fit_log = pickle.load(pickle_in)
+            self.fit_log = fit_log
+        except:
+            pass

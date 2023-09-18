@@ -5,6 +5,9 @@ import numpy as np
 from aslsd.functionals.kernels.basis_kernel import BasisKernel
 from aslsd.utilities import useful_functions as uf
 
+# =============================================================================
+# Upsilon
+# =============================================================================
 dict_upsilon = {}
 
 
@@ -213,6 +216,9 @@ def diff_cross_upsilon_gauss_exp(t, s, ix_func, ix_diff, vars_1, vars_2):
 dict_diff_cross_upsilon['ExponentialKernel'] = diff_cross_upsilon_gauss_exp
 
 
+# =============================================================================
+# L2 inner product
+# =============================================================================
 dict_l2_dot = {}
 
 
@@ -331,6 +337,9 @@ def diff_l2_dot_gauss_exp(ix_func, ix_diff, vars_1, vars_2):
 
 dict_diff_l2_dot['ExponentialKernel'] = diff_l2_dot_gauss_exp
 
+# =============================================================================
+# KL Divergence
+# =============================================================================
 dict_kl_divergence = {}
 
 
@@ -414,8 +423,11 @@ class GaussianKernel(BasisKernel):
         return 3
 
     # Bounds
-    def get_var_bounds(self):
+    def get_var_lower_bounds(self):
         return np.array([10**-8, 10**-8, 0.])
+
+    def get_var_upper_bounds(self):
+        return np.array([np.inf, np.inf, np.inf])
 
     # Param names
     def get_var_names(self):

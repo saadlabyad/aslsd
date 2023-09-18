@@ -253,13 +253,16 @@ class NonHomPoisson:
             n_iter = [n_iter for k in range(d)]
 
         # Bounds
-        bnds = [self.baselines[i].get_param_bounds() for i in range(d)]
+        lower_bnds = [self.baselines[i].get_param_lower_bounds()
+                      for i in range(d)]
+        upper_bnds = [self.baselines[i].get_param_upper_bounds()
+                      for i in range(d)]
 
         # Initialisation
         if x_0 is None:
             x_0 = [None]*d
             for ix in range(d):
-                x_0[ix] = self.baselines[ix].get_param_bounds()+rng.uniform(low=0., high=1., size=self.vec_n_param[ix])
+                x_0[ix] = self.baselines[ix].get_param_lower_bounds()+rng.uniform(low=0., high=1., size=self.vec_n_param[ix])
 
         # Initialize Estimators
         if estimators is None:
@@ -289,7 +292,8 @@ class NonHomPoisson:
         for k in range(d):
             x_k = x_0[k]
             logger.log_param(k, 0, x_k)
-            bounds_k = bnds[k]
+            lower_bounds_k = lower_bnds[k]
+            upper_bounds_k = upper_bnds[k]
             n_iter_k = n_iter[k]
 
             for t in tqdm(range(n_iter_k), disable=not verbose):
@@ -310,9 +314,10 @@ class NonHomPoisson:
                 # g_t[1] = 0.
                 # g_t[2] = 0.
                 logger.log_grad(k, t, g_t)
-                # Apply solver iteration then project into space of parameters
+                # Apply solver iteration
                 x_k = solvers[k].iterate(t, x_k, g_t)
-                x_k = np.maximum(x_k, bounds_k)
+                # Project into space of parameters
+                x_k = np.clip(x_k, lower_bounds_k, upper_bounds_k)
                 logger.log_param(k, t+1, x_k)
             esimator_k_log = estimators[k].get_log()
             logger.estimator_logs[k] = esimator_k_log

@@ -12,13 +12,20 @@ class CategoricalImpact(BasisImpact):
         BasisImpact.__init__(self, fixed_indices=fixed_indices,
                              fixed_vars=fixed_vars)
 
-    # Number of parameters
+    # Input dimension
+    def get_mark_dim(self):
+        return 1
+
+    # Number of Variables
     def get_n_vars(self):
         return self.J-1
 
     # Bounds
-    def get_var_bounds(self):
-        return 10**-10*np.ones(self.J-1)
+    def get_var_lower_bounds(self):
+        return (10**-10)*np.ones(self.J-1)
+
+    def get_var_upper_bounds(self):
+        return np.inf*np.ones(self.J-1)
 
     # Parameter names
     def get_var_names(self):
@@ -27,25 +34,33 @@ class CategoricalImpact(BasisImpact):
     # Impact functionals
     def make_impact(self, xi, vars_):
         if uf.is_array(xi):
-            val = np.ones(len(xi))
+            res = np.ones(len(xi))
             sub_ixs = np.where((xi > 0))[0]
             sub_vals = xi[sub_ixs]-1
-            val[sub_ixs] = vars_[sub_vals.astype(int)]
-            return val
+            sub_vals = sub_vals.astype(int)
+            sub_vals = sub_vals.flatten()
+            res[sub_ixs] = vars_[sub_vals]
+            if xi.ndim == 1:
+                return res[0]
+            elif xi.ndim == 2:
+                return res
         else:
-            if xi > 0:
-                return vars_[xi-1]
-            else:
-                return 1.
+            self.make_impact(np.array([xi]), vars_)
 
     def make_diff_impact(self, xi, ix_diff, vars_):
-        # Derivative wrt \beta
-        if ix_diff < self.J-1:
-            res = np.zeros(len(xi))
-            ixs_p = np.where((xi == ix_diff+1))[0]
-            res[ixs_p] = 1.
-            return res
+        if uf.is_array(xi):
+            # Derivative wrt \beta
+            if ix_diff < self.J-1:
+                res = np.zeros(len(xi))
+                ixs_p = np.where((xi == ix_diff+1))[0]
+                res[ixs_p] = 1.
+                if xi.ndim == 1:
+                    return res[0]
+                elif xi.ndim == 2:
+                    return res
+            else:
+                raise ValueError("The argument ix_diff = ", ix_diff, "is not a ",
+                                 "valid differentiation index for basis impacts",
+                                 "of type ", str(self.__class__))
         else:
-            raise ValueError("The argument ix_diff = ", ix_diff, "is not a ",
-                             "valid differentiation index for basis impacts",
-                             "of type ", str(self.__class__))
+            self.make_diff_impact(np.array([xi]), ix_diff, vars_)

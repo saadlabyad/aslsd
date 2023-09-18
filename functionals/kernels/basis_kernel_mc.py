@@ -91,9 +91,10 @@ class BasisKernelMC():
 
     """
 
-    def __init__(self, preloaded=None, n_vars=None, var_bounds=None,
+    def __init__(self, exact_func=False, preloaded=None, n_vars=None,
+                 var_lower_bounds=None, var_upper_bounds=None,
                  tphi_func=None, src_simu_func=None,
-                 diff_tphi_func=None, diff_log_tphi_func=None,
+                 diff_tphi_func=None, diff_log_tphi_func=None, tpsi_func=None,
                  var_names=None, rng=None, base_seed=None, n_mc=1, n_mc_l2=10**4,
                  fixed_indices=None, fixed_vars=None, n_fixed_vars=0,
                  ix_map=None, dict_interactions=None, phi=None, diff_phi=None,
@@ -120,6 +121,7 @@ class BasisKernelMC():
 
         """
         # MC Parameters
+        self.exact_func = exact_func
         if rng is None:
             rng = np.random.default_rng(base_seed)
         self.rng = rng
@@ -128,7 +130,8 @@ class BasisKernelMC():
         # Preload:
         if preloaded is None:
             self.n_vars = n_vars
-            self.var_bounds = var_bounds
+            self.var_lower_bounds = var_lower_bounds
+            self.var_upper_bounds = var_upper_bounds
             self.var_names = var_names
 
             self.tphi_func = tphi_func
@@ -141,19 +144,23 @@ class BasisKernelMC():
             if diff_log_tphi_func is None:
                 def diff_log_tphi_func(t, ix_diff, vars_):
                     return diff_tphi_func(t, ix_diff, vars_)/tphi_func(t, vars_)
-            self.diff_log_tphi_func = diff_log_tphi_func
+            self.diff_log_tphi_func = diff_log_tphi_func 
+            
+            self.tpsi_func = tpsi_func
 
         else:
             if preloaded not in dict_preloaded.keys():
                 raise NotImplementedError("This kernel type does not belong to the list of preloaded MC Basis Kernels: "+uf.dict_keys2str(dict_preloaded))
             preloaded_attr = dict_preloaded[preloaded]
             self.n_vars = preloaded_attr['n_vars']
-            self.var_bounds = preloaded_attr['var_bounds']
+            self.var_lower_bounds = preloaded_attr['var_lower_bounds']
+            self.var_upper_bounds = preloaded_attr['var_upper_bounds']
             self.var_names = preloaded_attr['var_names']
             self.tphi_func = preloaded_attr['tphi_func']
             self.src_simu_func = preloaded_attr['src_simu_func']
             self.diff_tphi_func = preloaded_attr['diff_tphi_func']
             self.diff_log_tphi_func = preloaded_attr['diff_log_tphi_func']
+            self.tpsi_func = preloaded_attr.get('tpsi_func', None)
         # Fixing variables
         if fixed_indices is None:
             self.fixed_indices = []
@@ -171,7 +178,9 @@ class BasisKernelMC():
             self.fixed_indices = [fixed_indices]
             self.fixed_vars = [fixed_vars]
             self.n_fixed_vars = 1
-
+        self.var_ixs_activity = [ix not in self.fixed_vars
+                                 for ix in range(self.get_n_vars())]
+        # Book keeping for indices
         self.ix_map = self.make_ix_map()
 
         self.dict_interactions = self.make_dict_interactions()
@@ -248,10 +257,13 @@ class BasisKernelMC():
         return (0 != self.fixed_indices[0])
 
     # Bounds
-    def get_var_bounds(self):
-        return self.var_bounds
+    def get_var_lower_bounds(self):
+        return self.var_lower_bounds
 
-    def get_param_bounds(self):
+    def get_var_upper_bounds(self):
+        return self.var_upper_bounds
+
+    def get_param_lower_bounds(self):
         """
         Get the list of lower bounds of the domain of each parameter of the
         basis kernel.
@@ -271,9 +283,37 @@ class BasisKernelMC():
             By parameters, we mean the non-fixed paramters.
 
         """
-        bnds = self.get_var_bounds()
-        n_vars = len(bnds)
-        return [bnds[i] for i in range(n_vars) if i not in self.fixed_indices]
+        var_bnds = self.get_var_lower_bounds()
+        n_vars = len(var_bnds)
+        param_bnds = np.array([var_bnds[i] for i in range(n_vars)
+                               if i not in self.fixed_indices])
+        return param_bnds
+
+    def get_param_upper_bounds(self):
+        """
+        Get the list of lower bounds of the domain of each parameter of the
+        basis kernel.
+
+        Let :math:`\\vartheta:=(\\vartheta_1, \\dots, \\vartheta_{n_{\\textrm{param}}})` denote the parameters of the basis kernel. 
+        Each parameter :math:`\\vartheta_i` lives in a half-open interval :math:`[b_i, +\\infty)`.
+        This method returns the vector :math:`(b_1, \\dots, b_{n_{\\textrm{param}}})`.
+
+        Returns
+        -------
+        `list`
+            List of lower bounds of the domain of each parameter of the
+            basis kernel.
+
+        Notes
+        ------
+            By parameters, we mean the non-fixed paramters.
+
+        """
+        var_bnds = self.get_var_upper_bounds()
+        n_vars = len(var_bnds)
+        param_bnds = np.array([var_bnds[i] for i in range(n_vars)
+                               if i not in self.fixed_indices])
+        return param_bnds
 
     # Parameter names
     def get_var_names(self):
@@ -429,52 +469,77 @@ class BasisKernelMC():
     def make_psi(self, t, vars_):
         n_mc = self.n_mc
         omega = vars_[0]
-        if isinstance(t, (list, np.ndarray)):
-            sim_tau = self.src_simu_func(self.rng, vars_[1:], size=(n_mc,
-                                                                    len(t)))
+        # Sample offsets from kernel
+        if uf.is_array(t):
+            len_t = len(t)
         else:
-            sim_tau = self.src_simu_func(self.rng, vars_[1:], size=n_mc)
-        m_1 = np.where(sim_tau < t, 1., 0.)
-        return omega*np.mean(m_1, axis=0)
+            len_t = 1
+        sim_tau = self.src_simu_func(self.rng, vars_[1:], size=(n_mc, len(t)))
+        # Set values for output
+        ixs_inf = np.where(sim_tau < t)
+        values = np.zeros((n_mc, len_t))
+        # Computations
+        values[ixs_inf] = 1.
+        res = omega*np.mean(values, axis=0)
+        # Adapt res to type of t
+        if uf.is_array(t):
+            return res
+        else:
+            return res[0]
 
     def make_diff_psi(self, t, ix_diff, vars_):
         n_mc = self.n_mc
         omega = vars_[0]
+        # Sample offsets from kernel
+        if uf.is_array(t):
+            len_t = len(t)
+        else:
+            len_t = 1
+        sim_tau = self.src_simu_func(self.rng, vars_[1:], size=(n_mc, len(t)))
+        # Set values for output
+        ixs_inf = np.where(sim_tau < t)
+        values = np.zeros((n_mc, len_t))
         # Omega Derivative
         if ix_diff == 0:
-            if isinstance(t, (list, np.ndarray)):
-                sim_tau = self.src_simu_func(self.rng, vars_[1:],
-                                             size=(n_mc, len(t)))
-            else:
-                sim_tau = self.src_simu_func(self.rng, vars_[1:], size=n_mc)
-            m_1 = np.where(sim_tau < t, 1., 0.)
-            return np.mean(m_1, axis=0)
+            values[ixs_inf] = 1.
+            res = np.mean(values, axis=0)
         # Other derivatives
         else:
-            if isinstance(t, (list, np.ndarray)):
-                sim_tau = self.src_simu_func(self.rng, vars_[1:],
-                                             size=(n_mc, len(t)))
-            else:
-                sim_tau = self.src_simu_func(self.rng, vars_[1:], size=n_mc)
-            m_1 = np.where(sim_tau < t, 1., 0.)
-            m_2 = self.diff_log_tphi_func(sim_tau, ix_diff-1, vars_[1:])
-            return omega*np.mean(np.multiply(m_1, m_2), axis=0)
+            values[ixs_inf] = self.diff_log_tphi_func(sim_tau[ixs_inf],
+                                                      ix_diff-1, vars_[1:])
+            res = omega*np.mean(values, axis=0)
+        # Adapt res to type of t
+        if uf.is_array(t):
+            return res
+        else:
+            return res[0]
 
     def make_upsilon(self, basis_kern_2, t, s, vars_1, vars_2):
         n_mc = self.n_mc
         omega_1 = vars_1[0]
         omega_2 = vars_2[0]
-
-        if isinstance(t, (list, np.ndarray)):
-            sim_tau = self.src_simu_func(self.rng, vars_1[1:], size=(n_mc,
-                                                                     len(t)))
+        # Sample offsets from kernel
+        if uf.is_array(t):
+            len_t = len(t)
         else:
-            sim_tau = self.src_simu_func(self.rng, vars_1[1:], size=n_mc)
-
-        m_1 = np.where(sim_tau < t, 1., 0.)
-        m_2 = basis_kern_2.tphi_func(sim_tau+s, vars_2[1:])
-        m_3 = np.multiply(m_1, m_2)
-        return omega_1*omega_2*np.mean(m_3, axis=0)
+            len_t = 1
+        sim_tau = self.src_simu_func(self.rng, vars_1[1:], size=(n_mc, len_t))
+        # Set values for output
+        ixs_inf = np.where(sim_tau < t)
+        if uf.is_array(s):
+            sim_shift = sim_tau[ixs_inf]+s[ixs_inf[1]]
+        else:
+            sim_shift = sim_tau[ixs_inf]+s
+        values = np.zeros((n_mc, len_t))
+        # Computations
+        values[ixs_inf] = basis_kern_2.tphi_func(sim_shift,
+                                                 vars_2[1:])
+        res = omega_1*omega_2*np.mean(values, axis=0)
+        # Adapt res to type of t
+        if uf.is_array(t):
+            return res
+        else:
+            return res[0]
 
     def make_upsilon_rev(self, basis_kern_2, t, s, vars_2, vars_1):
         pass
@@ -482,179 +547,163 @@ class BasisKernelMC():
     def make_diff_sim_upsilon(self, t, s, ix_diff, vars_):
         n_mc = self.n_mc
         omega = vars_[0]
+        # Sample offsets from kernels
+        if uf.is_array(t):
+            len_t = len(t)
+        else:
+            len_t = 1
+        sim_tau = self.src_simu_func(self.rng, vars_[1:], size=(n_mc, len_t))
+        # Set values for output
+        ixs_inf = np.where(sim_tau < t)
+        if uf.is_array(s):
+            sim_shift = sim_tau[ixs_inf]+s[ixs_inf[1]]
+        else:
+            sim_shift = sim_tau[ixs_inf]+s
+        values = np.zeros((n_mc, len_t))
+        # Values which are common to all derivatives
+        phi_vals = self.tphi_func(sim_shift, vars_[1:])
         # Omega derivative
         if ix_diff == 0:
-            if isinstance(t, (list, np.ndarray)):
-                sim_tau = self.src_simu_func(self.rng, vars_[1:],
-                                             size=(n_mc, len(t)))
-            else:
-                sim_tau = self.src_simu_func(self.rng, vars_[1:], size=n_mc)
-
-            m_1 = np.where(sim_tau < t, 1., 0.)
-            m_2 = self.tphi_func(sim_tau+s, vars_[1:])
-            m_3 = np.multiply(m_1, m_2)
-            return 2*omega*np.mean(m_3, axis=0)
+            values[ixs_inf] = phi_vals
+            res = 2*omega*np.mean(values, axis=0)
         # Other derivatives
         else:
-            if isinstance(t, (list, np.ndarray)):
-                sim_tau = self.src_simu_func(self.rng, vars_[1:],
-                                             size=(n_mc, len(t)))
-            else:
-                sim_tau = self.src_simu_func(self.rng, vars_[1:], size=n_mc)
-            # The expression below is numerically unstable. If s_ is large,
-            # then sim_tau-s_ is likely to be negative and large in
-            # absolute value, so the expression
-            # self.diff_tphi_func(sim_tau-s_, ix_diff-1, vars_[1:]) is
-            # likely to blow up and output a nan.
-            # Analytically, this should be compensator by the indicator
-            # function in front of it which should be zero as it checks
-            # notably for the condition (sim_tau > s_).
-            # Numerically, this is not how np.multiply treats this
-            # expression, creating a numerically instability.
-            # To avoid this problem, a temporary fix is to use
-            # np.nanprod instead of np.multiply.
-
-            # rvs = (np.multiply(np.where((sim_tau > s_) & (sim_tau < t_+s_),
-            #                             1., 0.),
-            #                    self.diff_tphi_func(sim_tau-s_, ix_diff-1,
-            #                                        vars_[1:]))
-            #        + np.multiply(np.where(sim_tau < t_, 1., 0.),
-            #                      self.diff_tphi_func(sim_tau+s_, ix_diff-1,
-            #                                          vars_[1:])))
-            m_1 = np.where((sim_tau > s) & (sim_tau < t+s), 1., 0.)
-            m_2 = self.diff_tphi_func(sim_tau-s, ix_diff-1, vars_[1:])
-            term_1 = np.nanprod([m_1, m_2], axis=0)
-            term_1 = np.where(np.isnan(term_1), 0., term_1)
-            m_3 = np.where(sim_tau < t, 1., 0.)
-            m_4 = self.diff_tphi_func(sim_tau+s, ix_diff-1, vars_[1:])
-            term_2 = np.multiply(m_3, m_4)
-            rvs = term_1+term_2
-            return omega**2*np.mean(rvs, axis=0)
+            values[ixs_inf] = (self.diff_tphi_func(sim_shift, ix_diff-1,
+                                                   vars_[1:])
+                               + (phi_vals
+                                  * self.diff_log_tphi_func(sim_tau[ixs_inf],
+                                                            ix_diff-1,
+                                                            vars_[1:])))
+            res = omega**2*np.mean(values, axis=0)
+        # Adapt res to type of t
+        if uf.is_array(t):
+            return res
+        else:
+            return res[0]
 
     def make_diff_cross_upsilon(self, basis_kern_2, t, s, ix_func, ix_diff,
                                 vars_1, vars_2):
         n_mc = self.n_mc
-        n_mc_2 = basis_kern_2.n_mc
         omega_1 = vars_1[0]
         omega_2 = vars_2[0]
+        # Sample offsets from kernel
+        if uf.is_array(t):
+            len_t = len(t)
+        else:
+            len_t = 1
+        sim_tau = self.src_simu_func(self.rng, vars_1[1:], size=(n_mc, len_t))
+        # Set values for output
+        ixs_inf = np.where(sim_tau < t)
+        if uf.is_array(s):
+            sim_shift = sim_tau[ixs_inf]+s[ixs_inf[1]]
+        else:
+            sim_shift = sim_tau[ixs_inf]+s
+        values = np.zeros((n_mc, len_t))
+        # Derivatives of First Function
         if ix_func == 1:
+            # Values common to all derviatives
+            phi_vals = basis_kern_2.tphi_func(sim_shift, vars_2[1:])
             # Omega derivative
             if ix_diff == 0:
-                if isinstance(t, (list, np.ndarray)):
-                    sim_tau = self.src_simu_func(self.rng, vars_1[1:],
-                                                 size=(n_mc, len(t)))
-                else:
-                    sim_tau = self.src_simu_func(self.rng, vars_1[1:],
-                                                 size=n_mc)
-                m_1 = np.where(sim_tau < t, 1., 0.)
-                m_2 = basis_kern_2.tphi_func(sim_tau+s, vars_2[1:])
-                m_3 = np.multiply(m_1, m_2)
-                return omega_1*np.mean(m_3, axis=0)
+                values[ixs_inf] = phi_vals
+                res = omega_2*np.mean(values, axis=0)
             # Other derivatives
             else:
-                if isinstance(t, (list, np.ndarray)):
-                    sim_tau = basis_kern_2.src_simu_func(basis_kern_2.rng,
-                                                         vars_2[1:],
-                                                         size=(n_mc_2, len(t)))
-                else:
-                    sim_tau = basis_kern_2.src_simu_func(basis_kern_2.rng,
-                                                         vars_2[1:],
-                                                         size=n_mc_2)
-                m_1 = np.where((sim_tau > s) & (sim_tau < t+s), 1., 0.)
-                # The expression below is numerically unstable. If s_ is large,
-                # then sim_tau-s_ is likely to be negative and large in
-                # absolute value, so the expression
-                # self.diff_tphi_func(sim_tau-s_, ix_diff-1, vars_[1:]) is
-                # likely to blow up and output a nan.
-                # Analytically, this should be compensator by the indicator
-                # function in front of it which should be zero as it checks
-                # notably for the condition (sim_tau > s_).
-                # Numerically, this is not how np.multiply treats this
-                # expression, creating a numerically instability.
-                # To avoid this problem, a temporary fix is to use
-                # np.nanprod instead of np.multiply.
-                m_2 = self.diff_tphi_func(sim_tau-s, ix_diff-1, vars_1[1:])
-                m_3 = np.nanprod([m_1, m_2], axis=0)
-                m_3 = np.where(np.isnan(m_3), 0., m_3)
-                return omega_1*omega_2*np.mean(m_3, axis=0)
-
+                values[ixs_inf] = phi_vals*self.diff_log_tphi_func(sim_shift,
+                                                                   ix_diff-1,
+                                                                   vars_1[1:])
+                res = omega_1*omega_2*np.mean(values, axis=0)
+        # Derivatives of Second Function
         elif ix_func == 2:
-            if isinstance(t, (list, np.ndarray)):
-                sim_tau = self.src_simu_func(self.rng, vars_1[1:],
-                                             size=(n_mc, len(t)))
-            else:
-                sim_tau = self.src_simu_func(self.rng, vars_1[1:],
-                                             size=n_mc)
-
             # Omega derivatives
             if ix_diff == 0:
-                m_1 = np.where(sim_tau < t, 1., 0.)
-                m_2 = basis_kern_2.tphi_func(sim_tau+s, vars_2[1:])
-                m_3 = np.multiply(m_1, m_2)
-                return omega_1*np.mean(m_3, axis=0)
-
+                values[ixs_inf] = basis_kern_2.tphi_func(sim_shift, vars_2[1:])
+                res = omega_1*np.mean(values, axis=0)
             # Other derivatives
             else:
-                m_1 = np.where(sim_tau < t, 1., 0.)
-                m_2 = basis_kern_2.diff_tphi_func(sim_tau+s, ix_diff-1,
-                                                  vars_2[1:])
-                m_3 = np.multiply(m_1, m_2)
-                return omega_1*omega_2*np.mean(m_3, axis=0)
+                values[ixs_inf] = basis_kern_2.diff_tphi_func(sim_shift,
+                                                              ix_diff-1,
+                                                              vars_2[1:])
+                res = omega_1*omega_2*np.mean(values, axis=0)
+        # Adapt res to type of t
+        if uf.is_array(t):
+            return res
+        else:
+            return res[0]
 
     def make_diff_cross_upsilon_rev(self, basis_kern_2, t, s, ix_func, ix_diff,
                                     vars_2, vars_1):
         pass
 
     def make_K(self, baseline, t, s, vars_ker, vars_mu):
+        # Unwrap variables
         n_mc = self.n_mc
         omega = vars_ker[0]
+        # Sample offsets from kernel
         if uf.is_array(t):
-            sim_tau = self.src_simu_func(self.rng, vars_ker[1:],
-                                         size=(n_mc, len(t)))
+            len_t = len(t)
         else:
-            sim_tau = self.src_simu_func(self.rng, vars_ker[1:], size=n_mc)
-        m_1 = np.where(sim_tau < t, 1., 0.)
-        mu_vals = baseline.mu(sim_tau+s, vars_mu)
-        return omega*np.mean(m_1*mu_vals, axis=0)
+            len_t = 1
+        sim_tau = self.src_simu_func(self.rng, vars_ker[1:],
+                                     size=(n_mc, len_t))
+        # Set values for output
+        ixs_inf = np.where(sim_tau < t)
+        if uf.is_array(s):
+            sim_shift = sim_tau[ixs_inf]+s[ixs_inf[1]]
+        else:
+            sim_shift = sim_tau[ixs_inf]+s
+        values = np.zeros((n_mc, len_t))
+        # Compute
+        values[ixs_inf] = baseline.mu(sim_shift, vars_mu)
+        res = omega*np.mean(values, axis=0)
+        # Adapt res to type of t
+        if uf.is_array(t):
+            return res
+        else:
+            return res[0]
 
     def make_diff_K(self, baseline, t, s, ix_func, ix_diff, vars_ker, vars_mu):
+        # Unwrap variables
         n_mc = self.n_mc
         omega = vars_ker[0]
+        # Sample offsets from kernel
+        if uf.is_array(t):
+            len_t = len(t)
+        else:
+            len_t = 1
+        sim_tau = self.src_simu_func(self.rng, vars_ker[1:],
+                                     size=(n_mc, len_t))
+        # Set values for output
+        ixs_inf = np.where(sim_tau < t)
+        if uf.is_array(s):
+            sim_shift = sim_tau[ixs_inf]+s[ixs_inf[1]]
+        else:
+            sim_shift = sim_tau[ixs_inf]+s
+        values = np.zeros((n_mc, len_t))
+        # Derivatives of Kernel
         if ix_func == 1:
+            # Values used by all
+            mu_vals = baseline.mu(sim_shift, vars_mu)
             # Omega Derivative
             if ix_diff == 0:
-                if uf.is_array(t):
-                    sim_tau = self.src_simu_func(self.rng, vars_ker[1:],
-                                                 size=(n_mc, len(t)))
-                else:
-                    sim_tau = self.src_simu_func(self.rng, vars_ker[1:],
-                                                 size=n_mc)
-                m_1 = np.where(sim_tau < t, 1., 0.)
-                mu_vals = baseline.mu(sim_tau+s, vars_mu)
-                return np.mean(m_1*mu_vals, axis=0)
+                values[ixs_inf] = mu_vals
+                res = np.mean(values, axis=0)
             # Other derivatives
             else:
-                if uf.is_array(t):
-                    sim_tau = self.src_simu_func(self.rng, vars_ker[1:],
-                                                 size=(n_mc, len(t)))
-                else:
-                    sim_tau = self.src_simu_func(self.rng, vars_ker[1:],
-                                                 size=n_mc)
-                mu_vals = baseline.mu(sim_tau+s, vars_mu)
-                m_1 = np.where(sim_tau < t, 1., 0.)*mu_vals
-                m_2 = self.diff_log_tphi_func(sim_tau, ix_diff-1, vars_ker[1:])
-                m_3 = np.nanprod([m_1, m_2], axis=0)
-                m_3 = np.where(np.isnan(m_3), 0., m_3)
-                return omega*np.mean(m_3, axis=0)
+                values[ixs_inf] = (mu_vals
+                                   * self.diff_log_tphi_func(sim_tau[ixs_inf],
+                                                             ix_diff-1,
+                                                             vars_ker[1:]))
+                res = omega*np.mean(values, axis=0)
+        # Derivatives of mu
         elif ix_func == 2:
-            if uf.is_array(t):
-                sim_tau = self.src_simu_func(self.rng, vars_ker[1:],
-                                             size=(n_mc, len(t)))
-            else:
-                sim_tau = self.src_simu_func(self.rng, vars_ker[1:], size=n_mc)
-            m_1 = np.where(sim_tau < t, 1., 0.)
-            diff_mu_vals = baseline.diff_mu(sim_tau+s, ix_diff, vars_mu)
-            return omega*np.mean(m_1*diff_mu_vals, axis=0)
+            values[ixs_inf] = baseline.diff_mu(sim_shift, ix_diff, vars_mu)
+            res = omega*np.mean(values, axis=0)
+        # Adapt res to type of t
+        if uf.is_array(t):
+            return res
+        else:
+            return res[0]
 
     def make_kernel_functionals(self):
         """
@@ -714,9 +763,15 @@ class BasisKernelMC():
             return self.make_diff_phi(t, ix_diff_scaled, vars_)
         self.diff_phi = diff_phi
 
-        def psi(t, params):
-            vars_ = self.make_vars(params)
-            return self.make_psi(t, vars_)
+        if self.exact_func:
+            def psi(t, params):
+                vars_ = self.make_vars(params)
+                omega = vars_[0]
+                return omega*self.tpsi_func(t, vars_[1:])
+        else:
+            def psi(t, params):
+                vars_ = self.make_vars(params)
+                return self.make_psi(t, vars_)
         self.psi = psi
 
         def diff_psi(t, ix_diff, params):

@@ -11,8 +11,11 @@ class ConstantBaseline(BasisBaseline):
     def get_n_vars(self):
         return 1
 
-    def get_var_bounds(self):
-        return [10**(-10)]
+    def get_var_lower_bounds(self):
+        return np.array([10**(-10)])
+
+    def get_var_upper_bounds(self):
+        return np.array([np.inf])
 
     def get_var_names(self):
         return ['$\u03BC$']

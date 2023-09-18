@@ -11,8 +11,11 @@ class LinearBaseline(BasisBaseline):
     def get_n_vars(self):
         return 2
 
-    def get_var_bounds(self):
-        return [10**-10, 10**-10]
+    def get_var_lower_bounds(self):
+        return np.array([10**-10, 10**-10])
+
+    def get_var_upper_bounds(self):
+        return np.array([np.inf, np.inf])
 
     def get_var_names(self):
         return ['$a$', '$b$']

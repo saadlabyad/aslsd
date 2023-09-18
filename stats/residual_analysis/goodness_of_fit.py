@@ -2,194 +2,13 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy.random import default_rng
+from scipy import stats
 from tqdm import tqdm
 
 
-from scipy import stats
-import statsmodels.api as sm
-
-
-#   Homogeneous Poisson Process
-def get_residuals_k_hpoisson(d, k, mu_k, list_times):
-    residuals_k = mu_k*(list_times[k][1:]-list_times[k][:-1])
-    return residuals_k
-
-
-def get_residuals_hpoisson(d, mu, list_times):
-    return [get_residuals_k_hpoisson(d, k, mu[k], list_times)
-            for k in range(d)]
-
-
-#   MHP
-def get_residuals_k(k, process_path, psi, mu, kernel_param,
-                    sampling=False, sample_size=10**3, seed=1234,
-                    verbose=False):
-    d = process_path.d
-    list_times = process_path.list_times
-    kappa = process_path.kappa
-    varpi = process_path.varpi
-    n_events = process_path.n_events
-    N_k = n_events[k]
-
-    mu_k = mu[k]
-
-    if sampling:
-        sample_size = max(min(sample_size, N_k-2), 1)
-        residuals_k = np.zeros(sample_size)
-        rng = np.random.default_rng(seed)
-        res_indices = rng.choice(N_k-1, size=sample_size, replace=False,
-                                 p=None)
-        res_indices = list(res_indices)
-    else:
-        residuals_k = np.zeros(N_k-1)
-        res_indices = [ind for ind in range(N_k-1)]
-
-    active_ind = 0
-    for m_index in tqdm(range(len(res_indices)), disable=not verbose):
-        m = res_indices[m_index]
-        t_m = list_times[k][m]
-        t_m_1 = list_times[k][m+1]
-        residuals_k[active_ind] = mu_k*(t_m_1-t_m)
-        for i in range(d):
-            # ind_prev is the index of the last event of type i happening
-            # strictly before [t^k_m,t^k_{m+1}] (if any)
-
-            # ind_first is the index of the first event of type i happening
-            # in [t^k_m,t^k_{m+1}] (if any)
-
-            # ind_last is the index of the last event of type i happening
-            # in [t^k_m,t^k_{m+1}] (if any)
-            if k == i:
-                ind_prev = m-1
-                ind_first = m
-                ind_last = m
-            else:
-                ind_prev = kappa[i][k][m]
-                if m <= kappa[k][i][-2]+1:
-                    ind_first = varpi[i][k][m]
-                    ind_last = kappa[i][k][m+1]
-                else:
-                    ind_first = -1
-
-            if ind_first > -1:
-                # Events of type i happening in [t^k_m,t^k_{m+1}]
-                t_ind_first = list_times[i][ind_first]
-                if t_ind_first < t_m_1:
-                    loc_times_1 = t_m_1-list_times[i][np.arange(ind_first,
-                                                                ind_last+1)]
-                    residuals_k[active_ind] += np.sum(psi[k][i](loc_times_1,
-                                                                kernel_param[k][i]))
-
-            # Events of type i happening strictly before [t^k_m,t^k_{m+1}]
-            if ind_prev >= 0:
-                loc_times_2 = list_times[i][np.arange(ind_prev+1)]
-                residuals_k[active_ind] += (np.sum(psi[k][i](t_m_1-loc_times_2,
-                                                             kernel_param[k][i]))
-                                            - np.sum(psi[k][i](t_m-loc_times_2,
-                                                               kernel_param[k][i])))
-        active_ind += 1
-    return residuals_k
-
-
-def get_residuals(process_path, psi, mu, kernel_param, sampling=False,
-                  sample_size=10**3, seed=1234, verbose=False):
-    d = process_path.d
-    return [get_residuals_k(k, process_path, psi, mu, kernel_param,
-                            sampling=sampling, sample_size=sample_size,
-                            seed=seed, verbose=verbose) for k in range(d)]
-
-
-#   MTLH
-def get_residuals_k_mtlh(k, process_path, mu_compensator, psi, impact,
-                         expected_impact_matrix,
-                         mu_param, kernel_param, impact_param,
-                         sampling=False, sample_size=10**3, seed=1234,
-                         verbose=False):
-    d = process_path.d
-    list_times = process_path.list_times
-    list_marks = process_path.list_marks
-    kappa = process_path.kappa
-    varpi = process_path.varpi
-    n_events = process_path.n_events
-    N_k = n_events[k]
-
-    if sampling:
-        sample_size = max(min(sample_size, N_k-2), 1)
-        residuals_k = np.zeros(sample_size)
-        rng = np.random.default_rng(seed)
-        res_indices = rng.choice(N_k-1, size=sample_size, replace=False,
-                                 p=None)
-        res_indices = list(res_indices)
-    else:
-        residuals_k = np.zeros(N_k-1)
-        res_indices = [ind for ind in range(N_k-1)]
-
-    active_ind = 0
-    for m_index in tqdm(range(len(res_indices)), disable=not verbose):
-        m = res_indices[m_index]
-        t_m = list_times[k][m]
-        t_m_1 = list_times[k][m+1]
-        residuals_k[active_ind] = mu_compensator[k](t_m_1, mu_param[k])-mu_compensator[k](t_m, mu_param[k])
-        for i in range(d):
-            # ind_prev is the index of the last event of type i happening
-            # strictly before [t^k_m,t^k_{m+1}] (if any)
-
-            # ind_first is the index of the first event of type i happening
-            # in [t^k_m,t^k_{m+1}] (if any)
-
-            # ind_last is the index of the last event of type i happening
-            # in [t^k_m,t^k_{m+1}] (if any)
-            if k == i:
-                ind_prev = m-1
-                ind_first = m
-                ind_last = m
-            else:
-                ind_prev = kappa[i][k][m]
-                if m <= kappa[k][i][-2]+1:
-                    ind_first = varpi[i][k][m]
-                    ind_last = kappa[i][k][m+1]
-                else:
-                    ind_first = -1
-
-            if ind_first > -1:
-                # Events of type i happening in [t^k_m,t^k_{m+1}]
-                t_ind_first = list_times[i][ind_first]
-                if t_ind_first < t_m_1:
-                    loc_times_1 = t_m_1-list_times[i][np.arange(ind_first,
-                                                                ind_last+1)]
-                    psi_vals = psi[k][i](loc_times_1, kernel_param[k][i])
-                    # impact_vals = impact[k][i](list_marks[i][np.arange(ind_first, ind_last+1)], impact_param[k][i])
-                    impact_vals = expected_impact_matrix[k][i]
-                    residuals_k[active_ind] += np.sum(psi_vals*impact_vals)
-
-            # Events of type i happening strictly before [t^k_m,t^k_{m+1}]
-            if ind_prev >= 0:
-                loc_times_2 = list_times[i][np.arange(ind_prev+1)]
-                # impact_vals = impact[k][i](list_marks[i][np.arange(ind_prev+1)], impact_param[k][i])
-                impact_vals = expected_impact_matrix[k][i]
-                residuals_k[active_ind] += (np.sum(psi[k][i](t_m_1-loc_times_2,
-                                                             kernel_param[k][i])*impact_vals)
-                                            - np.sum(psi[k][i](t_m-loc_times_2,
-                                                               kernel_param[k][i])*impact_vals))
-        active_ind += 1
-    return residuals_k
-
-
-def get_residuals_mtlh(process_path, mu_compensator, psi, impact,
-                       expected_impact_matrix,
-                       mu_param, kernel_param, impact_param,
-                       sampling=False, sample_size=10**3, seed=1234,
-                       verbose=False):
-    d = process_path.d
-    return [get_residuals_k_mtlh(k, process_path, mu_compensator, psi, impact,
-                                 expected_impact_matrix,
-                                 mu_param, kernel_param, impact_param,
-                                 sampling=sampling, sample_size=sample_size,
-                                 seed=seed, verbose=verbose) for k in range(d)]
-
-
+# =============================================================================
 # Tests and plots
+# =============================================================================
 def ks_test_residuals(residuals):
     return [stats.kstest(res, 'expon') for res in residuals]
 
@@ -254,3 +73,192 @@ def qq_plot(residuals, n_models=1, labels=None, style='exponential',
     if show:
         plt.show()
     return ax
+
+
+# =============================================================================
+# Homogeneous Poisson Process
+# =============================================================================
+def get_residuals_k_hompoisson(k, process_path, mu):
+    # Unwrap data
+    list_times = process_path.list_times
+    mu_k = mu[k]
+    # Compute
+    residuals_k = mu_k*(list_times[k][1:]-list_times[k][:-1])
+    return residuals_k
+
+
+def get_residuals_hompoisson(process_path, mu):
+    residuals = [get_residuals_k_hompoisson(k, process_path, mu)
+                 for k in range(process_path.d)]
+    return residuals
+
+
+# =============================================================================
+# Non-homogeneous Poisson Process
+# =============================================================================
+def get_residuals_k_nonhompoisson(k, process_path, mu_primitive, mu_param):
+    # Compute
+    times_comp = mu_primitive[k](process_path.list_times[k], mu_param[k])
+    residuals_k = times_comp[1:]-times_comp[:-1]
+    return residuals_k
+
+
+def get_residuals_nonhompoisson(process_path, mu_primitive, mu_param):
+    residuals = [get_residuals_k_nonhompoisson(k, process_path, mu_primitive,
+                                               mu_param)
+                 for k in range(process_path.d)]
+    return residuals
+
+
+# =============================================================================
+# MHP
+# =============================================================================
+def get_residuals_k_mhp(k, process_path, psi, mu, kernel_param,
+                        cutoff=False, cutoff_ixlag=200,
+                        sampling=False, sample_size=10**3, rng=None, seed=1234,
+                        verbose=False):
+    # Unwrap data
+    d = process_path.d
+    list_times = process_path.list_times
+    kappa = process_path.kappa
+    n_events = process_path.n_events
+    N_k = n_events[k]
+    varpi_ki1 = np.array([process_path.varpi[k][i][1] for i in range(d)],
+                         dtype=int)
+
+    # Prepare output
+    kernel_part = np.zeros((d, N_k))  # Kernel part of compensator times
+
+    # I. Computations for Poisson part
+    poisson_residuals = get_residuals_k_hompoisson(k, process_path, mu)
+
+    # II. Computations for Kernel part
+    for i in range(d):
+        # II.1. Compute transofrmed time at varpi_ki1 exactly
+        if varpi_ki1[i] > 0:
+            # If \varpi_{ki,1} > 0, then all residuals r_m with
+            # m < \varpi_{ki,1}-1 do not have a kernel contribution part
+            # (because all such t^k_m and t^k_{m+1} have no preceding
+            # event of type i).
+            # For m = \varpi_{ki,1}-1, t^k_m has no predecessor of type i,
+            # but t^k_{m+1} does: so the kernel contribution term is non-null.
+            t_m = list_times[k][varpi_ki1[i]]
+            kernel_part[i][varpi_ki1[i]] = np.sum(
+                psi[k][i](t_m-list_times[i][:kappa[i][k][varpi_ki1[i]]+1],
+                          kernel_param[k][i]))
+        # II.2. Compute residuals for all m in [varpi_ki1, N_k-1],
+        # that is for all ixs m such that both t^k_{m+1} and t^k_{m}
+        # have antecedents of type i
+        for m in tqdm(range(varpi_ki1[i]+1, N_k), disable=not verbose):
+            t_m = list_times[k][m]
+            kappa_old = kappa[i][k][m-1]
+            kappa_new = kappa[i][k][m]
+            # Compute exactly the contribution of new events in the interval
+            # t^k_{m-1}, t^k_m
+            new_events = list_times[i][kappa_old+1:kappa_new+1]
+            if len(new_events) > 0:
+                contrib_new = np.sum(psi[k][i](t_m-new_events,
+                                               kernel_param[k][i]))
+            else:
+                contrib_new = 0.
+            # Compute the contribution of old events
+            
+            contrib_old = np.sum(psi[k][i](t_m-list_times[i][:kappa_old+1],
+                                           kernel_param[k][i]))
+            # Merge results
+            kernel_part[i][m] = contrib_new+contrib_old
+
+    # Group results
+    kernel_residuals = (kernel_part[:, 1:]-kernel_part[:, :-1]).sum(axis=0)
+    residuals_k = poisson_residuals+kernel_residuals
+    return residuals_k
+
+
+def get_residuals_mhp(process_path, psi, mu, kernel_param, cutoff=False,
+                      cutoff_ixlag=200, sampling=False, sample_size=10**3,
+                      rng=None, seed=1234, verbose=False):
+    d = process_path.d
+    return [get_residuals_k_mhp(k, process_path, psi, mu, kernel_param,
+                                cutoff=cutoff, cutoff_ixlag=cutoff_ixlag,
+                                sampling=sampling, sample_size=sample_size,
+                                rng=rng, seed=seed, verbose=verbose)
+            for k in range(d)]
+
+
+# =============================================================================
+# MTLH
+# =============================================================================
+def get_residuals_k_mtlh(k, process_path, mu_primitive, psi,
+                         expected_impact_matrix,
+                         mu_param, kernel_param, impact_param,
+                         cutoff=False, cutoff_ixlag=200,
+                         sampling=False, sample_size=10**3, rng=None, seed=1234,
+                         verbose=False):
+    # Unwrap data
+    d = process_path.d
+    list_times = process_path.list_times
+    kappa = process_path.kappa
+    N_k = process_path.n_events[k]
+    varpi_ki1 = np.array([process_path.varpi[k][i][1] for i in range(d)],
+                         dtype=int)
+
+    # Prepare output
+    kernel_part = np.zeros((d, N_k))  # Kernel part of compensator times
+
+    # I. Computations for Poisson part
+    poisson_residuals = get_residuals_k_nonhompoisson(k, process_path,
+                                                      mu_primitive, mu_param)
+
+    # II. Computations for Kernel part
+    for i in range(d):
+        e_ki = expected_impact_matrix[k][i]
+        # II.1. Compute transofrmed time at varpi_ki1 exactly
+        t_m = list_times[k][varpi_ki1[i]]
+        kernel_part[i][varpi_ki1[i]] = np.sum(
+            psi[k][i](t_m-list_times[i][:kappa[i][k][varpi_ki1[i]]+1],
+                      kernel_param[k][i]))*e_ki
+        # II.2. Compute residuals for all m in [varpi_ki1, N_k-1],
+        # that is for all ixs m such that both t^k_{m+1} and t^k_{m}
+        # have antecedents of type i
+        for m in tqdm(range(varpi_ki1[i]+1, N_k), disable=not verbose):
+            t_m = list_times[k][m]
+            kappa_old = kappa[i][k][m-1]
+            kappa_new = kappa[i][k][m]
+            # Compute exactly the contribution of new events in the interval
+            # t^k_{m-1}, t^k_m
+            new_events = list_times[i][kappa_old+1:kappa_new+1]
+            if len(new_events) > 0:
+                contrib_new = np.sum(psi[k][i](t_m-new_events,
+                                               kernel_param[k][i]))
+            else:
+                contrib_new = 0.
+            # Compute the contribution of old events
+            contrib_old = np.sum(psi[k][i](t_m-list_times[i][:kappa_old+1],
+                                           kernel_param[k][i]))
+            # Merge results
+            kernel_part[i][m] = (contrib_new+contrib_old)*e_ki
+
+    # Group results
+    # ker_diff = kernel_part[:, 1:]-kernel_part[:, :-1]
+    kernel_residuals = (kernel_part[:, 1:]-kernel_part[:, :-1]).sum(axis=0)
+    residuals_k = poisson_residuals+kernel_residuals
+    return residuals_k
+
+
+def get_residuals_mtlh(process_path, mu_primitive, psi, expected_impact_matrix,
+                       mu_param, kernel_param, impact_param, cutoff=False,
+                       cutoff_ixlag=200, sampling=False, sample_size=10**3,
+                       rng=None, seed=1234, verbose=False):
+    d = process_path.d
+    residuals = [None]*d
+    for k in range(d):
+        residuals[k] = get_residuals_k_mtlh(k, process_path, mu_primitive, psi,
+                                            expected_impact_matrix, mu_param,
+                                            kernel_param, impact_param,
+                                            cutoff=cutoff,
+                                            cutoff_ixlag=cutoff_ixlag,
+                                            sampling=sampling,
+                                            sample_size=sample_size,
+                                            rng=rng, seed=seed,
+                                            verbose=verbose)
+    return residuals

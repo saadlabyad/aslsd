@@ -6,6 +6,10 @@ import numpy as np
 import pandas as pd
 import scipy.special
 
+
+# =============================================================================
+# String operations
+# =============================================================================
 # Delete ambiguous variable names 'l' and 'o' following pycodestyle E741
 lower_case_varnames = (list(string.ascii_lowercase)[:11]
                        + list(string.ascii_lowercase)[12:14]
@@ -40,6 +44,258 @@ def get_alphabet_range(n):
         return lower_case_varnames[:n]
 
 
+def dict_keys2str(d):
+    s = ''
+    L = [key for key in d.keys()]
+    for ix in range(len(L)-1):
+        s += L[ix]
+        s += ', '
+    s += L[-1]+'.'
+    return s
+
+
+def add_subscript(s, sub):
+    if '$' in s:
+        x = s[1:-1]
+    else:
+        x = s
+    L = x.split('_')
+    if len(L) == 1:
+        # In this case, there was no subsbscript in s
+        return '$'+x+'_{'+sub+'}$'
+    else:
+        old_sub = L[1]  # original subscript with '{}' delimiters
+        return '$'+L[0]+'_{'+sub+','+old_sub[1:-1]+'}$'
+
+# s = 'b_{0}'
+# sub = '1,2,'
+# print(s)
+# print(add_subscript(s, sub))
+
+
+# =============================================================================
+# List operations
+# =============================================================================
+def get_next_greater(t, L):
+    """
+    Get the nearest events greater than t.
+
+    Parameters
+    ----------
+    t : TYPE
+        DESCRIPTION.
+    L : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    next_dims : TYPE
+        DESCRIPTION.
+    next_ixs : TYPE
+        DESCRIPTION.
+    next_vals : TYPE
+        DESCRIPTION.
+
+    """
+    d = len(L)
+    n = len(t)
+    # Compute next element for each dim
+    lists_next_ixs = np.zeros((d, n), dtype=int)
+    lists_next_vals = np.zeros((d, n))
+    for i in range(d):
+        local_next_ixs = np.searchsorted(L[i], t, side='left')
+        # Get next indices
+        lists_next_ixs[i] = 0+local_next_ixs
+        # Correct for elements of t greater than the last element of L[i]
+        ixs_no_next = []
+        n_i = len(L[i])
+        ix_n_i = n-1
+        while (ix_n_i >= 0) & (local_next_ixs[ix_n_i] == n_i):
+            local_next_ixs[ix_n_i] = 0 # set index value to 0. This will be corrected.
+            ixs_no_next.append(ix_n_i)
+            ix_n_i -= 1
+        # Get next values
+        lists_next_vals[i] = L[i][local_next_ixs]
+        lists_next_vals[i][ixs_no_next] = np.inf
+    # Compute next element overall
+    next_dims = np.zeros(n, dtype=int)
+    next_ixs = np.zeros(n, dtype=int)
+    next_vals = np.zeros(n)
+    for ix in range(n):
+        running_dim = 0
+        for i in range(d):
+            if lists_next_vals[i, ix] < lists_next_vals[running_dim, ix]:
+                running_dim = i
+        next_dims[ix] = running_dim
+        next_ixs[ix] = lists_next_ixs[running_dim, ix]
+        next_vals[ix] = lists_next_vals[running_dim, ix]
+    return next_dims, next_ixs, next_vals
+
+
+def get_prev_smaller(t, L):
+    """
+    Get the nearest events smaller than t.
+
+    Parameters
+    ----------
+    t : TYPE
+        DESCRIPTION.
+    L : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    prev_dims : TYPE
+        DESCRIPTION.
+    prev_ixs : TYPE
+        DESCRIPTION.
+    prev_vals : TYPE
+        DESCRIPTION.
+
+    """
+    d = len(L)
+    n = len(t)
+    # Compute previous element for each dim
+    lists_prev_ixs = np.zeros((d, n), dtype=int)
+    lists_prev_vals = np.zeros((d, n))
+    for i in range(d):
+        local_prev_ixs = np.searchsorted(L[i], t, side='left')-1
+        # Get next indices
+        lists_prev_ixs[i] = 0+local_prev_ixs
+        # Correct for elements of t greater than the last element of L[i]
+        ixs_no_prev = []
+        n_i = len(L[i])
+        ix_0 = 0
+        while (ix_0 <= n_i-1) & local_prev_ixs[ix_0] == -1:
+            local_prev_ixs[ix_0] = 0 # set index value to 0. This will be corrected.
+            ixs_no_prev.append(ix_0)
+            ix_0 += 1
+        # Get next values
+        lists_prev_vals[i] = L[i][local_prev_ixs]
+        lists_prev_vals[i][ixs_no_prev] = np.inf
+    # Compute next element overall
+    prev_dims = np.zeros(n, dtype=int)
+    prev_ixs = np.zeros(n, dtype=int)
+    prev_vals = np.zeros(n)
+    for ix in range(n):
+        running_dim = 0
+        for i in range(d):
+            if lists_prev_vals[i, ix] < lists_prev_vals[running_dim, ix]:
+                running_dim = i
+        prev_dims[ix] = running_dim
+        prev_ixs[ix] = lists_prev_ixs[running_dim, ix]
+        prev_vals[ix] = lists_prev_vals[running_dim, ix]
+    return prev_dims, prev_ixs, prev_vals
+
+
+# d = 2
+# rng = np.random.default_rng()
+# L = rng.uniform(low=0., high=10., size=(d, 7))
+# for i in range(d):
+#     L[i] = np.sort(L[i])
+# t = np.linspace(0., 8., num=10)
+# next_dims, next_ixs, next_vals = get_next_greater(t, L)
+# print('L', L)
+# print('t', t)
+# print('next_dims', next_dims)
+# prev_dims, prev_ixs, prev_vals = get_prev_smaller(t, L)
+# print('prev_dims', next_dims)
+
+def is_array(L):
+    return isinstance(L, (list, pd.core.series.Series, np.ndarray))
+
+
+def is_empty(L):
+    if L is None:
+        return True
+    elif is_array(L) or type(L) == dict:
+        return len(L) == 0
+
+
+def is_sorted(x, reverse=False, strict=False):
+    """Check if x is sorted"""
+    if not reverse:
+        if strict:
+            return (np.diff(x) > 0).all()
+        else:
+            return (np.diff(x) >= 0).all()
+    else:
+        if strict:
+            return (np.diff(x) < 0).all()
+        else:
+            return (np.diff(x) <= 0).all()
+
+
+def discretize_space(x_min, x_max, res, disc_type):
+    """
+    Return evenly spaced values in an interval or on a log scale.
+
+    Let :math:`x_{\\textrm{min}},x_{\\textrm{max}} \\in \\mathbb{R}`. If a
+    linear discretization is chosen, return `res` evenly spaced numbers in
+    :math:`[x_{\\textrm{min}},x_{\\textrm{max}}]`. If a logarithmic
+    discretization is chosen, return `res` evenly spaced numbers in
+    :math:`[10^{x_{\\textrm{min}}},10^{x_{\\textrm{max}}}]`.
+
+    Parameters
+    ----------
+    x_min : `float`
+        Start value or logarithm of the start value.
+    x_max : `float`
+        End value or logarithm of the end value.
+    res : `int`
+        Number of elements to return.
+    disc_type : `str`
+        Discretization type.
+
+    Returns
+    -------
+    `numpy.ndarray`
+        Discretized set.
+
+    """
+    if disc_type == 'log':
+        return np.logspace(x_min, x_max, res)
+    elif disc_type == 'linear':
+        return np.linspace(x_min, x_max, res)
+
+
+def partition_space(l_bound, r_bound, n_strata, disc_type):
+    disc = discretize_space(l_bound, r_bound, n_strata+1, disc_type)
+    disc = disc.astype(int)
+    strata = [None]*n_strata
+    strata[0] = [l_bound, disc[1]-1]
+    strata[-1] = [disc[-2], r_bound]
+    for ix in range(1, len(disc)-2):
+        strata[ix] = [disc[ix], disc[ix+1]-1]
+    return strata
+
+
+def concatenate_linspace(vec_T, vec_n_res):
+    n_total = sum(vec_n_res)-(len(vec_n_res)-1)
+    X = np.zeros(n_total)
+    Q = np.linspace(0, vec_T[0], vec_n_res[0])
+    X[:vec_n_res[0]] = Q
+    start_index = vec_n_res[0]
+    for i in range(1, len(vec_n_res)):
+        W = np.linspace(0, vec_T[i], vec_n_res[i])
+        X[start_index:start_index+vec_n_res[i]-1] = X[start_index-1]+W[1:]
+        start_index += vec_n_res[i]-1
+    return X
+
+
+def get_ix_positions(L, Q):
+    return [np.where(Q == x)[0][0] for x in L]
+
+
+def get_grid_position(x, ref_x):
+    # Get the ixs such that ref_x[ix-1] <= x < ref_x[ix]
+    ixs_grid = np.searchsorted(ref_x, x, side='right')
+    return ixs_grid
+
+
+# =============================================================================
+# Algebraic operations
+# =============================================================================
 def prod_ratio(x, y):
     """
     Given floats :math:`x, y \\in \\mathbb{R}`, return the quantity
@@ -474,111 +730,6 @@ def double_sum_exp_1D_midpoint(beta, times, T_f):
                + np.exp(-2*beta*(T_f-(times[m]+times[m-1])/2.)))
         res += u_m
     return res
-
-
-# =============================================================================
-# List operations
-# =============================================================================
-def is_array(L):
-    return isinstance(L, (list, pd.core.series.Series, np.ndarray))
-
-def is_empty(L):
-    if L is None:
-        return True
-    elif is_array(L) or type(L) == dict:
-        return len(L) == 0
-
-
-def is_sorted(x, reverse=False, strict=False):
-    """Check if x is sorted"""
-    if not reverse:
-        if strict:
-            return (np.diff(x) > 0).all()
-        else:
-            return (np.diff(x) >= 0).all()
-    else:
-        if strict:
-            return (np.diff(x) < 0).all()
-        else:
-            return (np.diff(x) <= 0).all()
-
-
-def discretize_space(x_min, x_max, res, disc_type):
-    """
-    Return evenly spaced values in an interval or on a log scale.
-
-    Let :math:`x_{\\textrm{min}},x_{\\textrm{max}} \\in \\mathbb{R}`. If a
-    linear discretization is chosen, return `res` evenly spaced numbers in
-    :math:`[x_{\\textrm{min}},x_{\\textrm{max}}]`. If a logarithmic
-    discretization is chosen, return `res` evenly spaced numbers in
-    :math:`[10^{x_{\\textrm{min}}},10^{x_{\\textrm{max}}}]`.
-
-    Parameters
-    ----------
-    x_min : `float`
-        Start value or logarithm of the start value.
-    x_max : `float`
-        End value or logarithm of the end value.
-    res : `int`
-        Number of elements to return.
-    disc_type : `str`
-        Discretization type.
-
-    Returns
-    -------
-    `numpy.ndarray`
-        Discretized set.
-
-    """
-    if disc_type == 'log':
-        return np.logspace(x_min, x_max, res)
-    elif disc_type == 'linear':
-        return np.linspace(x_min, x_max, res)
-
-
-def partition_space(l_bound, r_bound, n_strata, disc_type):
-    disc = discretize_space(l_bound, r_bound, n_strata+1, disc_type)
-    disc = disc.astype(int)
-    strata = [None]*n_strata
-    strata[0] = [l_bound, disc[1]-1]
-    strata[-1] = [disc[-2], r_bound]
-    for ix in range(1, len(disc)-2):
-        strata[ix] = [disc[ix], disc[ix+1]-1]
-    return strata
-
-
-def concatenate_linspace(vec_T, vec_n_res):
-    n_total = sum(vec_n_res)-(len(vec_n_res)-1)
-    X = np.zeros(n_total)
-    Q = np.linspace(0, vec_T[0], vec_n_res[0])
-    X[:vec_n_res[0]] = Q
-    start_index = vec_n_res[0]
-    for i in range(1, len(vec_n_res)):
-        W = np.linspace(0, vec_T[i], vec_n_res[i])
-        X[start_index:start_index+vec_n_res[i]-1] = X[start_index-1]+W[1:]
-        start_index += vec_n_res[i]-1
-    return X
-
-
-def get_ix_positions(L, Q):
-    return [np.where(Q == x)[0][0] for x in L]
-
-
-def get_grid_position(x, ref_x):
-    # Get the ixs such that ref_x[ix-1] <= x < ref_x[ix]
-    ixs_grid = np.searchsorted(ref_x, x, side='right')
-    return ixs_grid
-# =============================================================================
-# Dictionary operations
-# =============================================================================
-def dict_keys2str(d):
-    s = ''
-    L = [key for key in d.keys()]
-    for ix in range(len(L)-1):
-        s += L[ix]
-        s += ', '
-    s += L[-1]+'.'
-    return s
 
 
 # =============================================================================

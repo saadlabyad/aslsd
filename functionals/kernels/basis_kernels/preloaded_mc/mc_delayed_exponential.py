@@ -8,7 +8,8 @@ import aslsd.utilities.useful_functions as uf
 dict_ker = {}
 dict_ker['n_vars'] = 2
 dict_ker['var_names'] = ['$\u03C9$', '$\u03B2$', '$\u03B4$']
-dict_ker['var_bounds'] = np.array([10**-10, 10**-10, 10**-10])
+dict_ker['var_lower_bounds'] = np.array([10**-10, 10**-10, 10**-10])
+dict_ker['var_upper_bounds'] = np.array([np.inf, np.inf, np.inf])
 
 
 def tphi_func(t, vars_):

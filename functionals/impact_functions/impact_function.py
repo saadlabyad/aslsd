@@ -90,12 +90,20 @@ class ImpactFunction():
         return ix_map, interval_map
 
     # Bounds
-    def get_param_bounds(self):
-        bnds = [None]*self.n_param
+    def get_param_lower_bounds(self):
+        bnds = np.zeros(self.n_param)
         for i in range(self.n_param):
             ix_imp = self.ix_map[i]['imp']
             ix_param = self.ix_map[i]['par']
-            bnds[i] = self._basis_impacts[ix_imp].get_param_bounds()[ix_param]
+            bnds[i] = self._basis_impacts[ix_imp].get_param_lower_bounds()[ix_param]
+        return bnds
+
+    def get_param_upper_bounds(self):
+        bnds = np.zeros(self.n_param)
+        for i in range(self.n_param):
+            ix_imp = self.ix_map[i]['imp']
+            ix_param = self.ix_map[i]['par']
+            bnds[i] = self._basis_impacts[ix_imp].get_param_upper_bounds()[ix_param]
         return bnds
 
     # Param names

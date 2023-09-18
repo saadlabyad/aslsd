@@ -163,7 +163,7 @@ class HomPoisson:
         return fitted_mu_param
 
     # Simulation
-    def simulate(self, T_f, mu=None, rng=None, seed=1234):
+    def simulate(self, T_f, mu_param=None, rng=None, seed=1234):
         """
         Simulate a path of the homogeneous Poisson model.
 
@@ -189,17 +189,14 @@ class HomPoisson:
             List of jump times per dimension.
 
         """
-        if mu is None:
-            mu = self.fitted_mu
-            if mu is None:
-                raise ValueError("Missing value for Mu")
+        mu_param = self.load_param(mu_param=mu_param)
         d = self.d
         list_times = [None]*d
         # RNG
         rng = us.make_rng(rng=rng, seed=seed)
         for i in range(d):
             # Number of immigrants
-            Nim = rng.poisson(mu[i]*T_f)
+            Nim = rng.poisson(mu_param[i][0]*T_f)
             generations = rng.uniform(low=0., high=T_f, size=Nim)
             generations.sort()
             list_times[i] = generations

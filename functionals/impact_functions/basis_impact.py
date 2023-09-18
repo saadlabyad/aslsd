@@ -85,6 +85,11 @@ class BasisImpact(ABC):
 
         self.make_impact_functionals()
 
+    # Input dimension
+    @abstractmethod
+    def get_mark_dim(self):
+        pass
+
     # Number of parameters
     @abstractmethod
     def get_n_vars(self):
@@ -114,10 +119,14 @@ class BasisImpact(ABC):
 
     # Bounds
     @abstractmethod
-    def get_var_bounds(self):
+    def get_var_lower_bounds(self):
         pass
 
-    def get_param_bounds(self):
+    @abstractmethod
+    def get_var_upper_bounds(self):
+        pass
+
+    def get_param_lower_bounds(self):
         """
         Get the list of lower bounds of the domain of each parameter of the
         basis kernel.
@@ -137,9 +146,37 @@ class BasisImpact(ABC):
             By parameters, we mean the non-fixed paramters.
 
         """
-        bnds = self.get_var_bounds()
-        n_vars = len(bnds)
-        return [bnds[i] for i in range(n_vars) if i not in self.fixed_indices]
+        var_bnds = self.get_var_lower_bounds()
+        n_vars = len(var_bnds)
+        param_bnds = np.array([var_bnds[ix] for ix in range(n_vars)
+                               if ix not in self.fixed_indices])
+        return param_bnds
+
+    def get_param_upper_bounds(self):
+        """
+        Get the list of lower bounds of the domain of each parameter of the
+        basis kernel.
+
+        Let :math:`\\vartheta:=(\\vartheta_1, \\dots, \\vartheta_{n_{\\textrm{param}}})` denote the parameters of the basis kernel. 
+        Each parameter :math:`\\vartheta_i` lives in a half-open interval :math:`[b_i, +\\infty)`.
+        This method returns the vector :math:`(b_1, \\dots, b_{n_{\\textrm{param}}})`.
+
+        Returns
+        -------
+        `list`
+            List of lower bounds of the domain of each parameter of the
+            basis kernel.
+
+        Notes
+        ------
+            By parameters, we mean the non-fixed paramters.
+
+        """
+        var_bnds = self.get_var_upper_bounds()
+        n_vars = len(var_bnds)
+        param_bnds = np.array([var_bnds[ix] for ix in range(n_vars)
+                               if ix not in self.fixed_indices])
+        return param_bnds
 
     # Parameter names
     @abstractmethod
@@ -158,6 +195,12 @@ class BasisImpact(ABC):
         Notes
         ------
             By parameters, we mean the non-fixed paramters.
+            If the method get_var_names is not properly implemented in a child
+            class, that is, if the method is set to return `None`, we generate
+            parameter names as letters of the alphabet, except letters 'l' and
+            'o' following pycodestyle E741.
+            In the unlikely case where the basis kernel has more than 24
+            parameters in the basis kernel, this will raise a ValueError.
 
         """
         var_names = self.get_var_names()
@@ -165,12 +208,7 @@ class BasisImpact(ABC):
             n_vars = len(var_names)
             return [var_names[i] for i in range(n_vars)
                     if i not in self.fixed_indices]
-        # If the method get_var_names is not properly implemented in a child
-        # class, that is, if the method is set to return `None`, we generate
-        # parameter names as letters of the alphabet, except letters 'l' and
-        # 'o' following pycodestyle E741.
-        # In the unlikely case where the basis kernel has more than 24
-        # parameters in the basis kernel, this will raise a ValueError.
+
         else:
             n_param = self.get_n_param()
             return uf.get_alphabet_range(n_param)
