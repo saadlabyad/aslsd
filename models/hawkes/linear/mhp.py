@@ -727,7 +727,7 @@ class MHP:
         lower_bnds = self.matrix2tensor_params(mu_lower_bnds,
                                                self.param_lower_bounds)
         upper_bnds = self.matrix2tensor_params(mu_upper_bnds,
-                                               self.param_uppwer_bounds)
+                                               self.param_upper_bounds)
 
         # Solver
         if not isinstance(n_iter, (list, np.ndarray)):
