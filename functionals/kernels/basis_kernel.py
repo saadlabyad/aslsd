@@ -115,31 +115,35 @@ class BasisKernel(ABC):
             to which we want to impose for the parameter of index fixed_indices[p].
 
         """
-
+        # Fix variables
         if fixed_indices is None:
-            self.fixed_indices = []
-            self.fixed_vars = []
+            self.fixed_indices = np.array([], dtype=int)
+            self.fixed_vars = np.array([])
             self.n_fixed_vars = 0
-        elif isinstance(fixed_indices, (list, np.ndarray)):
+        else:
+            if not uf.is_array(fixed_indices):
+                fixed_indices = np.array([fixed_indices], dtype=int)
+                fixed_vars = np.array([fixed_vars])
             self.n_fixed_vars = len(fixed_vars)
             # Sort the list of fixed indices
             mixed_list = [[fixed_indices[i], fixed_vars[i]]
                           for i in range(self.n_fixed_vars)]
             mixed_list = sorted(mixed_list, key=lambda x: x[0])
-            self.fixed_indices = [x[0] for x in mixed_list]
-            self.fixed_vars = [x[1] for x in mixed_list]
+            self.fixed_indices = np.array([x[0] for x in mixed_list],
+                                          dtype=int)
+            self.fixed_vars = np.array([x[1] for x in mixed_list])
 
-        else:
-            self.fixed_indices = [fixed_indices]
-            self.fixed_vars = [fixed_vars]
-            self.n_fixed_vars = 1
-
+        # Book-keeping for parameter indices
+        self.list_is_active_var = self.make_list_is_active_var()
         self.ix_map = self.make_ix_map()
 
+        # Interactions with other kernels
         self.dict_interactions = self.make_dict_interactions()
 
+        # Kernel interactions
         self.make_kernel_functionals()
 
+        # Simulation
         self.allow_simu = allow_simu
         if self.allow_simu:
             def simu_func(rng, params, size=1):
@@ -147,6 +151,7 @@ class BasisKernel(ABC):
                 return self.make_simu_func(rng, vars_, size=size)
             self.simu_func = simu_func
 
+        # L_p metrics
         self.make_l1_metrics()
         self.make_l2_metrics()
 
@@ -176,6 +181,12 @@ class BasisKernel(ABC):
 
         """
         return self.get_n_vars()-self.n_fixed_vars
+
+    def make_list_is_active_var(self):
+        n_vars = self.get_n_vars()
+        list_is_active_var = np.ones(n_vars, dtype=bool)
+        list_is_active_var[self.fixed_indices] = False
+        return list_is_active_var
 
     # Omega
     def has_omega_param(self):

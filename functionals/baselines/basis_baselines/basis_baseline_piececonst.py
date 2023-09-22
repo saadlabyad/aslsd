@@ -168,6 +168,116 @@ class PieceConstBaseline(BasisBaseline):
             res[ixs_equal] = 2.*vars_[ix_diff]*(t[ixs_equal]-self.beta[ix_diff])/t[ixs_equal]
             return res
 
+    # Interactions with kernels
+    def make_K(self, basis_kernel, t, s, vars_ker, vars_mu):
+        psi = basis_kernel.make_psi
+        if uf.is_array(t) or uf.is_array(s):
+            if uf.is_array(t):
+                res = np.zeros(t.shape)
+            else:
+                res = np.zeros(s.shape)
+            g_s = self.g(s)
+            g_ts = self.g(t+s)
+            ixs_same_bin = np.where((g_s == g_ts))
+            ixs_diff_bin = np.where((g_s < g_ts))
+            # Same bin
+            res[ixs_same_bin] = vars_mu[g_s[ixs_same_bin]]*psi(t[ixs_same_bin],
+                                                                        vars_ker)
+            # Different bins
+            # initial term
+            init_psi_diff = psi(self.beta[g_s[ixs_diff_bin]+1]-s[ixs_diff_bin],
+                                vars_ker)
+            init_term = vars_mu[g_s[ixs_same_bin]]*init_psi_diff
+            # final term
+            fin_psi_diff = (psi(t[ixs_diff_bin], vars_ker)
+                            - psi(self.beta[g_ts[ixs_diff_bin]], vars_ker))
+            fin_term = vars_mu[g_ts[ixs_diff_bin]]*fin_psi_diff
+            # Sum them
+            res[ixs_diff_bin] = init_term+fin_term
+            # Middle term
+            ixs_middle = np.where((g_s <= g_ts-2))
+            b_ixdiffs = g_ts[ixs_middle]-g_s[ixs_middle]-2
+            for ix in ixs_middle:
+                for j in range(g_s[ix]+1, g_ts):
+                    res[ix] += vars_mu[j]*(psi(self.beta[j+1]-s[ix])
+                                           - psi(self.beta[j]-s[ix]))
+            return res
+        else:
+            res = self.make_K(basis_kernel, np.array([t]), np.array([s]),
+                              vars_ker, vars_mu)
+            return res[0]
+
+    def make_diff_K(self, basis_kernel, t, s, ix_func, ix_diff, vars_ker,
+                    vars_mu):
+        if uf.is_array(t) or uf.is_array(s):        
+            g_s = self.g(s)
+            g_ts = self.g(t+s)
+            if ix_func == 1:
+                # Derivative wrt kernel
+                diff_psi = basis_kernel.make_diff_psi
+                if uf.is_array(t):
+                    res = np.zeros(t.shape)
+                else:
+                    res = np.zeros(s.shape)
+
+                ixs_same_bin = np.where((g_s == g_ts))
+                ixs_diff_bin = np.where((g_s < g_ts))
+                # Same bin
+                res[ixs_same_bin] = vars_mu[g_s[ixs_same_bin]]*diff_psi(t[ixs_same_bin],
+                                                                        ix_diff,
+                                                                        vars_ker)
+                # Different bins
+                # initial term
+                init_psi_diff = diff_psi(self.beta[g_s[ixs_diff_bin]+1]-s[ixs_diff_bin],
+                                         vars_ker)
+                init_term = vars_mu[g_s[ixs_same_bin]]*init_psi_diff
+                # final term
+                fin_psi_diff = (diff_psi(t[ixs_diff_bin], vars_ker)
+                                - diff_psi(self.beta[g_ts[ixs_diff_bin]],
+                                           vars_ker))
+                fin_term = vars_mu[g_ts[ixs_diff_bin]]*fin_psi_diff
+                # Sum them
+                res[ixs_diff_bin] = init_term+fin_term
+                # Middle term
+                ixs_middle = np.where((g_s <= g_ts-2))
+                for ix in ixs_middle:
+                    for j in range(g_s[ix]+1, g_ts):
+                        res[ix] += vars_mu[j]*(diff_psi(self.beta[j+1]-s[ix])
+                                               - diff_psi(self.beta[j]-s[ix]))
+                return res
+            elif ix_func == 2:
+                # Derivative wrt baseline
+                psi = basis_kernel.make_psi
+                if uf.is_array(t):
+                    res = np.zeros(t.shape)
+                else:
+                    res = np.zeros(s.shape)
+                # Binning
+                diff_g = g_ts-g_s
+                # Same bin
+                ixs_same = np.where((diff_g == 0) & (g_s == ix_diff))
+                res[ixs_same] = psi(t[ixs_same], vars_ker)
+                # Different bins: mathcing with initial term
+                ixs_diff_init = np.where((diff_g > 0) & (g_s == ix_diff))
+                res[ixs_diff_init] = psi(self.beta[ix_diff+1]
+                                         - s[ixs_diff_init], vars_ker)
+                # Different bins: matching with final term
+                ixs_diff_fin = np.where((diff_g > 0) & (g_ts == ix_diff))
+                res[ixs_diff_fin] = (psi(t[ixs_diff_fin], vars_ker)
+                                     - psi(self.beta[ix_diff], vars_ker))
+                # Different bins: matching with middle term
+                ixs_diff_mid = np.where((diff_g > 1) & (g_s < ix_diff)
+                                        & (g_ts > ix_diff))
+                res[ixs_diff_mid] = (psi(self.beta[ix_diff+1]-s[ixs_diff_mid],
+                                         vars_ker)
+                                     - psi(self.beta[ix_diff]-s[ixs_diff_mid],
+                                           vars_ker))
+                return res
+        else:
+            res = self.make_diff_K(basis_kernel, np.array([t]), np.array([s]),
+                                   ix_func, ix_diff, vars_ker, vars_mu)
+            return res[0]
+
     # Simulatiom
     def make_compensator(self, t, vars_):
         g_t = self.g(t)

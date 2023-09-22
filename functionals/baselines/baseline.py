@@ -173,6 +173,43 @@ class BaselineModel():
             return res
         return diff_M
 
+    def make_K(self):
+        def K(kernel, t, s, params_ker, params_mu):
+            res = 0.
+            for ix_mu in range(self.n_basis_mus):
+                basis_mu = self._basis_mus[ix_mu]
+                start = self.interval_map[ix_mu][0]
+                end = self.interval_map[ix_mu][1]
+                params_basis_mu = params_mu[start:end]
+                res += basis_mu.K(kernel, t, s, params_ker, params_basis_mu)
+            return res
+        return K
+
+    def make_diff_K(self):
+        def diff_K(kernel, t, s, ix_func, ix_diff, params_ker, params_mu):
+            if ix_func == 1:
+                # Derivatives wrt kernel
+                res = 0.
+                for ix_mu in range(self.n_basis_mus):
+                    basis_mu = self._basis_mus[ix_mu]
+                    start = self.interval_map[ix_mu][0]
+                    end = self.interval_map[ix_mu][1]
+                    params_basis_mu = params_mu[start:end]
+                    res += basis_mu.diff_K(kernel, t, s, ix_func, ix_diff,
+                                           params_ker, params_basis_mu)
+                return res
+            elif ix_func == 2:
+                # Derivaitves wrt baseline
+                ix_mu = self.ix_map[ix_diff]['mu']
+                ix_diff_scaled = self.ix_map[ix_diff]['par']
+                basis_mu = self._basis_mus[ix_mu]
+                start = self.interval_map[ix_mu][0]
+                end = self.interval_map[ix_mu][1]
+                params_basis_mu = params_mu[start:end]
+                return basis_mu.diff_K(kernel, t, s, ix_func, ix_diff_scaled,
+                                       params_ker, params_basis_mu)
+        return diff_K
+
     def make_baseline_functionals(self):
         mu = self.make_mu()
         self.mu = mu
@@ -185,6 +222,12 @@ class BaselineModel():
 
         diff_M = self.make_diff_M()
         self.diff_M = diff_M
+
+        K = self.make_K()
+        self.K = K
+
+        diff_K = self.make_diff_K()
+        self.diff_K = diff_K
 
     # Simulation functionals
     def make_compensator(self):

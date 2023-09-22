@@ -166,7 +166,10 @@ class BasisKernelMC():
             self.fixed_indices = []
             self.fixed_vars = []
             self.n_fixed_vars = 0
-        elif uf.is_array(fixed_indices):
+        else:
+            if not uf.is_array(fixed_indices):
+                fixed_indices = [fixed_indices]
+                fixed_vars = [fixed_vars]
             self.n_fixed_vars = len(fixed_vars)
             # Sort the list of fixed indices
             mixed_list = [[fixed_indices[i], fixed_vars[i]]
@@ -174,12 +177,9 @@ class BasisKernelMC():
             mixed_list = sorted(mixed_list, key=lambda x: x[0])
             self.fixed_indices = [x[0] for x in mixed_list]
             self.fixed_vars = [x[1] for x in mixed_list]
-        else:
-            self.fixed_indices = [fixed_indices]
-            self.fixed_vars = [fixed_vars]
-            self.n_fixed_vars = 1
-        self.var_ixs_activity = [ix not in self.fixed_vars
-                                 for ix in range(self.get_n_vars())]
+
+        self.list_is_active_var = self.make_list_is_active_var()
+
         # Book keeping for indices
         self.ix_map = self.make_ix_map()
 
@@ -222,6 +222,12 @@ class BasisKernelMC():
 
         """
         return self.get_n_vars()-self.n_fixed_vars
+
+    def make_list_is_active_var(self):
+        n_vars = self.get_n_vars()
+        list_is_active_var = np.ones(n_vars, dtype=bool)
+        list_is_active_var[self.fixed_indices] = False
+        return list_is_active_var
 
     # Omega
     def has_omega_param(self):

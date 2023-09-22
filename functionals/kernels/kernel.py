@@ -8,6 +8,7 @@ from tqdm import tqdm
 
 from aslsd.functionals.kernels.basis_kernel import BasisKernel
 from aslsd.optimize.solvers.adam import ADAM
+import aslsd.utilities.useful_functions as uf
 
 
 class KernelModel():
@@ -33,15 +34,7 @@ class KernelModel():
 
     """
 
-    def __init__(self, _basis_kernels, n_basis_ker=0, is_null=None,
-                 vec_n_param=None,
-                 n_param=0, ix_map=None, interval_map=None, phi=None,
-                 diff_phi=None, psi=None, diff_psi=None,  upsilon=None,
-                 diff_sim_upsilon=None, diff_cross_upsilon=None,
-                 allow_simu=True, sim_func=None, l1_norm=None,
-                 diff_l1_norm=None, l2_norm=None, l2_dot=None,
-                 l2_distance=None, kl_divergence=None,
-                 diff_kl_divergence=None):
+    def __init__(self, _basis_kernels):
 
         self.basis_kernels = _basis_kernels
 
@@ -52,29 +45,48 @@ class KernelModel():
 
     @basis_kernels.setter
     def basis_kernels(self, L):
-        if isinstance(L, (list, np.ndarray)):
-            self.n_basis_ker = len(L)
-        else:
-            self.n_basis_ker = 1
+        if not uf.is_array(L):
             L = [L]
 
+        self.n_basis_ker = len(L)
         self._basis_kernels = L
 
         self.is_null = self.test_nullity()
 
+        # Variables count
+        self.vec_n_vars = [self._basis_kernels[i].get_n_vars()
+                           for i in range(self.n_basis_ker)]
+        self.n_vars = sum(self.vec_n_vars)
+
+        self.vec_n_fixed_vars = [self._basis_kernels[i].n_fixed_vars
+                                 for i in range(self.n_basis_ker)]
+        self.n_fixed_vars = sum(self.vec_n_fixed_vars)
+        # Active variables
+        list_is_active_var = np.ones(self.n_vars, dtype=bool)
+        ix_ref = 0
+        for ix_basis in range(self.n_basis_ker):
+            if len(L[ix_basis].fixed_indices) > 0:
+                scaled_fixed_ixs = ix_ref+L[ix_basis].fixed_indices
+                list_is_active_var[scaled_fixed_ixs] = False
+            ix_ref += L[ix_basis].get_n_vars()
+        self.list_is_active_var = list_is_active_var
+
+        # Parameters count
         self.vec_n_param = [self._basis_kernels[i].get_n_param()
                             for i in range(self.n_basis_ker)]
 
         self.n_param = sum(self.vec_n_param)
 
+        # Book-keeping
         ix_map, interval_map = self.make_maps()
         self.ix_map = ix_map
         self.interval_map = interval_map
 
+        # Kernel functions
         self.make_kernel_functionals()
 
+        # L_p metrics
         self.make_l1_metrics()
-
         self.make_l2_metrics()
 
     @basis_kernels.deleter
@@ -103,6 +115,38 @@ class KernelModel():
             ix_right = ix_left+self.vec_n_param[ix_ker]
             interval_map[ix_ker] = [ix_left, ix_right]
         return ix_map, interval_map
+
+    def make_vars(self, params):
+        """
+        Get the array of variables of the kernel.
+
+        Parameters
+        ----------
+        params : `list` or `numpy.ndarray`
+            Array of (non-fixed) parameters of the kernel.
+
+        Returns
+        -------
+        variables : `numpy.ndarray`
+            Array of variables (i.e. fixed and non-fixed parameters) of the
+            basis kernel.
+
+        """
+
+        # A simple case: when no parameter has been fixed
+        if self.n_fixed_vars == 0:
+            return params
+        else:
+            n_vars = self.get_n_vars()
+            variables = np.zeros(n_vars)
+            ix_ref = 0
+            for ix_ker in range(self.n_basis_ker):
+                basis_ker = self.basis_kernels[ix_ker]
+                params_ker = params[self.interval_map[ix_ker][0]:self.interval_map[ix_ker][1]]
+                vars_ker = basis_ker.make_vars(params_ker)
+                n_vars_ker = len(vars_ker)
+                variables[ix_ref:ix_ref+n_vars_ker] = vars_ker
+            return variables
 
     # Null
     def test_nullity(self):

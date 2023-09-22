@@ -9,6 +9,53 @@ import aslsd.functionals.baselines.periodic_baselines.\
     periodic_mu_inversion as pmi
 
 
+def K_exp(basis_kernel, t, s, vars_ker, vars_mu):
+    omega, beta = vars_ker
+    alpha, a, b, delta = vars_mu
+    psi_term = (alpha+delta)*omega*(1.-np.exp(-beta*t))
+    coeff = (omega*beta)/(beta**2+a**2)
+    integral = coeff*(
+        beta*np.cos(a*s+b)-a*np.sin(a*s+b)
+        - np.exp(-beta*t)*(beta*np.cos(a*(t+s)+b)-a*np.sin(a*(t+s)+b)))
+    res = psi_term + alpha*integral
+    return res
+
+
+def diff_K_exp(basis_kernel, t, s, ix_func, ix_diff, vars_ker,
+               vars_mu):
+    omega, beta = vars_ker
+    alpha, a, b, delta = vars_mu
+    if ix_func == 1:
+        # Derivative wrt kernel
+        if ix_diff == 0:
+            # Derivative wrt omega
+            psi_term = (alpha+delta)*(1.-np.exp(-beta*t))
+            coeff = beta/(beta**2+a**2)
+            integral = coeff*(
+                beta*np.cos(a*s+b)-a*np.sin(a*s+b)
+                - np.exp(-beta*t)*(beta*np.cos(a*(t+s)+b)-a*np.sin(a*(t+s)+b)))
+            res = psi_term + alpha*integral
+            return res
+        elif ix_diff == 1:
+            # Derivative wrt beta
+            pass
+    elif ix_func == 2:
+        # Derivative wrt baseline
+        if ix_diff == 0:
+            # Derivative wrt alpha
+            pass
+        elif ix_diff == 1:
+            # Derivative wrt a
+            pass
+        elif ix_diff == 2:
+            # Derivative wrt b
+            pass
+        elif ix_diff == 3:
+            # Derivative wrt delta
+            psi_term = 1.-np.exp(-beta*t)
+            return psi_term
+
+
 class CosineBaseline(BasisBaseline):
     def __init__(self, inverse_kepler=None, inv_kepler_type='Newton',
                  inv_kepler_args=None,

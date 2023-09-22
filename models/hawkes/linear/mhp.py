@@ -1751,7 +1751,7 @@ class MHP:
             file_ker = file+'_fitted_ker'
         file_ker = file+'_fitted_ker'
         pickle_in = open(file_ker, "rb")
-        fitted_ker = pickle.load(pickle_in)
+        fitted_ker_param = pickle.load(pickle_in)
 
         if file.endswith('.pickle'):
             file_residuals = file+'_fitted_residuals.pickle'
@@ -1771,7 +1771,7 @@ class MHP:
 
         self.is_fitted = True
         self.fitted_mu = fitted_mu
-        self.fitted_ker_param = fitted_ker
+        self.fitted_ker_param = fitted_ker_param
         self.fit_residuals = fitted_residuals
         self.fitted_adjacency = fitted_adjacency
         if file.endswith('.pickle'):

@@ -140,7 +140,7 @@ class MTLH:
 
     def __init__(self, _kernel_matrix, _baselines_vec=None,
                  _impact_matrix=None, vec_marks=None,
-                 index_from_one=False):
+                 index_from_one=False, K_from_baseline=False):
         """
         Constructor of objects of class MHP.
 
@@ -154,6 +154,7 @@ class MTLH:
         self.d = len(_kernel_matrix)
         self.is_fitted = False
         self.index_from_one = index_from_one
+        self.K_from_baseline = K_from_baseline
         self.baselines_vec = _baselines_vec
         self.kernel_matrix = _kernel_matrix
         self.impact_matrix = _impact_matrix
@@ -999,16 +1000,28 @@ class MTLH:
         for i, j in itertools.product(range(d), range(d)):
             kernel = self._kernel_matrix[i][j]
             baseline = self._baselines_vec[i]
-            func_K = kernel.make_K()
+            if self.K_from_baseline:
+                func_K = baseline.make_K()
 
-            def K(t, s, params_ker, params_mu):
-                return func_K(baseline, t, s, params_ker, params_mu)
+                def K(t, s, params_ker, params_mu):
+                    return func_K(kernel, t, s, params_ker, params_mu)
+                diff_func_K = baseline.make_diff_K()
+
+                def diff_K(t, s, ix_func, ix_diff, params_ker, params_mu):
+                    return diff_func_K(kernel, t, s, ix_func, ix_diff,
+                                       params_ker, params_mu)
+            else:
+                func_K = kernel.make_K()
+
+                def K(t, s, params_ker, params_mu):
+                    return func_K(baseline, t, s, params_ker, params_mu)
+                diff_func_K = kernel.make_diff_K()
+
+                def diff_K(t, s, ix_func, ix_diff, params_ker, params_mu):
+                    return diff_func_K(baseline, t, s, ix_func, ix_diff,
+                                       params_ker, params_mu)
+
             self.K[i][j] = K
-            diff_func_K = kernel.make_diff_K()
-
-            def diff_K(t, s, ix_func, ix_diff, params_ker, params_mu):
-                return diff_func_K(baseline, t, s, ix_func, ix_diff,
-                                   params_ker, params_mu)
             self.diff_K[i][j] = diff_K
 
         # Impact
@@ -1122,8 +1135,7 @@ class MTLH:
     # Fit
     def clear_fit(self):
         """
-        Delete all previously saved results and logs from the
-        corresponding attributes of the MHP object.
+        Delete all previously saved results and fit logs.
 
         """
         self.is_fitted = False
@@ -1134,8 +1146,9 @@ class MTLH:
         self.fitted_adjacency = None
         self.fit_log = None
 
-    def fit(self, process_path, kappa=None, varpi=None, x_0=None,
-            n_iter=1000, solvers=None, estimators=None, logger=None, seed=1234,
+    def fit(self, process_path, x_0=None,
+            n_iter=1000, solvers=None, estimators=None, logger=None, rng=None,
+            seed=1234,
             verbose=False, clear=True, write=True, **kwargs):
         """
         Fit the MHP model to some observations.
@@ -1157,14 +1170,8 @@ class MTLH:
 
         Parameters
         ----------
-        list_times : `list` of `numpy.ndarray`
-            List of jump times for each dimension.
-        T_f : `float`
-            Terminal time.
-        kappa : TYPE, optional
-            DESCRIPTION. The default is None.
-        varpi : TYPE, optional
-            DESCRIPTION. The default is None.
+        process_path : `aslsd.ProcessPath`
+            Data path to fit model to.
         x_0 : `list` of `numpy.ndarray`, optional
             x_0[k] is the initial guess for parameters of problem k. The
             default is None.
@@ -1202,7 +1209,7 @@ class MTLH:
             Fitted kernel parameters.
 
         """
-        rng = np.random.default_rng(seed)
+        rng = us.make_rng(rng=rng, seed=seed)
 
         # Clear saved data in case already fitted
         if clear:

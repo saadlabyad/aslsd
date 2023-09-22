@@ -357,6 +357,15 @@ class BasisBaseline(ABC):
     def make_diff_M(self, t, ix_diff, vars_):
         pass
 
+    @abstractmethod
+    def make_K(self, basis_kernel, t, s, vars_ker, vars_mu):
+        pass
+
+    @abstractmethod
+    def make_diff_K(self, basis_kernel, t, s, ix_func, ix_diff, vars_ker,
+                    vars_mu):
+        pass
+
     def make_baseline_functionals(self):
         """
         Set the attributes corresponding to kernel functionals and their
@@ -425,6 +434,47 @@ class BasisBaseline(ABC):
             ix_diff_scaled = self.ix_map[ix_diff]
             return self.make_diff_M(t, ix_diff_scaled, vars_)
         self.diff_M = diff_M
+
+        def K(kernel, t, s, params_ker, params_mu):
+            vars_mu = self.make_vars(params_mu)
+            res = 0.
+            for ix_ker in kernel.n_basis_ker:
+                basis_kernel = kernel._basis_kernels[ix_ker]
+                start = basis_kernel.interval_map[ix_ker][0]
+                end = basis_kernel.interval_map[ix_ker][1]
+                params_basis_ker = params_ker[start:end]
+                vars_basis_ker = basis_kernel.make_vars(params_basis_ker)
+                res += self.make_K(basis_kernel, t, s, vars_basis_ker, vars_mu)
+            return res
+        self.K = K
+
+        def diff_K(kernel, t, s, ix_func, ix_diff, params_ker,
+                   params_mu):
+            vars_mu = self.make_vars(params_mu)
+            if ix_func == 1:
+                # Derivative wrt kernel
+                ix_ker = kernel.ix_map[ix_diff]['ker']
+                ix_diff_scaled = kernel.ix_map[ix_diff]['par']
+                basis_kernel = kernel._basis_kernels[ix_ker]
+                start = kernel.interval_map[ix_ker][0]
+                end = kernel.interval_map[ix_ker][1]
+                params_basis_ker = params_ker[start:end]
+                vars_basis_ker = basis_kernel.make_vars(params_basis_ker)
+                return self.make_diff_K(basis_kernel, t, s, ix_func,
+                                        ix_diff_scaled, vars_basis_ker,
+                                        vars_mu)
+            elif ix_func == 2:
+                res = 0.
+                for ix_ker in range(kernel.n_basis_ker):
+                    basis_kernel = kernel._basis_kernels[ix_ker]
+                    start = kernel.interval_map[ix_ker][0]
+                    end = kernel.interval_map[ix_ker][1]
+                    params_basis_ker = params_ker[start:end]
+                    vars_basis_ker = basis_kernel.make_vars(params_basis_ker)
+                    res += self.make_diff_K(basis_kernel, t, s, ix_func,
+                                            ix_diff, vars_basis_ker, vars_mu)
+                return res
+        self.diff_K = diff_K
 
     # Simulatiom
     @abstractmethod
