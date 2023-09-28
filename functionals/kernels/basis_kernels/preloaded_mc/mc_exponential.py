@@ -23,6 +23,13 @@ def tpsi_func(t, vars_):
 dict_ker['tpsi_func'] = tpsi_func
 
 
+def diff_tpsi_func(t, ix_diff, vars_):
+    return t*np.exp(-vars_[0]*t)
+
+
+dict_ker['diff_tpsi_func'] = diff_tpsi_func
+
+
 def diff_tphi_func(t, ix_diff, vars_):
     if ix_diff == 0:
         # Derivative wrt \beta

@@ -95,6 +95,7 @@ class BasisKernelMC():
                  var_lower_bounds=None, var_upper_bounds=None,
                  tphi_func=None, src_simu_func=None,
                  diff_tphi_func=None, diff_log_tphi_func=None, tpsi_func=None,
+                 diff_tpsi_func=None,
                  var_names=None, rng=None, base_seed=None, n_mc=1, n_mc_l2=10**4,
                  fixed_indices=None, fixed_vars=None, n_fixed_vars=0,
                  ix_map=None, dict_interactions=None, phi=None, diff_phi=None,
@@ -147,6 +148,7 @@ class BasisKernelMC():
             self.diff_log_tphi_func = diff_log_tphi_func 
             
             self.tpsi_func = tpsi_func
+            self.diff_tpsi_func = diff_tpsi_func
 
         else:
             if preloaded not in dict_preloaded.keys():
@@ -161,22 +163,25 @@ class BasisKernelMC():
             self.diff_tphi_func = preloaded_attr['diff_tphi_func']
             self.diff_log_tphi_func = preloaded_attr['diff_log_tphi_func']
             self.tpsi_func = preloaded_attr.get('tpsi_func', None)
+            self.diff_tpsi_func = preloaded_attr.get('diff_tpsi_func', None)
         # Fixing variables
         if fixed_indices is None:
-            self.fixed_indices = []
-            self.fixed_vars = []
+            self.fixed_indices = np.array([], dtype=int)
+            self.fixed_vars = np.array([])
             self.n_fixed_vars = 0
         else:
             if not uf.is_array(fixed_indices):
-                fixed_indices = [fixed_indices]
-                fixed_vars = [fixed_vars]
+                fixed_indices = np.array([fixed_indices], dtype=int)
+            if not uf.is_array(fixed_vars):
+                fixed_vars = np.array([fixed_vars])
             self.n_fixed_vars = len(fixed_vars)
             # Sort the list of fixed indices
             mixed_list = [[fixed_indices[i], fixed_vars[i]]
                           for i in range(self.n_fixed_vars)]
             mixed_list = sorted(mixed_list, key=lambda x: x[0])
-            self.fixed_indices = [x[0] for x in mixed_list]
-            self.fixed_vars = [x[1] for x in mixed_list]
+            self.fixed_indices = np.array([x[0] for x in mixed_list],
+                                          dtype=int)
+            self.fixed_vars = np.array([x[1] for x in mixed_list])
 
         self.list_is_active_var = self.make_list_is_active_var()
 
@@ -473,20 +478,25 @@ class BasisKernelMC():
             return omega*self.diff_tphi_func(t, ix_diff-1, vars_[1:])
 
     def make_psi(self, t, vars_):
-        n_mc = self.n_mc
-        omega = vars_[0]
-        # Sample offsets from kernel
-        if uf.is_array(t):
-            len_t = len(t)
+        if self.exact_func:
+            omega = vars_[0]
+            return omega*self.tpsi_func(t, vars_[1:])
         else:
-            len_t = 1
-        sim_tau = self.src_simu_func(self.rng, vars_[1:], size=(n_mc, len(t)))
-        # Set values for output
-        ixs_inf = np.where(sim_tau < t)
-        values = np.zeros((n_mc, len_t))
-        # Computations
-        values[ixs_inf] = 1.
-        res = omega*np.mean(values, axis=0)
+            n_mc = self.n_mc
+            omega = vars_[0]
+            # Sample offsets from kernel
+            if uf.is_array(t):
+                len_t = len(t)
+            else:
+                len_t = 1
+            sim_tau = self.src_simu_func(self.rng, vars_[1:],
+                                         size=(n_mc, len(t)))
+            # Set values for output
+            ixs_inf = np.where(sim_tau < t)
+            values = np.zeros((n_mc, len_t))
+            # Computations
+            values[ixs_inf] = 1.
+            res = omega*np.mean(values, axis=0)
         # Adapt res to type of t
         if uf.is_array(t):
             return res
@@ -494,26 +504,33 @@ class BasisKernelMC():
             return res[0]
 
     def make_diff_psi(self, t, ix_diff, vars_):
-        n_mc = self.n_mc
         omega = vars_[0]
-        # Sample offsets from kernel
-        if uf.is_array(t):
-            len_t = len(t)
+        if self.exact_func:
+            if ix_diff == 0:
+                return self.tpsi_func(t, vars_[1:])
+            else:
+                return omega*self.diff_tpsi_func(t, ix_diff-1, vars_[1:])
         else:
-            len_t = 1
-        sim_tau = self.src_simu_func(self.rng, vars_[1:], size=(n_mc, len(t)))
-        # Set values for output
-        ixs_inf = np.where(sim_tau < t)
-        values = np.zeros((n_mc, len_t))
-        # Omega Derivative
-        if ix_diff == 0:
-            values[ixs_inf] = 1.
-            res = np.mean(values, axis=0)
-        # Other derivatives
-        else:
-            values[ixs_inf] = self.diff_log_tphi_func(sim_tau[ixs_inf],
-                                                      ix_diff-1, vars_[1:])
-            res = omega*np.mean(values, axis=0)
+            n_mc = self.n_mc
+            # Sample offsets from kernel
+            if uf.is_array(t):
+                len_t = len(t)
+            else:
+                len_t = 1
+            sim_tau = self.src_simu_func(self.rng, vars_[1:], size=(n_mc,
+                                                                    len(t)))
+            # Set values for output
+            ixs_inf = np.where(sim_tau < t)
+            values = np.zeros((n_mc, len_t))
+            # Omega Derivative
+            if ix_diff == 0:
+                values[ixs_inf] = 1.
+                res = np.mean(values, axis=0)
+            # Other derivatives
+            else:
+                values[ixs_inf] = self.diff_log_tphi_func(sim_tau[ixs_inf],
+                                                          ix_diff-1, vars_[1:])
+                res = omega*np.mean(values, axis=0)
         # Adapt res to type of t
         if uf.is_array(t):
             return res
@@ -769,15 +786,9 @@ class BasisKernelMC():
             return self.make_diff_phi(t, ix_diff_scaled, vars_)
         self.diff_phi = diff_phi
 
-        if self.exact_func:
-            def psi(t, params):
-                vars_ = self.make_vars(params)
-                omega = vars_[0]
-                return omega*self.tpsi_func(t, vars_[1:])
-        else:
-            def psi(t, params):
-                vars_ = self.make_vars(params)
-                return self.make_psi(t, vars_)
+        def psi(t, params):
+            vars_ = self.make_vars(params)
+            return self.make_psi(t, vars_)
         self.psi = psi
 
         def diff_psi(t, ix_diff, params):

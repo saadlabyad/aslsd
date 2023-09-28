@@ -59,7 +59,7 @@ class ConstantBaseline(BasisBaseline):
                     vars_mu):
         if ix_func == 1:
             # Derivative wrt kernel
-            return vars_mu[0]*basis_kernel.make_diff_psi(t, ix_func, vars_ker)
+            return vars_mu[0]*basis_kernel.make_diff_psi(t, ix_diff, vars_ker)
         elif ix_func == 2:
             # Derivative wrt baseline
             return basis_kernel.make_psi(t, vars_ker)

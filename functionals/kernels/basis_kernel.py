@@ -123,6 +123,7 @@ class BasisKernel(ABC):
         else:
             if not uf.is_array(fixed_indices):
                 fixed_indices = np.array([fixed_indices], dtype=int)
+            if not uf.is_array(fixed_vars):
                 fixed_vars = np.array([fixed_vars])
             self.n_fixed_vars = len(fixed_vars)
             # Sort the list of fixed indices

@@ -144,7 +144,7 @@ class ProcessPath():
         if self.book_keeping:
             dict_attr['list_times2end'] = self.list_times2end
             dict_attr['kappa'] = self.kappa
-            dict_attr['varpi'] = self.varpi,
+            dict_attr['varpi'] = self.varpi
             dict_attr['lag_sizes'] = self.lag_sizes
 
         pickle_out = open(file, "wb", **kwargs)

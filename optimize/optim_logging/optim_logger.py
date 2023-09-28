@@ -68,3 +68,7 @@ class OptimLogger:
     def log_grad(self, k, t, g_t):
         if self.is_log_grad:
             self.grad_logs[k][t] = g_t
+
+    def log_lse(self, k, t, lse_t):
+        if self.is_log_lse:
+            self.lse_k[k][t] = lse_t

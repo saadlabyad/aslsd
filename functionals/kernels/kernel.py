@@ -137,7 +137,7 @@ class KernelModel():
         if self.n_fixed_vars == 0:
             return params
         else:
-            n_vars = self.get_n_vars()
+            n_vars = self.n_vars
             variables = np.zeros(n_vars)
             ix_ref = 0
             for ix_ker in range(self.n_basis_ker):

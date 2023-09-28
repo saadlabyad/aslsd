@@ -438,10 +438,10 @@ class BasisBaseline(ABC):
         def K(kernel, t, s, params_ker, params_mu):
             vars_mu = self.make_vars(params_mu)
             res = 0.
-            for ix_ker in kernel.n_basis_ker:
+            for ix_ker in range(kernel.n_basis_ker):
                 basis_kernel = kernel._basis_kernels[ix_ker]
-                start = basis_kernel.interval_map[ix_ker][0]
-                end = basis_kernel.interval_map[ix_ker][1]
+                start = kernel.interval_map[ix_ker][0]
+                end = kernel.interval_map[ix_ker][1]
                 params_basis_ker = params_ker[start:end]
                 vars_basis_ker = basis_kernel.make_vars(params_basis_ker)
                 res += self.make_K(basis_kernel, t, s, vars_basis_ker, vars_mu)

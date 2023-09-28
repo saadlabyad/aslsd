@@ -43,7 +43,7 @@ def update_exp_sum(S_m, m, i, j, beta, kappa, list_times, U):
         return exp_term+np.sum(np.exp(-beta*t_diff)*U_n)
 
 
-def get_exp_sum(i, j, beta, varpi, kappa, list_times, U):
+def get_exp_sum(i, j, beta, varpi, kappa, list_times, U, verbose=False):
     res = np.zeros(len(list_times[i]))
     # Initialise
     t_m1 = list_times[i][varpi[i][j][1]]
@@ -52,7 +52,8 @@ def get_exp_sum(i, j, beta, varpi, kappa, list_times, U):
     S_m = np.sum(np.exp(-beta*t_diff)*U_n)
     res[varpi[i][j][1]] = S_m
     # recurrence
-    for m in range(varpi[i][j][1]+1, len(list_times[i])):
+    for m in tqdm(range(varpi[i][j][1]+1, len(list_times[i])),
+                  disable=not verbose):
         S_m = update_exp_sum(S_m, m-1, i, j, beta, kappa, list_times, U)
         res[m] = S_m
     return res
@@ -1454,6 +1455,17 @@ class RecurrentExponential:
             res[k] = (s <= self.max_array_size)
         return res
 
+    def is_computable_precomps(self, process_path):
+        # Impact
+        is_comp_imp = self.is_computable_imp(process_path)
+        self.is_comp_imp = is_comp_imp
+        # is_comp_S
+        is_comp_S = self.is_computable_S(process_path)
+        self.is_comp_S = is_comp_S
+        # is_comp_eps
+        is_comp_eps = self.is_computable_eps(process_path)
+        self.is_comp_eps = is_comp_eps
+
 # =============================================================================
 # Assign qts
 # =============================================================================
@@ -1703,7 +1715,15 @@ class RecurrentExponential:
 
         # Precomputations
         impact_kf = self.assign_impact_ki(k, f, imp_param_k, list_marks)
-
+        epsilon_ffk_rr = self.assign_epsilon_ijk_pq(f, f, r, r, beta_kfr,
+                                                    beta_kfr,
+                                                    list_times2end)
+        S_imp_ffk_r = self.assign_S_imp_ijk_q(f, f, r, beta_kfr, varpi,
+                                              kappa, list_times,
+                                              impact_kj=impact_kf, k=k,
+                                              imp_param_k=imp_param_k,
+                                              list_marks=list_marks)
+        # Compute result
         res = 0.
         # Single Sums
         # Sum K
@@ -1716,9 +1736,7 @@ class RecurrentExponential:
 
         # Sum Upsilonzero
         # Self
-        epsilon_ffk_rr = self.assign_epsilon_ijk_pq(f, f, r, r, beta_kfr,
-                                                    beta_kfr,
-                                                    list_times2end)
+
         uzero_self = get_diff_omega_sum_upsilonzero_ki_pp(omega_kfr, beta_kfr,
                                                           impact_kf,
                                                           epsilon_ffk_rr)
@@ -1758,14 +1776,6 @@ class RecurrentExponential:
         # Double sums
         # Upsilon
         # upsilon self
-        # Precomp
-        S_imp_ffk_r = self.assign_S_imp_ijk_q(f, f, r, beta_kfr, varpi, kappa,
-                                              list_times, impact_kj=impact_kf,
-                                              k=k, imp_param_k=imp_param_k,
-                                              list_marks=list_marks)
-        epsilon_ffk_rr = self.assign_epsilon_ijk_pq(f, f, r, r, beta_kfr,
-                                                    beta_kfr, list_times2end)
-        # Comp
         ups_self = get_diff_omega_sum_upsilon_iik_pp(f, omega_kfr, beta_kfr,
                                                      impact_kf, S_imp_ffk_r,
                                                      epsilon_ffk_rr,
@@ -1776,7 +1786,7 @@ class RecurrentExponential:
             b_ffk_rq = self.b_k[f][f][r][q]
             S_imp_ffk_q = self.assign_S_imp_ijk_q(f, f, q, beta_kfq, varpi,
                                                   kappa, list_times,
-                                                  impact_kj=impact_kf, k=k, 
+                                                  impact_kj=impact_kf, k=k,
                                                   imp_param_k=imp_param_k,
                                                   list_marks=list_marks)
             epsilon_ffk_rq = self.assign_epsilon_ijk_pq(f, f, r, q, beta_kfr,
@@ -1794,11 +1804,6 @@ class RecurrentExponential:
             beta_kfp = ker_vars_kf[2*p+1]
             # Precomp
             b_ffk_pr = self.b_k[f][f][p][r]
-            S_imp_ffk_r = self.assign_S_imp_ijk_q(f, f, r, beta_kfr, varpi,
-                                                  kappa, list_times,
-                                                  impact_kj=impact_kf, k=k,
-                                                  imp_param_k=imp_param_k,
-                                                  list_marks=list_marks)
             epsilon_ffk_pr = self.assign_epsilon_ijk_pq(f, f, p, r, beta_kfp,
                                                         beta_kfr,
                                                         list_times2end)
@@ -1916,10 +1921,22 @@ class RecurrentExponential:
         impact_kf = self.assign_impact_ki(k, f, imp_param_k, list_marks)
         epsilon_ffk_rr = self.assign_epsilon_ijk_pq(f, f, r, r, beta_kfr,
                                                     beta_kfr, list_times2end)
-
+        S_imp_ffk_r = self.assign_S_imp_ijk_q(f, f, r, beta_kfr, varpi, kappa,
+                                              list_times, impact_kj=impact_kf,
+                                              k=k, imp_param_k=imp_param_k,
+                                              list_marks=list_marks)
+        twimpact_kf = self.assign_twimpact_ki(f, list_times,
+                                              impact_ki=impact_kf,
+                                              k=k, imp_param_k=imp_param_k,
+                                              list_marks=list_marks)
+        S_twimp_ffk_r = self.assign_S_twimp_ijk_q(f, f, r, beta_kfr, varpi,
+                                                  kappa, list_times,
+                                                  twimpact_kj=twimpact_kf,
+                                                  impact_kj=impact_kf, k=k,
+                                                  imp_param_k=imp_param_k,
+                                                  list_marks=list_marks)
         # Compute result
         res = 0.
-
         # Single Sums
         # Sum K
         ix_func = 1
@@ -1980,22 +1997,6 @@ class RecurrentExponential:
         # Double sums
         # Upsilon
         # upsilon self
-        # Precomp
-        S_imp_ffk_r = self.assign_S_imp_ijk_q(f, f, r, beta_kfr, varpi, kappa,
-                                              list_times, impact_kj=impact_kf,
-                                              k=k, imp_param_k=imp_param_k,
-                                              list_marks=list_marks)
-        twimpact_kf = self.assign_twimpact_ki(f, list_times,
-                                              impact_ki=impact_kf,
-                                              k=k, imp_param_k=imp_param_k,
-                                              list_marks=list_marks)
-        S_twimp_ffk_r = self.assign_S_twimp_ijk_q(f, f, r, beta_kfr, varpi,
-                                                  kappa, list_times,
-                                                  twimpact_kj=twimpact_kf,
-                                                  impact_kj=impact_kf, k=k,
-                                                  imp_param_k=imp_param_k,
-                                                  list_marks=list_marks)
-        # Comp
         ups_self = get_diff_beta_sum_upsilon_iik_pp(f, omega_kfr, beta_kfr,
                                                     impact_kf, S_imp_ffk_r,
                                                     S_twimp_ffk_r,
@@ -2396,7 +2397,7 @@ class RecurrentExponential:
             logger.grad_imp = [[[None for x in range(n_iter[i])]
                                 for j in range(d)] for i in range(d)]
         if logger.is_log_lse:
-            logger.lse = np.array([np.zeros(n_iter[k]) for k in range(d)])
+            logger.lse_k = [np.zeros(n_iter[k]+1) for k in range(d)]
 
         logger.mu_0 = None
         logger.ker_0 = None
@@ -2446,8 +2447,7 @@ class RecurrentExponential:
         self.fitted_adjacency = None
         self.fit_log = None
 
-    def init_precomp(self, k,  ker_param_k, imp_param_k, process_path,
-                     is_comp_imp, is_comp_S, is_comp_eps):
+    def init_precomp(self, k,  ker_param_k, imp_param_k, process_path):
         # Time quantities
         list_times = process_path.list_times
         list_times2end = process_path.list_times2end
@@ -2461,7 +2461,7 @@ class RecurrentExponential:
         self.b_2_k = get_b_2_k_tensor(k, self.kernel_matrix, ker_param_k)
 
         # Impact only: self.precomp_imp
-        if (self.precomp_imp is None and is_comp_imp) or self.precomp_imp:
+        if (self.precomp_imp is None and self.is_comp_imp) or self.precomp_imp:
             self.impact_k = get_impact_k_tensor(k, self.impact,
                                                 imp_param_k,
                                                 list_marks)
@@ -2472,7 +2472,7 @@ class RecurrentExponential:
             self.twimpact_k = None
 
         # self.precomp_S
-        if (self.precomp_S is None and is_comp_S[k]) or self.precomp_S:
+        if (self.precomp_S is None and self.is_comp_S[k]) or self.precomp_S:
             self.S_imp_k = get_S_imp_k_tensor(k, self.kernel_matrix,
                                               ker_param_k, varpi, kappa,
                                               list_times, self.impact_k)
@@ -2488,15 +2488,14 @@ class RecurrentExponential:
             self.S_twimp_k = None
 
         # self.precomp_eps
-        if (self.precomp_eps is None and is_comp_eps[k]) or self.precomp_eps:
+        if (self.precomp_eps is None and self.is_comp_eps[k]) or self.precomp_eps:
             self.epsilon_k = get_epsilon_k_tensor(k, self.kernel_matrix,
                                                   ker_param_k,
                                                   list_times2end)
         else:
             self.epsilon_k = None
 
-    def update_precomp(self, k,  ker_param_k, imp_param_k, process_path,
-                       is_comp_imp, is_comp_S, is_comp_eps):
+    def update_precomp(self, k,  ker_param_k, imp_param_k, process_path):
         # Time quantities
         list_times = process_path.list_times
         list_times2end = process_path.list_times2end
@@ -2511,7 +2510,7 @@ class RecurrentExponential:
             self.b_2_k = get_b_2_k_tensor(k, self.kernel_matrix, ker_param_k)
 
         # Impact only: self.precomp_imp
-        if (self.precomp_imp is None and is_comp_imp) or self.precomp_imp:
+        if (self.precomp_imp is None and self.is_comp_imp) or self.precomp_imp:
             self.impact_k = get_impact_k_tensor(k, self.impact,
                                                 imp_param_k,
                                                 list_marks)
@@ -2520,7 +2519,7 @@ class RecurrentExponential:
                                                         list_times)
 
         # self.precomp_S
-        if (self.precomp_S is None and is_comp_S[k]) or self.precomp_S:
+        if (self.precomp_S is None and self.is_comp_S[k]) or self.precomp_S:
             if (not self.is_fixed_betas) or (not self.is_fixed_impacts):
                 self.S_imp_k = get_S_imp_k_tensor(k, self.kernel_matrix,
                                                   ker_param_k, varpi, kappa,
@@ -2532,7 +2531,7 @@ class RecurrentExponential:
                                                       self.twimpact_k)
 
         # self.precomp_eps
-        if (self.precomp_eps is None and is_comp_eps[k]) or self.precomp_eps:
+        if (self.precomp_eps is None and self.is_comp_eps[k]) or self.precomp_eps:
             if not self.is_fixed_betas:
                 self.epsilon_k = get_epsilon_k_tensor(k, self.kernel_matrix,
                                                       ker_param_k,
@@ -2667,9 +2666,7 @@ class RecurrentExponential:
         self.init_logger(logger)
 
         # Precomp
-        is_comp_imp = self.is_computable_imp(process_path)
-        is_comp_S = self.is_computable_S(process_path)
-        is_comp_eps = self.is_computable_eps(process_path)       
+        self.is_computable_precomps(process_path)
 
         # Scheme
         x = [None]*d
@@ -2682,8 +2679,11 @@ class RecurrentExponential:
             # Precomp
             mu_param_k, ker_param_k, imp_param_k = self.xk2matrix_params(k,
                                                                          x_k)
-            self.init_precomp(k,  ker_param_k, imp_param_k, process_path,
-                              is_comp_imp, is_comp_S, is_comp_eps)
+            self.init_precomp(k, ker_param_k, imp_param_k, process_path)
+            # LSE
+            if logger.is_log_lse:
+                lse_t = self.get_lse_k(k, process_path, x_k=x_k)
+                logger.log_lse(k, 0, lse_t)
             for t in tqdm(range(n_iter_k), disable=not verbose):
                 # Compute LSE gradient estimate for parameters x_k
                 g_t = self.compute_grad_lse_k(k, process_path, x_k=x_k)
@@ -2693,12 +2693,14 @@ class RecurrentExponential:
                 # Project into space of parameters
                 x_k = np.clip(x_k, lower_bounds_k, upper_bounds_k)
                 logger.log_param(k, t+1, x_k)
+                # LSE
+                if logger.is_log_lse:
+                    lse_t = self.get_lse_k(k, process_path, x_k=x_k)
+                    logger.log_lse(k, t+1, lse_t)
                 # Update precomps
                 mu_param_k, ker_param_k, imp_param_k = self.xk2matrix_params(k,
                                                                              x_k)
-                self.update_precomp(k, ker_param_k, imp_param_k,
-                                    process_path, is_comp_imp, is_comp_S,
-                                    is_comp_eps)
+                self.update_precomp(k, ker_param_k, imp_param_k, process_path)
             x[k] = x_k
         fitted_mu_param, fitted_ker_param, fitted_imp_param = self.tensor2matrix_params(x)
         if write:
@@ -3046,6 +3048,8 @@ class RecurrentExponential:
         list_times = process_path.list_times
         varpi = process_path.varpi
         kappa = process_path.kappa
+        # Precomp
+        self.is_computable_precomps(process_path)
         # Compute residuals
         residuals = [None]*d
         for k in range(d):
@@ -3056,6 +3060,8 @@ class RecurrentExponential:
                                   for j in range(d)], dtype=int)
             kernel_part = np.zeros((d, N_k))
             U_ones = np.ones(N_k)
+            self.init_precomp(k, kernel_param[k], impact_param[k],
+                              process_path)
             # I. Computations for Poisson part
             times_comp_poisson = self.mu_compensator[k](list_times[k],
                                                         mu_param[k])
