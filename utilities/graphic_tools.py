@@ -18,7 +18,7 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
                      true_ker_param=None, min_mu=None,
                      min_ker_param=None, plot_derivatives=False,
                      derivatives_zero=False,
-                     axs=None, save=False,
+                     axes=None, save=False,
                      filename='image.png', show=False, **kwargs):
     """
     Generic function to plot solver paths for each estimated MHP parameter.
@@ -73,36 +73,36 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
     known in closed form.
     """
     d = len(matrix_n_param)
-    n_iter = [len(fit_log.mu[k])-1 for k in range(d)]
+    n_iter = fit_log.n_iter
 
     n_param = d+np.sum(matrix_n_param)
 
     if plot_derivatives:
         fig_count = 0
-        if axs is None:
+        if axes is None:
             kwargs_2 = copy.deepcopy(kwargs)
             if 'pad' in kwargs_2.keys():
                 kwargs_2.pop('pad', None)
-            fig, axs = plt.subplots(n_param, 2, sharex=True, sharey=False,
+            fig, axes = plt.subplots(n_param, 2, sharex=True, sharey=False,
                                     **kwargs_2)
         # Mu
         for i in range(d):
             # Parameter
-            axs[i, 0].plot(fit_log.mu[i], color=standard_colors[0])
+            axes[i, 0].plot(fit_log.mu[i], color=standard_colors[0])
             if true_mu is not None:
-                axs[i, 0].hlines(true_mu[i], 0, n_iter[i]+1,
+                axes[i, 0].hlines(true_mu[i], 0, n_iter[i]+1,
                                  colors=standard_colors[1], linestyles='solid')
             if min_mu is not None:
-                axs[i, 0].hlines(min_mu[i], 0, n_iter[i]+1,
+                axes[i, 0].hlines(min_mu[i], 0, n_iter[i]+1,
                                  colors=standard_colors[2], linestyles='solid')
-            axs[fig_count, 0].set(ylabel=mu_names[i]+' updates')
+            axes[fig_count, 0].set(ylabel=mu_names[i]+' updates')
 
             # Derivative
-            axs[i, 1].plot(fit_log.grad_mu[i], color=standard_colors[0])
+            axes[i, 1].plot(fit_log.grad_mu[i], color=standard_colors[0])
             if derivatives_zero:
-                axs[i, 1].hlines(0., 0, n_iter[i], colors='grey',
+                axes[i, 1].hlines(0., 0, n_iter[i], colors='grey',
                                  linestyles='dashed')
-            axs[i, 1].set(ylabel=mu_names[i]+' derivative')
+            axes[i, 1].set(ylabel=mu_names[i]+' derivative')
 
             fig_count += 1
 
@@ -110,33 +110,35 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
         for i, j in itertools.product(range(d), range(d)):
             for ix_param in range(matrix_n_param[i][j]):
                 # Parameter
-                axs[fig_count, 0].plot([fit_log.ker[i][j][n][ix_param] for n in range(n_iter[i]+1)], color=standard_colors[0])
+                axes[fig_count, 0].plot([fit_log.ker[i][j][n][ix_param]
+                                         for n in range(n_iter[i]+1)],
+                                        color=standard_colors[0])
                 if true_ker_param is not None:
-                    axs[fig_count, 0].hlines(true_ker_param[i][j][ix_param],
+                    axes[fig_count, 0].hlines(true_ker_param[i][j][ix_param],
                                              0, n_iter[i]+1,
                                              colors=standard_colors[1],
                                              linestyles='solid')
                 if min_ker_param is not None:
-                    axs[fig_count, 0].hlines(min_ker_param[i][j][ix_param], 0,
+                    axes[fig_count, 0].hlines(min_ker_param[i][j][ix_param], 0,
                                              n_iter[i]+1,
                                              colors=standard_colors[2],
                                              linestyles='solid')
-                axs[fig_count, 0].set(ylabel=ker_param_names[i][j][ix_param]
+                axes[fig_count, 0].set(ylabel=ker_param_names[i][j][ix_param]
                                       + ' updates')
 
                 # Derivative
-                axs[fig_count, 1].plot([fit_log.grad_ker[i][j][n][ix_param] for n in range(n_iter[i])], color=standard_colors[0])
+                axes[fig_count, 1].plot([fit_log.grad_ker[i][j][n][ix_param] for n in range(n_iter[i])], color=standard_colors[0])
                 if derivatives_zero:
-                    axs[fig_count, 1].hlines(0., 0, n_iter[i],
+                    axes[fig_count, 1].hlines(0., 0, n_iter[i],
                                              colors='grey',
                                              linestyles='dashed')
-                axs[fig_count, 1].set(ylabel=ker_param_names[i][j][ix_param]
+                axes[fig_count, 1].set(ylabel=ker_param_names[i][j][ix_param]
                                       + ' derivative')
 
                 fig_count += 1
 
-        axs[n_param-1, 0].set(xlabel='Iteration')
-        axs[n_param-1, 1].set(xlabel='Iteration')
+        axes[n_param-1, 0].set(xlabel='Iteration')
+        axes[n_param-1, 1].set(xlabel='Iteration')
 
         if "pad" in kwargs:
             pad = kwargs.get('pad', 300)
@@ -145,19 +147,19 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
     else:
         n_rows = (n_param // 2) + (n_param % 2)
         if n_rows > 1:
-            fig, axs = plt.subplots(n_rows, 2, sharex=True,
+            fig, axes = plt.subplots(n_rows, 2, sharex=True,
                                     sharey=False, **kwargs)
             fig_count = 0
             #   Mu
             for i in range(d):
                 row_index, col_index = fig_count // 2, fig_count % 2
                 # Parameter
-                axs[row_index, col_index].plot(fit_log.mu[i], color=standard_colors[0])
+                axes[row_index, col_index].plot(fit_log.mu[i], color=standard_colors[0])
                 if true_mu is not None:
-                    axs[row_index, col_index].hlines(true_mu[i], 0, n_iter[i]+1, colors=standard_colors[1], linestyles='solid')
+                    axes[row_index, col_index].hlines(true_mu[i], 0, n_iter[i]+1, colors=standard_colors[1], linestyles='solid')
                 if min_mu is not None:
-                    axs[row_index, col_index].hlines(min_mu[i], 0, n_iter[i]+1, colors=standard_colors[2], linestyles='solid')
-                axs[row_index, col_index].set(ylabel=mu_names[i] + ' updates')
+                    axes[row_index, col_index].hlines(min_mu[i], 0, n_iter[i]+1, colors=standard_colors[2], linestyles='solid')
+                axes[row_index, col_index].set(ylabel=mu_names[i] + ' updates')
                 fig_count += 1
 
             #   Kernel Parameters
@@ -165,33 +167,33 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
                 for ix_param in range(len(ker_param_names[i][j])):
                     row_index, col_index = fig_count // 2, fig_count % 2
                     #   Parameter
-                    axs[row_index, col_index].plot([fit_log.ker[i][j][n][ix_param] for n in range(n_iter[i]+1)], color=standard_colors[0])
+                    axes[row_index, col_index].plot([fit_log.ker[i][j][n][ix_param] for n in range(n_iter[i]+1)], color=standard_colors[0])
                     if true_ker_param is not None:
-                        axs[row_index, col_index].hlines(true_ker_param[i][j][ix_param], 0, n_iter[i]+1, colors=standard_colors[1], linestyles='solid')
+                        axes[row_index, col_index].hlines(true_ker_param[i][j][ix_param], 0, n_iter[i]+1, colors=standard_colors[1], linestyles='solid')
                     if min_ker_param is not None:
-                        axs[row_index, col_index].hlines(min_ker_param[i][j][ix_param], 0, n_iter[i]+1, colors=standard_colors[2], linestyles='solid')
-                    axs[row_index, col_index].set(ylabel=ker_param_names[i][j][ix_param]+' updates')
+                        axes[row_index, col_index].hlines(min_ker_param[i][j][ix_param], 0, n_iter[i]+1, colors=standard_colors[2], linestyles='solid')
+                    axes[row_index, col_index].set(ylabel=ker_param_names[i][j][ix_param]+' updates')
 
                     fig_count += 1
 
-            axs[n_rows-1, 0].set(xlabel='Iteration')
-            axs[n_rows-1, 1].set(xlabel='Iteration')
+            axes[n_rows-1, 0].set(xlabel='Iteration')
+            axes[n_rows-1, 1].set(xlabel='Iteration')
 
             if "pad" in kwargs:
                 pad = kwargs.get('pad', 300)
                 fig.tight_layout(pad=pad)
 
         else:
-            fig, axs = plt.subplots(1, 2, sharex=True, sharey=False, **kwargs)
+            fig, axes = plt.subplots(1, 2, sharex=True, sharey=False, **kwargs)
             fig_count = 0
             #   Mu
             for i in range(d):
-                axs[fig_count % 2].plot(fit_log.mu[i], color=standard_colors[0])
+                axes[fig_count % 2].plot(fit_log.mu[i], color=standard_colors[0])
                 if true_mu is not None:
-                    axs[fig_count % 2].hlines(true_mu[i], 0, n_iter[i]+1, colors=standard_colors[1], linestyles='solid')
+                    axes[fig_count % 2].hlines(true_mu[i], 0, n_iter[i]+1, colors=standard_colors[1], linestyles='solid')
                 if min_mu is not None:
-                    axs[fig_count % 2].hlines(min_mu[i], 0, n_iter[i]+1, colors=standard_colors[2], linestyles='solid')
-                axs[fig_count % 2].set(ylabel=mu_names[i]+' updates')
+                    axes[fig_count % 2].hlines(min_mu[i], 0, n_iter[i]+1, colors=standard_colors[2], linestyles='solid')
+                axes[fig_count % 2].set(ylabel=mu_names[i]+' updates')
 
                 fig_count += 1
 
@@ -199,17 +201,17 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
             for i, j in itertools.product(range(d), range(d)):
                 for ix_param in range(len(ker_param_names[i][j])):
                     #   Parameter
-                    axs[fig_count % 2].plot([fit_log.ker[i][j][n][ix_param] for n in range(n_iter[i]+1)], color=standard_colors[0])
+                    axes[fig_count % 2].plot([fit_log.ker[i][j][n][ix_param] for n in range(n_iter[i]+1)], color=standard_colors[0])
                     if true_ker_param is not None:
-                        axs[fig_count % 2].hlines(true_ker_param[i][j][ix_param], 0, n_iter[i]+1, colors=standard_colors[1], linestyles='solid')
+                        axes[fig_count % 2].hlines(true_ker_param[i][j][ix_param], 0, n_iter[i]+1, colors=standard_colors[1], linestyles='solid')
                     if min_ker_param is not None:
-                        axs[fig_count % 2].hlines(min_ker_param[i][j][ix_param], 0, n_iter[i]+1, colors=standard_colors[2], linestyles='solid')
-                    axs[fig_count % 2].set(ylabel=ker_param_names[i][j][ix_param]+' updates')
+                        axes[fig_count % 2].hlines(min_ker_param[i][j][ix_param], 0, n_iter[i]+1, colors=standard_colors[2], linestyles='solid')
+                    axes[fig_count % 2].set(ylabel=ker_param_names[i][j][ix_param]+' updates')
 
                     fig_count += 1
 
-            axs[0].set(xlabel='Iteration')
-            axs[1].set(xlabel='Iteration')
+            axes[0].set(xlabel='Iteration')
+            axes[1].set(xlabel='Iteration')
 
             if "pad" in kwargs:
                 pad = kwargs.get('pad', 300)
@@ -220,7 +222,7 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
     if show:
         plt.show()
 
-    return axs
+    return axes
 
 
 def plot_solver_path_contour(x_updates, y_updates, loss_function, scale=1.,
@@ -360,7 +362,7 @@ def plot_solver_path_contour(x_updates, y_updates, loss_function, scale=1.,
 
 
 def plot_kernels(phi, kernel_param, t_min=0., t_max=10., n_samples=10**3,
-                 index_from_one=False, log_scale=False, axs=None,
+                 index_from_one=False, log_scale=False, axes=None,
                  save=False, filename='image.png', show=False, **kwargs):
     """
     Generic function to plot the matrix of kernels of an MHP.
@@ -371,30 +373,30 @@ def plot_kernels(phi, kernel_param, t_min=0., t_max=10., n_samples=10**3,
     """
 
     d = len(phi)
-    if axs is None:
-        fig, axs = plt.subplots(d, d, sharex=True, sharey=False, **kwargs)
+    if axes is None:
+        fig, axes = plt.subplots(d, d, sharex=True, sharey=False, **kwargs)
     x_phi = np.linspace(t_min, t_max, n_samples)
     if d > 1:
         for i, j in itertools.product(range(d), range(d)):
             y_phi = phi[i][j](x_phi, kernel_param[i][j])
-            axs[i, j].plot(x_phi, y_phi, color='steelblue')
-            axs[i, j].set(ylabel=r'$\phi_{'+str(i+int(index_from_one))+','
+            axes[i, j].plot(x_phi, y_phi, color='steelblue')
+            axes[i, j].set(ylabel=r'$\phi_{'+str(i+int(index_from_one))+','
                                  + str(j + int(index_from_one)) + '}(t)$')
-        axs[d-1, 0].set(xlabel=r'$t$')
-        axs[d-1, 1].set(xlabel=r'$t$')
+        axes[d-1, 0].set(xlabel=r'$t$')
+        axes[d-1, 1].set(xlabel=r'$t$')
 
     else:
         y_phi = phi[0][0](x_phi, kernel_param[0][0])
-        axs.plot(x_phi, y_phi, color='steelblue')
-        axs.set(ylabel=r'$\phi(t)$')
-        axs.set(xlabel=r'$t$')
+        axes.plot(x_phi, y_phi, color='steelblue')
+        axes.set(ylabel=r'$\phi(t)$')
+        axes.set(xlabel=r'$t$')
     plt.tight_layout()
     if save:
         plt.savefig(filename)
     if show:
         plt.show()
 
-    return axs
+    return axes
 
 
 def plot_function_shaded_error(x_vals, list_y_vals, list_y_std,

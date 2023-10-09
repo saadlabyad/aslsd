@@ -1722,7 +1722,7 @@ class MHP:
 
     def plot_solver_path(self, true_mu=None, true_ker_param=None, min_mu=None,
                          min_ker_param=None, plot_derivatives=False,
-                         derivatives_zero=False, axs=None, save=False,
+                         derivatives_zero=False, axes=None, save=False,
                          filename='image.png', show=False, **kwargs):
         if not self.is_fitted:
             raise ValueError("MHP must be fitted before plotting solver path")
@@ -1737,7 +1737,7 @@ class MHP:
                                    min_mu=min_mu, min_ker_param=min_ker_param,
                                    plot_derivatives=plot_derivatives,
                                    derivatives_zero=derivatives_zero,
-                                   axs=axs, save=save, filename=filename,
+                                   axes=axes, save=save, filename=filename,
                                    show=show, **kwargs)
 
 # =============================================================================
