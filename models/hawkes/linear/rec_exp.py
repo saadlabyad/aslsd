@@ -17,8 +17,10 @@ from aslsd.functionals.kernels.basis_kernels.\
 from aslsd.stats.residual_analysis import goodness_of_fit as gof
 from aslsd.stats.events.process_path import ProcessPath
 from aslsd.optimize.optim_logging.optim_logger import OptimLogger
-from aslsd.optimize.solvers.adam import ADAM
 from aslsd.optimize.solvers.solver import Solver
+from aslsd.optimize.solvers.momentum import Momentum
+from aslsd.optimize.solvers.rmsprop import RMSprop
+from aslsd.optimize.solvers.adam import ADAM
 from aslsd.utilities import useful_functions as uf
 from aslsd.utilities import useful_statistics as us
 from aslsd.utilities import graphic_tools as gt
@@ -2660,6 +2662,13 @@ class RecurrentExponential:
         else:
             if issubclass(type(solvers), Solver):
                 solvers = [copy.deepcopy(solvers) for k in range(d)]
+            elif type(solvers) == str:
+                if solvers == 'Momentum':
+                    solvers = [Momentum(**kwargs) for k in range(d)]
+                elif solvers == 'RMSprop':
+                    solvers = [RMSprop(**kwargs) for k in range(d)]
+                elif solvers == 'ADAM':
+                    solvers = [ADAM(**kwargs) for k in range(d)]
 
         # Initialize logger
         logger = OptimLogger(d, n_iter, **kwargs)
@@ -3247,7 +3256,8 @@ class RecurrentExponential:
         if verbose:
             n_tot = sum([len(L) for L in list_times])
             print('Simulation Complete, ', n_tot, ' events simulated.')
-        return list_times, list_marks
+        process_path = ProcessPath(list_times, T_f, list_marks=list_marks)
+        return process_path
 
     def simu_multipath(self, path_res, t_res, x_min, x_max, mu=None,
                        kernel_param=None, seed=1234, verbose=False,

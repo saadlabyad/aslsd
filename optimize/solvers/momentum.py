@@ -34,15 +34,15 @@ class Momentum(Solver):
     """
 
     def __init__(self, **kwargs):
-        self.momentum = kwargs.get('momentum', default=0.9)
-        self.momentum_term = 0.
+        self.momentum_1 = kwargs.get('momentum_1', 0.9)
+        self.momentum_term_1 = 0.
         Solver.__init__(self, **kwargs)
 
     def iterate(self, t, x, grad):
         g_t = self.clip(grad)
-        delta_vt = self.momentum_term
+        delta_vt = self.momentum_term_1
         rate = self.learning_rate(t)
-        delta_vt = -rate*g_t+self.momentum*delta_vt
-        self.momentum_term = delta_vt
+        delta_vt = -rate*g_t+self.momentum_1*delta_vt
+        self.momentum_term_1 = delta_vt
         self.t += 1
         return x + delta_vt

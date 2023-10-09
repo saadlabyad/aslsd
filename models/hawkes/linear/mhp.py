@@ -12,8 +12,10 @@ from aslsd.optimize.estimators.\
     adaptive_stratified_estimator import AdaptiveStratified
 from aslsd.optimize.estimators.estimator import Estimator
 from aslsd.optimize.optim_logging.optim_logger import OptimLogger
-from aslsd.optimize.solvers.adam import ADAM
 from aslsd.optimize.solvers.solver import Solver
+from aslsd.optimize.solvers.momentum import Momentum
+from aslsd.optimize.solvers.rmsprop import RMSprop
+from aslsd.optimize.solvers.adam import ADAM
 from aslsd.stats.residual_analysis import goodness_of_fit as gof
 from aslsd.utilities import graphic_tools as gt
 from aslsd.utilities import useful_functions as uf
@@ -22,6 +24,7 @@ from aslsd.utilities import useful_statistics as us
 from aslsd.functionals.baselines.baseline import BaselineModel
 from aslsd.functionals.baselines.\
     basis_baselines.basis_baseline_constant import ConstantBaseline
+from aslsd.stats.events.process_path import ProcessPath
 
 
 class MHP:
@@ -534,285 +537,9 @@ class MHP:
                                           " between kernel", k, ",", i,
                                           " and kernel ", k, ",", j)
 
-    # Statistics
-    def get_intensity(self, process_path, mu=None, kernel_param=None,
-                      verbose=False):
-        d = self.d
-        # Prepare parameters
-        mu, kernel_param = self.load_param(mu=mu, kernel_param=kernel_param)
-
-        # Compute
-        intensity = [mu[i]+np.zeros(process_path.n_events[i])
-                     for i in range(d)]
-        print('intensity[0][0]', intensity[0][0])
-        if verbose:
-            print('Starting Computations...')
-        for i, j in itertools.product(range(d), range(d)):
-            for m in tqdm(range(process_path.varpi[i][j][1],
-                                process_path.n_events[i]),
-                          disable=not verbose):
-                t_m = process_path.list_times[i][m]
-                t_n = process_path.list_times[j][:process_path.kappa[j][i][m]+1]
-                t_diff = t_m-t_n
-                intensity[i][m] += np.sum(self.phi[i][j](t_diff,
-                                                         kernel_param[i][j]))
-        return intensity
-
-    # Estimator functions
-    def init_estimator(self, estimator, k):
-        # Ixs book-keeping
-        estimator.n_param_k = 1+sum(self.matrix_n_param[k])
-        estimator.matrix_n_param = self.matrix_n_param
-        estimator.ix_map = self.ix_map
-        estimator.interval_map = self.interval_map
-        # Functionals
-        estimator.phi = self.phi
-        estimator.diff_phi = self.diff_phi
-        estimator.psi = self.psi
-        estimator.diff_psi = self.diff_psi
-        estimator.upsilon = self.upsilon
-        estimator.diff_sim_upsilon = self.diff_sim_upsilon
-        estimator.diff_cross_upsilon = self.diff_cross_upsilon
-
-    # Fit
-    def init_logger(self, logger):
-        d = self.d
-        n_iter = logger.n_iter
-        n_param_k = [1+sum(self.matrix_n_param[k]) for k in range(d)]
-
-        if logger.is_log_param:
-            logger.param_logs = [np.zeros((n_iter[k]+1, n_param_k[k]))
-                                 for k in range(d)]
-            logger.mu = [np.zeros(n_iter[k]+1) for k in range(d)]
-            logger.ker = [[[None for x in range(n_iter[i]+1)] for j in range(d)]
-                          for i in range(d)]
-        if logger.is_log_grad:
-            logger.grad_logs = [np.zeros((n_iter[k], n_param_k[k]))
-                                for k in range(d)]
-            logger.grad_mu = [[None for x in range(n_iter[k])]
-                              for k in range(d)]
-            logger.grad_ker = [[[None for x in range(n_iter[i])]
-                                for j in range(d)] for i in range(d)]
-
-        logger.mu_0 = None
-        logger.ker_0 = None
-
-    def process_logs(self, logger):
-        d = self.d
-        if logger.is_log_param:
-            for i in range(d):
-                for ix in range(logger.n_iter[i]+1):
-                    logger.mu[i][ix] = logger.param_logs[i][ix][0]
-            for i, j in itertools.product(range(d), range(d)):
-                for ix in range(logger.n_iter[i]+1):
-                    logger.ker[i][j][ix] = logger.param_logs[i][ix][self.interval_map[i][j][0]:self.interval_map[i][j][1]]
-        if logger.is_log_grad:
-            for i in range(d):
-                for ix in range(logger.n_iter[i]):
-                    logger.grad_mu[i][ix] = logger.grad_logs[i][ix][0]
-            for i, j in itertools.product(range(d), range(d)):
-                for ix in range(logger.n_iter[i]):
-                    logger.grad_ker[i][j][ix] = logger.grad_logs[i][ix][self.interval_map[i][j][0]:self.interval_map[i][j][1]]
-        if logger.is_log_lse:
-            for k in range(d):
-                self.lse[k] = self.estimator_logs[k]['lse']
-        if logger.is_log_ixs:
-            for k in range(d):
-                logger.samples[k] = {}
-                logger.samples[k]['psi'] = logger.estimator_logs[k]['samples']['psi']
-                logger.samples[k]['upsilonzero'] = logger.estimator_logs[k]['samples']['upsilonzero']
-                logger.samples[k]['phi'] = logger.estimator_logs[k]['samples']['phi']
-                logger.samples[k]['upsilon'] = logger.estimator_logs[k]['samples']['upsilon']
-        if logger.is_log_allocs:
-            for k in range(d):
-                logger.allocs[k] = {}
-                logger.allocs[k]['phi'] = logger.estimator_logs[k]['allocs']['phi']
-                logger.allocs[k]['upsilon'] = logger.estimator_logs[k]['allocs']['upsilon']
-
-    def clear_fit(self):
-        """
-        Delete all previously saved results and logs from the
-        corresponding attributes of the MHP object.
-
-        """
-        self.is_fitted = False
-        self.fitted_mu = None
-        self.fitted_ker_param = None
-        self.fit_residuals = None
-        self.fitted_adjacency = None
-        self.fit_log = None
-
-    def fit(self, process_path, kappa=None, varpi=None, x_0=None,
-            n_iter=1000, solvers=None, estimators=None, logger=None, seed=1234,
-            verbose=False, clear=True, write=True, **kwargs):
-        """
-        Fit the MHP model to some observations.
-
-        We suppose that we observe a path of a d-dimensional counting process
-        :math:`\\mathbf{N}` started at time :math:`0` up to some terminal time
-        :math:`T`.
-
-        The least squares error (LSE) of this model for these observations is
-        defined as
-
-        .. math::
-            \\mathcal{R}_{T}(\\boldsymbol{\\mu}):=\\frac{1}{T} \\sum_{k=1}^{d} \\int_{0}^{T} \\lambda_{k}(t)^{2} \\mathrm{~d} t-\\frac{2}{T} \\sum_{k=1}^{d} \\sum_{m=1}^{N_{T}^{k}} \\lambda_{k}\\left(t_{m}^{k}\\right).
-
-        For a homogeneous Poisson model, this simplifies to
-
-        .. math::
-            \\mathcal{R}_{T}(\\boldsymbol{\\mu}):=\\sum_{k=1}^{d} \\bigg( \\mu_{k}^{2} -2 \\frac{N_{T}^{k}}{T} \\bigg).
-
-        Parameters
-        ----------
-        list_times : `list` of `numpy.ndarray`
-            List of jump times for each dimension.
-        T_f : `float`
-            Terminal time.
-        kappa : TYPE, optional
-            DESCRIPTION. The default is None.
-        varpi : TYPE, optional
-            DESCRIPTION. The default is None.
-        x_0 : `list` of `numpy.ndarray`, optional
-            x_0[k] is the initial guess for parameters of problem k. The
-            default is None.
-        n_iter : `list` or `int`, optional
-            n_iter[k] is the number of iterations of the the optimisation
-            algorithm for problem k. If  n_iter is of type `int`, it will be
-            converted to a d-dimensional array where each entry is equal to
-            that integer. The default is 1000.
-        solvers : `list` of `aslsd.Solver`, optional
-            solvers[k] is the optimization solver for problem k. The default
-            is None.
-        estimators : `list` of `aslsd.Esimtator`, optional
-            estimators[k] is the gradient estimator for problem k. The default
-            is None.
-        logger : `aslsd.OptimLogger`, optional
-            DESCRIPTION. The default is None.
-        seed : `int`, optional
-            Seed for the random number generator. The default is 1234.
-        verbose : `bool`, optional
-            If True, print progression information. The default is False.
-        clear : `bool`, optional
-            If true, delete all previously saved results and logs from the
-            corresponding attributes of the MHP object. The default is True.
-        write : `bool`, optional
-            If true, save the estimation results and logs in the corresponding
-            attributes of the MHP object. The default is True.
-        **kwargs : `dict`
-            Additional keyword arguments.
-
-        Returns
-        -------
-        fitted_mu : `numpy.ndarray`
-            Fitted baselines.
-        fitted_ker_param : `numpy.ndarray`
-            Fitted kernel parameters.
-
-        """
-        rng = np.random.default_rng(seed)
-
-        # Clear saved data in case already fitted
-        if clear:
-            self.clear_fit()
-
-        # Data
-        d = self.d
-        list_times = process_path.list_times
-        T_f = process_path.T_f
-
-        # Model
-        mu_lower_bnds = np.array([10**-10 for k in range(d)])
-        mu_upper_bnds = np.array([np.inf for k in range(d)])
-        lower_bnds = self.matrix2tensor_params(mu_lower_bnds,
-                                               self.param_lower_bounds)
-        upper_bnds = self.matrix2tensor_params(mu_upper_bnds,
-                                               self.param_upper_bounds)
-
-        # Solver
-        if not isinstance(n_iter, (list, np.ndarray)):
-            n_iter = [n_iter for k in range(d)]
-
-        # Initialisation
-        if x_0 is None:
-            ref_mu = kwargs.get('ref_mu', None)
-            ref_ker_param = kwargs.get('ref_ker_param', None)
-            range_ref = kwargs.get('range_ref', 0.1)
-            target_bratio = kwargs.get('target_bratio', 0.6)
-            max_omega = kwargs.get('max_omega', 1.)
-            true_omega = kwargs.get('true_omega', None)
-            max_param = kwargs.get('max_param', 5.)
-            min_mu = kwargs.get('min_mu', 0.)
-            max_mu = kwargs.get('max_mu', None)
-            mu_0, ker_0 = self.get_random_param(ref_mu=ref_mu,
-                                                ref_ker_param=ref_ker_param,
-                                                range_ref=range_ref,
-                                                target_bratio=target_bratio,
-                                                max_omega=max_omega,
-                                                true_omega=true_omega,
-                                                max_param=max_param,
-                                                min_mu=min_mu, max_mu=max_mu,
-                                                flatten=False, rng=rng)
-            x_0 = self.matrix2tensor_params(mu_0, ker_0)
-        else:
-            mu_0, ker_0 = self.tensor2matrix_params(x_0)
-
-        # Initialize Estimators
-        if estimators is None:
-            estimators = [AdaptiveStratified(**kwargs) for k in range(d)]
-        else:
-            if issubclass(type(estimators), Estimator):
-                estimators = [copy.deepcopy(estimators) for k in range(d)]
-        for k in range(d):
-            estimators[k].k = k
-            estimators[k].n_iter = n_iter[k]
-            estimators[k].initialize(process_path, self)
-            estimators[k].intialize_logs()
-            estimators[k].set_stratification(**kwargs)
-
-        # Initialize Solvers
-        if solvers is None:
-            solvers = [ADAM(**kwargs) for k in range(d)]
-        else:
-            if issubclass(type(solvers), Solver):
-                solvers = [copy.deepcopy(solvers) for k in range(d)]
-
-        # Initialize logger
-        logger = OptimLogger(d, n_iter, **kwargs)
-        self.init_logger(logger)
-
-        # Scheme
-        x = [None]*d
-        for k in range(d):
-            x_k = x_0[k]
-            logger.log_param(k, 0, x_k)
-            lower_bounds_k = lower_bnds[k]
-            upper_bounds_k = upper_bnds[k]
-            n_iter_k = n_iter[k]
-
-            for t in tqdm(range(n_iter_k), disable=not verbose):
-                # Compute LSE gradient estimate for parameters x_k
-                g_t = estimators[k].lse_k_grad_estimate(x_k, rng)
-                logger.log_grad(k, t, g_t)
-                # Apply solver iteration
-                x_k = solvers[k].iterate(t, x_k, g_t)
-                # Project into space of parameters
-                x_k = np.clip(x_k, lower_bounds_k, upper_bounds_k)
-                logger.log_param(k, t+1, x_k)
-            esimator_k_log = estimators[k].get_log()
-            logger.estimator_logs[k] = esimator_k_log
-            x[k] = x_k
-        fitted_mu, fitted_ker_param = self.tensor2matrix_params(x)
-        if write:
-            self.is_fitted = True
-            self.fitted_mu = fitted_mu
-            self.fitted_ker_param = fitted_ker_param
-            self.process_logs(logger)
-            logger.mu_0 = mu_0
-            logger.ker_0 = ker_0
-            self.fit_log = logger
-        return fitted_mu, fitted_ker_param
-
+# =============================================================================
+# Branching representation
+# =============================================================================
     def make_adjacency_matrix(self, kernel_param=None):
         """
         Compute the adjacency matrix of the MHP.
@@ -853,8 +580,10 @@ class MHP:
             else:
                 raise ValueError("kernel_param must be specified.")
         d = self.d
-        adjacency = [[self._kernel_matrix[i][j].l1_norm(kernel_param[i][j])
-                      for j in range(d)] for i in range(d)]
+        adjacency = np.zeros((d, d))
+        for i, j in itertools.product(range(d), range(d)):
+            x_ker_ij = kernel_param[i][j]
+            adjacency[i, j] = self._kernel_matrix[i][j].l1_norm(x_ker_ij)
         if log_fitted_adjacency:
             self.fitted_adjacency = adjacency
         return adjacency
@@ -902,201 +631,52 @@ class MHP:
         bratio = np.max(np.absolute(np.linalg.eigvals(adjacency)))
         return bratio
 
-    def get_random_param(self, ref_mu=None, ref_ker_param=None, range_ref=0.1,
-                         target_bratio=0.6, max_omega=1., true_omega=None,
-                         max_param=5.,
-                         min_mu=0., max_mu=None, flatten=False, seed=1234,
-                         rng=None):
-        if rng is None:
-            rng = np.random.default_rng(seed)
+# =============================================================================
+# Statistics
+# =============================================================================
+    def get_intensity_at_jumps(self, process_path, mu=None, kernel_param=None,
+                               verbose=False):
         d = self.d
+        # Prepare parameters
+        mu, kernel_param = self.load_param(mu=mu, kernel_param=kernel_param)
 
-        # Mu
-        if ref_mu is None:
-            if not isinstance(min_mu, (list, np.ndarray)):
-                min_mu = np.ones(d)*min_mu
-            if max_mu is None:
-                max_mu = max(max(min_mu), 1.)
-            if not isinstance(max_mu, (list, np.ndarray)):
-                max_mu = np.ones(d)*max_mu
-            mu = np.zeros(d)
-            for i in range(d):
-                mu[i] = rng.uniform(low=min_mu[i], high=max_mu[i], size=1)[0]
-        else:
-            mu = np.zeros(d)
-            for i in range(d):
-                mu[i] = rng.uniform(low=max(0., (1.-range_ref)*ref_mu[i]),
-                                    high=(1+range_ref)*ref_mu[i], size=1)[0]
-
-        # Kernels
-        kernel_param = np.array([[None for j in range(d)]
-                                 for i in range(d)], dtype=object)
-        if ref_ker_param is None:
-            if not isinstance(max_param, (list, np.ndarray)):
-                float_max = max_param
-                max_param = [[[None for x
-                               in range(self._kernel_matrix[i][j].n_param)]
-                              for j in range(d)] for i in range(d)]
-                for i, j in itertools.product(range(d), range(d)):
-                    n_param = self._kernel_matrix[i][j].n_param
-                    vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
-                    bnds = self.param_lower_bounds[i][j]
-                    for x in range(n_param):
-                        if x in vec_ix_omega:
-                            max_param[i][j][x] = max_omega
-                        else:
-                            max_param[i][j][x] = max(float_max, bnds[x])
-
-            for i, j in itertools.product(range(d), range(d)):
-                kernel_param[i][j] = []
-                n_param = self._kernel_matrix[i][j].n_param
-                vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
-                bnds = self.param_lower_bounds[i][j]
-                for x in range(n_param):
-                    val = rng.uniform(low=bnds[x], high=max_param[i][j][x],
-                                      size=1)[0]
-                    kernel_param[i][j].append(val)
-        else:
-            for i, j in itertools.product(range(d), range(d)):
-                kernel_param[i][j] = []
-                n_param = self._kernel_matrix[i][j].n_param
-                bnds = self.param_lower_bounds[i][j]
-                for x in range(n_param):
-                    val = rng.uniform(low=max(bnds[x],
-                                              (1.-range_ref)
-                                              * ref_ker_param[i][j][x]),
-                                      high=(1.+range_ref)
-                                      * ref_ker_param[i][j][x],
-                                      size=1)[0]
-                    kernel_param[i][j].append(val)
-
-        # Rescaling
-        branching_ratio = self.get_branching_ratio(kernel_param=kernel_param)
-        if branching_ratio > 0.:
-            scaling = target_bratio/branching_ratio
+        # Compute
+        intensity = [mu[i]+np.zeros(process_path.n_events[i])
+                     for i in range(d)]
+        if verbose:
+            print('Starting Computations...')
         for i, j in itertools.product(range(d), range(d)):
-            kernel_param[i][j] = np.array(kernel_param[i][j])
-            if branching_ratio > 0.:
-                vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
-                kernel_param[i][j][vec_ix_omega] = (scaling*kernel_param[i][j][vec_ix_omega])
+            for m in tqdm(range(process_path.varpi[i][j][1],
+                                process_path.n_events[i]),
+                          disable=not verbose):
+                t_m = process_path.list_times[i][m]
+                ix_bnd = process_path.kappa[j][i][m]+1
+                t_n = process_path.list_times[j][:ix_bnd]
+                t_diff = t_m-t_n
+                intensity[i][m] += np.sum(self.phi[i][j](t_diff,
+                                                         kernel_param[i][j]))
+        return intensity
 
-        # Flatten
-        if flatten:
-            return self.matrix2tensor_params(mu, kernel_param)
-        else:
-            return mu, kernel_param
-
-    # Residuals
-    def get_residuals(self, process_path, mu=None, kernel_param=None,
-                      sampling=False, sample_size=10**3, seed=1234, write=True,
-                      verbose=False):
-        """
-        Compute the residuals of the model.
-
-        We suppose that we observe a path of a d-dimensional counting process
-        :math:`\\mathbf{N}` started at time :math:`0` up to some terminal time
-        :math:`T`.
-
-        Let :math:`k \\in [d]`, define the compensator of :math:`N^k`
-        for all :math:`t \\geq 0` by
-
-        .. math::
-            \\Lambda_{k}(t):=\\int_{[0,t]}\\lambda_k(t)\\mathrm{~d} t.
-
-        For all :math:`m \\in \\mathbb{N}^{*}, k \\in [d]`, let
-
-        .. math::
-            s_{m}^{k}=\\Lambda_{k}\\left(t_{m}^{k}\\right).
-
-        For each :math:`k \\in[d]`, define the point process
-
-        .. math::
-            \\mathcal{S}^{k}:=\\left\\{s_{m}^{k}: m \\in \\mathbb{N}^{*}\\right\\};
-
-        then :math:`\\left(\mathcal{S}^{k}\\right)_{k \\in[d]}` are independent
-        standard Poisson processes. The inter-arrival times of
-        :math:`\\mathcal{S}^{k}` ('residuals'), for a model that fits the data
-        well must therefore be close to a standard exponential distribution.        
-
-        Parameters
-        ----------
-        process_path : `aslsd.ProcessPath`
-            DESCRIPTION.
-        mu : `numpy.ndarray`, optional
-            Vector of baseline parameters. The default is None, in that case
-            fitted baseline parameters will be used if they are stored in the
-            corresponding attribute of the MHP object.
-        kernel_param : `numpy.ndarray`, optional
-            Matrix of kernel parameters. The default is None, in that case
-            fitted kernel parameters will be used if they are stored in the
-            corresponding attribute of the MHP object.
-        sampling : `bool`, optional
-            If True, subsample the residuals. The default is False.
-        sample_size : `int`, optional
-            Size of the subsample of residuals. The default is 10**3. Only
-            used if sampling is True.
-        seed : `int`, optional
-            Seed of the random number generator. The default is 1234. Only
-            used if sampling is true.
-        write : `bool`, optional
-            If true, save computed residuals in the corresponding
-            attributes of the MHP object. The default is True.
-        verbose : `bool`, optional
-            If True, print progress bar. The default is False.
-
-        Raises
-        ------
-        ValueError
-            Raise an error if the baseline is not specified and there is no
-            fitted baseline saved as an atrribute.
-
-        Returns
-        -------
-        residuals : `list` of `numpy.ndarray`
-            Residuals of the fitted model.
-
-        """
-        if mu is None or kernel_param is None:
+    def get_stationary_intensity(self, mu=None, adjacency=None,
+                                 kernel_param=None):
+        d = self.d
+        # Prepare parameters
+        mu, kernel_param = self.load_param(mu=mu, kernel_param=kernel_param)
+        if adjacency is None:
             if self.is_fitted:
-                mu = self.fitted_mu
-                kernel_param = self.fitted_ker_param
-            else:
-                raise ValueError("Both mu and kernel_param must be specified.")
-        residuals = gof.get_residuals(process_path, self.psi, mu,
-                                      kernel_param, sampling=sampling,
-                                      sample_size=sample_size, seed=seed,
-                                      verbose=verbose)
-        if self.is_fitted and write:
-            self.fit_residuals = residuals
-        return residuals
+                adjacency = self.fitted_adjacency
+        # formula
+        inv_adj = np.linalg.inv(np.eye(d)-adjacency)
+        res = inv_adj.dot(mu)
+        return res
 
-    def ks_test_residuals(self, residuals=None):
-        if residuals is None:
-            if self.fit_residuals is not None:
-                residuals = self.fit_residuals
-            else:
-                raise ValueError("residuals must be specified.")
-        return gof.ks_test_residuals(residuals)
-
-    def qq_plot(self, i, residuals=None, labels=None, style='exponential',
-                substract_yx=False, normalize=False, max_points=None,
-                display_line45=True, log_scale=False, ax=None, save=False,
-                filename='image.png', show=False, **kwargs):
-        if residuals is None:
-            if self.fit_residuals is not None:
-                residuals = self.fit_residuals
-            else:
-                raise ValueError("residuals must be specified.")
-        return gof.qq_plot(residuals[i], n_models=1, labels=labels,
-                           style=style, substract_yx=substract_yx,
-                           normalize=normalize, max_points=max_points,
-                           display_line45=display_line45, log_scale=log_scale,
-                           ax=ax, save=save, filename=filename, show=show,
-                           **kwargs)
-
+# =============================================================================
+# Simulation
+# =============================================================================
     # Simulation
-    def simulate_descendants(self, dim_src, t_src, T_f, T_i=0., kernel_param=None,
-                             rng=None, seed=1234, verbose=False):
+    def simulate_descendants(self, dim_src, t_src, T_f, T_i=0.,
+                             kernel_param=None, rng=None, seed=1234,
+                             verbose=False):
         """
         Simulate descendants of an event that happened in t_src.
 
@@ -1359,7 +939,8 @@ class MHP:
         if verbose:
             n_tot = sum([len(L) for L in list_times])
             print('Simulation Complete, ', n_tot, ' events simulated.')
-        return list_times
+        process_path = ProcessPath(list_times, T_f)
+        return process_path
 
     def simu_multipath(self, path_res, t_res, x_min, x_max, mu=None,
                        kernel_param=None, rng=None, base_seed=1234,
@@ -1510,7 +1091,469 @@ class MHP:
             print('Simulation Complete.')
         return dim_next, t_next
 
-    # Metrics
+# =============================================================================
+# Estimation
+# =============================================================================
+    def get_random_param(self, ref_mu=None, ref_ker_param=None, range_ref=0.1,
+                         target_bratio=0.6, max_omega=1., true_omega=None,
+                         max_param=5.,
+                         min_mu=0., max_mu=None, flatten=False, seed=1234,
+                         rng=None):
+        if rng is None:
+            rng = np.random.default_rng(seed)
+        d = self.d
+
+        # Mu
+        if ref_mu is None:
+            if not isinstance(min_mu, (list, np.ndarray)):
+                min_mu = np.ones(d)*min_mu
+            if max_mu is None:
+                max_mu = max(max(min_mu), 1.)
+            if not isinstance(max_mu, (list, np.ndarray)):
+                max_mu = np.ones(d)*max_mu
+            mu = np.zeros(d)
+            for i in range(d):
+                mu[i] = rng.uniform(low=min_mu[i], high=max_mu[i], size=1)[0]
+        else:
+            mu = np.zeros(d)
+            for i in range(d):
+                mu[i] = rng.uniform(low=max(0., (1.-range_ref)*ref_mu[i]),
+                                    high=(1+range_ref)*ref_mu[i], size=1)[0]
+
+        # Kernels
+        kernel_param = np.array([[None for j in range(d)]
+                                 for i in range(d)], dtype=object)
+        if ref_ker_param is None:
+            if not isinstance(max_param, (list, np.ndarray)):
+                float_max = max_param
+                max_param = [[[None for x
+                               in range(self._kernel_matrix[i][j].n_param)]
+                              for j in range(d)] for i in range(d)]
+                for i, j in itertools.product(range(d), range(d)):
+                    n_param = self._kernel_matrix[i][j].n_param
+                    vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
+                    bnds = self.param_lower_bounds[i][j]
+                    for x in range(n_param):
+                        if x in vec_ix_omega:
+                            max_param[i][j][x] = max_omega
+                        else:
+                            max_param[i][j][x] = max(float_max, bnds[x])
+
+            for i, j in itertools.product(range(d), range(d)):
+                kernel_param[i][j] = []
+                n_param = self._kernel_matrix[i][j].n_param
+                vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
+                bnds = self.param_lower_bounds[i][j]
+                for x in range(n_param):
+                    val = rng.uniform(low=bnds[x], high=max_param[i][j][x],
+                                      size=1)[0]
+                    kernel_param[i][j].append(val)
+        else:
+            for i, j in itertools.product(range(d), range(d)):
+                kernel_param[i][j] = []
+                n_param = self._kernel_matrix[i][j].n_param
+                bnds = self.param_lower_bounds[i][j]
+                for x in range(n_param):
+                    val = rng.uniform(low=max(bnds[x],
+                                              (1.-range_ref)
+                                              * ref_ker_param[i][j][x]),
+                                      high=(1.+range_ref)
+                                      * ref_ker_param[i][j][x],
+                                      size=1)[0]
+                    kernel_param[i][j].append(val)
+
+        # Rescaling
+        branching_ratio = self.get_branching_ratio(kernel_param=kernel_param)
+        if branching_ratio > 0.:
+            scaling = target_bratio/branching_ratio
+        for i, j in itertools.product(range(d), range(d)):
+            kernel_param[i][j] = np.array(kernel_param[i][j])
+            if branching_ratio > 0.:
+                vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
+                kernel_param[i][j][vec_ix_omega] = (scaling*kernel_param[i][j][vec_ix_omega])
+
+        # Flatten
+        if flatten:
+            return self.matrix2tensor_params(mu, kernel_param)
+        else:
+            return mu, kernel_param
+
+    # Estimator functions
+    def init_estimator(self, estimator, k):
+        # Ixs book-keeping
+        estimator.n_param_k = 1+sum(self.matrix_n_param[k])
+        estimator.matrix_n_param = self.matrix_n_param
+        estimator.ix_map = self.ix_map
+        estimator.interval_map = self.interval_map
+        # Functionals
+        estimator.phi = self.phi
+        estimator.diff_phi = self.diff_phi
+        estimator.psi = self.psi
+        estimator.diff_psi = self.diff_psi
+        estimator.upsilon = self.upsilon
+        estimator.diff_sim_upsilon = self.diff_sim_upsilon
+        estimator.diff_cross_upsilon = self.diff_cross_upsilon
+
+    # Fit
+    def init_logger(self, logger):
+        d = self.d
+        n_iter = logger.n_iter
+        n_param_k = [1+sum(self.matrix_n_param[k]) for k in range(d)]
+
+        if logger.is_log_param:
+            logger.param_logs = [np.zeros((n_iter[k]+1, n_param_k[k]))
+                                 for k in range(d)]
+            logger.mu = [np.zeros(n_iter[k]+1) for k in range(d)]
+            logger.ker = [[[None for x in range(n_iter[i]+1)] for j in range(d)]
+                          for i in range(d)]
+        if logger.is_log_grad:
+            logger.grad_logs = [np.zeros((n_iter[k], n_param_k[k]))
+                                for k in range(d)]
+            logger.grad_mu = [[None for x in range(n_iter[k])]
+                              for k in range(d)]
+            logger.grad_ker = [[[None for x in range(n_iter[i])]
+                                for j in range(d)] for i in range(d)]
+
+        logger.mu_0 = None
+        logger.ker_0 = None
+
+    def process_logs(self, logger):
+        d = self.d
+        if logger.is_log_param:
+            for i in range(d):
+                for ix in range(logger.n_iter[i]+1):
+                    logger.mu[i][ix] = logger.param_logs[i][ix][0]
+            for i, j in itertools.product(range(d), range(d)):
+                for ix in range(logger.n_iter[i]+1):
+                    logger.ker[i][j][ix] = logger.param_logs[i][ix][self.interval_map[i][j][0]:self.interval_map[i][j][1]]
+        if logger.is_log_grad:
+            for i in range(d):
+                for ix in range(logger.n_iter[i]):
+                    logger.grad_mu[i][ix] = logger.grad_logs[i][ix][0]
+            for i, j in itertools.product(range(d), range(d)):
+                for ix in range(logger.n_iter[i]):
+                    logger.grad_ker[i][j][ix] = logger.grad_logs[i][ix][self.interval_map[i][j][0]:self.interval_map[i][j][1]]
+        if logger.is_log_lse:
+            for k in range(d):
+                self.lse[k] = self.estimator_logs[k]['lse']
+        if logger.is_log_ixs:
+            for k in range(d):
+                logger.samples[k] = {}
+                logger.samples[k]['psi'] = logger.estimator_logs[k]['samples']['psi']
+                logger.samples[k]['upsilonzero'] = logger.estimator_logs[k]['samples']['upsilonzero']
+                logger.samples[k]['phi'] = logger.estimator_logs[k]['samples']['phi']
+                logger.samples[k]['upsilon'] = logger.estimator_logs[k]['samples']['upsilon']
+        if logger.is_log_allocs:
+            for k in range(d):
+                logger.allocs[k] = {}
+                logger.allocs[k]['phi'] = logger.estimator_logs[k]['allocs']['phi']
+                logger.allocs[k]['upsilon'] = logger.estimator_logs[k]['allocs']['upsilon']
+
+    def clear_fit(self):
+        """
+        Delete all previously saved results and logs from the
+        corresponding attributes of the MHP object.
+
+        """
+        self.is_fitted = False
+        self.fitted_mu = None
+        self.fitted_ker_param = None
+        self.fit_residuals = None
+        self.fitted_adjacency = None
+        self.fit_log = None
+
+    def fit(self, process_path, kappa=None, varpi=None, x_0=None,
+            n_iter=1000, solvers=None, estimators=None, logger=None, seed=1234,
+            verbose=False, clear=True, write=True, **kwargs):
+        """
+        Fit the MHP model to some observations.
+
+        We suppose that we observe a path of a d-dimensional counting process
+        :math:`\\mathbf{N}` started at time :math:`0` up to some terminal time
+        :math:`T`.
+
+        The least squares error (LSE) of this model for these observations is
+        defined as
+
+        .. math::
+            \\mathcal{R}_{T}(\\boldsymbol{\\mu}):=\\frac{1}{T} \\sum_{k=1}^{d} \\int_{0}^{T} \\lambda_{k}(t)^{2} \\mathrm{~d} t-\\frac{2}{T} \\sum_{k=1}^{d} \\sum_{m=1}^{N_{T}^{k}} \\lambda_{k}\\left(t_{m}^{k}\\right).
+
+        For a homogeneous Poisson model, this simplifies to
+
+        .. math::
+            \\mathcal{R}_{T}(\\boldsymbol{\\mu}):=\\sum_{k=1}^{d} \\bigg( \\mu_{k}^{2} -2 \\frac{N_{T}^{k}}{T} \\bigg).
+
+        Parameters
+        ----------
+        list_times : `list` of `numpy.ndarray`
+            List of jump times for each dimension.
+        T_f : `float`
+            Terminal time.
+        kappa : TYPE, optional
+            DESCRIPTION. The default is None.
+        varpi : TYPE, optional
+            DESCRIPTION. The default is None.
+        x_0 : `list` of `numpy.ndarray`, optional
+            x_0[k] is the initial guess for parameters of problem k. The
+            default is None.
+        n_iter : `list` or `int`, optional
+            n_iter[k] is the number of iterations of the the optimisation
+            algorithm for problem k. If  n_iter is of type `int`, it will be
+            converted to a d-dimensional array where each entry is equal to
+            that integer. The default is 1000.
+        solvers : `list` of `aslsd.Solver`, optional
+            solvers[k] is the optimization solver for problem k. The default
+            is None.
+        estimators : `list` of `aslsd.Esimtator`, optional
+            estimators[k] is the gradient estimator for problem k. The default
+            is None.
+        logger : `aslsd.OptimLogger`, optional
+            DESCRIPTION. The default is None.
+        seed : `int`, optional
+            Seed for the random number generator. The default is 1234.
+        verbose : `bool`, optional
+            If True, print progression information. The default is False.
+        clear : `bool`, optional
+            If true, delete all previously saved results and logs from the
+            corresponding attributes of the MHP object. The default is True.
+        write : `bool`, optional
+            If true, save the estimation results and logs in the corresponding
+            attributes of the MHP object. The default is True.
+        **kwargs : `dict`
+            Additional keyword arguments.
+
+        Returns
+        -------
+        fitted_mu : `numpy.ndarray`
+            Fitted baselines.
+        fitted_ker_param : `numpy.ndarray`
+            Fitted kernel parameters.
+
+        """
+        rng = np.random.default_rng(seed)
+
+        # Clear saved data in case already fitted
+        if clear:
+            self.clear_fit()
+
+        # Data
+        d = self.d
+        list_times = process_path.list_times
+        T_f = process_path.T_f
+
+        # Model
+        mu_lower_bnds = np.array([10**-10 for k in range(d)])
+        mu_upper_bnds = np.array([np.inf for k in range(d)])
+        lower_bnds = self.matrix2tensor_params(mu_lower_bnds,
+                                               self.param_lower_bounds)
+        upper_bnds = self.matrix2tensor_params(mu_upper_bnds,
+                                               self.param_upper_bounds)
+
+        # Solver
+        if not isinstance(n_iter, (list, np.ndarray)):
+            n_iter = [n_iter for k in range(d)]
+
+        # Initialisation
+        if x_0 is None:
+            ref_mu = kwargs.get('ref_mu', None)
+            ref_ker_param = kwargs.get('ref_ker_param', None)
+            range_ref = kwargs.get('range_ref', 0.1)
+            target_bratio = kwargs.get('target_bratio', 0.6)
+            max_omega = kwargs.get('max_omega', 1.)
+            true_omega = kwargs.get('true_omega', None)
+            max_param = kwargs.get('max_param', 5.)
+            min_mu = kwargs.get('min_mu', 0.)
+            max_mu = kwargs.get('max_mu', None)
+            mu_0, ker_0 = self.get_random_param(ref_mu=ref_mu,
+                                                ref_ker_param=ref_ker_param,
+                                                range_ref=range_ref,
+                                                target_bratio=target_bratio,
+                                                max_omega=max_omega,
+                                                true_omega=true_omega,
+                                                max_param=max_param,
+                                                min_mu=min_mu, max_mu=max_mu,
+                                                flatten=False, rng=rng)
+            x_0 = self.matrix2tensor_params(mu_0, ker_0)
+        else:
+            mu_0, ker_0 = self.tensor2matrix_params(x_0)
+
+        # Initialize Estimators
+        if estimators is None:
+            estimators = [AdaptiveStratified(**kwargs) for k in range(d)]
+        else:
+            if issubclass(type(estimators), Estimator):
+                estimators = [copy.deepcopy(estimators) for k in range(d)]
+        for k in range(d):
+            estimators[k].k = k
+            estimators[k].n_iter = n_iter[k]
+            estimators[k].initialize(process_path, self)
+            estimators[k].intialize_logs()
+            estimators[k].set_stratification(**kwargs)
+
+        # Initialize Solvers
+        if solvers is None:
+            solvers = [ADAM(**kwargs) for k in range(d)]
+        else:
+            if issubclass(type(solvers), Solver):
+                solvers = [copy.deepcopy(solvers) for k in range(d)]
+            elif type(solvers) == str:
+                if solvers == 'Momentum':
+                    solvers = [Momentum(**kwargs) for k in range(d)]
+                elif solvers == 'RMSprop':
+                    solvers = [RMSprop(**kwargs) for k in range(d)]
+                elif solvers == 'ADAM':
+                    solvers = [ADAM(**kwargs) for k in range(d)]
+
+        # Initialize logger
+        logger = OptimLogger(d, n_iter, **kwargs)
+        self.init_logger(logger)
+
+        # Scheme
+        x = [None]*d
+        for k in range(d):
+            x_k = x_0[k]
+            logger.log_param(k, 0, x_k)
+            lower_bounds_k = lower_bnds[k]
+            upper_bounds_k = upper_bnds[k]
+            n_iter_k = n_iter[k]
+
+            for t in tqdm(range(n_iter_k), disable=not verbose):
+                # Compute LSE gradient estimate for parameters x_k
+                g_t = estimators[k].lse_k_grad_estimate(x_k, rng)
+                logger.log_grad(k, t, g_t)
+                # Apply solver iteration
+                x_k = solvers[k].iterate(t, x_k, g_t)
+                # Project into space of parameters
+                x_k = np.clip(x_k, lower_bounds_k, upper_bounds_k)
+                logger.log_param(k, t+1, x_k)
+            esimator_k_log = estimators[k].get_log()
+            logger.estimator_logs[k] = esimator_k_log
+            x[k] = x_k
+        fitted_mu, fitted_ker_param = self.tensor2matrix_params(x)
+        if write:
+            self.is_fitted = True
+            self.fitted_mu = fitted_mu
+            self.fitted_ker_param = fitted_ker_param
+            self.process_logs(logger)
+            logger.mu_0 = mu_0
+            logger.ker_0 = ker_0
+            self.fit_log = logger
+        return fitted_mu, fitted_ker_param
+
+# =============================================================================
+# Goodness of fit
+# =============================================================================
+    # Residuals
+    def get_residuals(self, process_path, mu=None, kernel_param=None,
+                      sampling=False, sample_size=10**3, seed=1234, write=True,
+                      verbose=False):
+        """
+        Compute the residuals of the model.
+
+        We suppose that we observe a path of a d-dimensional counting process
+        :math:`\\mathbf{N}` started at time :math:`0` up to some terminal time
+        :math:`T`.
+
+        Let :math:`k \\in [d]`, define the compensator of :math:`N^k`
+        for all :math:`t \\geq 0` by
+
+        .. math::
+            \\Lambda_{k}(t):=\\int_{[0,t]}\\lambda_k(t)\\mathrm{~d} t.
+
+        For all :math:`m \\in \\mathbb{N}^{*}, k \\in [d]`, let
+
+        .. math::
+            s_{m}^{k}=\\Lambda_{k}\\left(t_{m}^{k}\\right).
+
+        For each :math:`k \\in[d]`, define the point process
+
+        .. math::
+            \\mathcal{S}^{k}:=\\left\\{s_{m}^{k}: m \\in \\mathbb{N}^{*}\\right\\};
+
+        then :math:`\\left(\mathcal{S}^{k}\\right)_{k \\in[d]}` are independent
+        standard Poisson processes. The inter-arrival times of
+        :math:`\\mathcal{S}^{k}` ('residuals'), for a model that fits the data
+        well must therefore be close to a standard exponential distribution.        
+
+        Parameters
+        ----------
+        process_path : `aslsd.ProcessPath`
+            DESCRIPTION.
+        mu : `numpy.ndarray`, optional
+            Vector of baseline parameters. The default is None, in that case
+            fitted baseline parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        kernel_param : `numpy.ndarray`, optional
+            Matrix of kernel parameters. The default is None, in that case
+            fitted kernel parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        sampling : `bool`, optional
+            If True, subsample the residuals. The default is False.
+        sample_size : `int`, optional
+            Size of the subsample of residuals. The default is 10**3. Only
+            used if sampling is True.
+        seed : `int`, optional
+            Seed of the random number generator. The default is 1234. Only
+            used if sampling is true.
+        write : `bool`, optional
+            If true, save computed residuals in the corresponding
+            attributes of the MHP object. The default is True.
+        verbose : `bool`, optional
+            If True, print progress bar. The default is False.
+
+        Raises
+        ------
+        ValueError
+            Raise an error if the baseline is not specified and there is no
+            fitted baseline saved as an atrribute.
+
+        Returns
+        -------
+        residuals : `list` of `numpy.ndarray`
+            Residuals of the fitted model.
+
+        """
+        if mu is None or kernel_param is None:
+            if self.is_fitted:
+                mu = self.fitted_mu
+                kernel_param = self.fitted_ker_param
+            else:
+                raise ValueError("Both mu and kernel_param must be specified.")
+        residuals = gof.get_residuals(process_path, self.psi, mu,
+                                      kernel_param, sampling=sampling,
+                                      sample_size=sample_size, seed=seed,
+                                      verbose=verbose)
+        if self.is_fitted and write:
+            self.fit_residuals = residuals
+        return residuals
+
+    def ks_test_residuals(self, residuals=None):
+        if residuals is None:
+            if self.fit_residuals is not None:
+                residuals = self.fit_residuals
+            else:
+                raise ValueError("residuals must be specified.")
+        return gof.ks_test_residuals(residuals)
+
+    def qq_plot(self, i, residuals=None, labels=None, style='exponential',
+                substract_yx=False, normalize=False, max_points=None,
+                display_line45=True, log_scale=False, ax=None, save=False,
+                filename='image.png', show=False, **kwargs):
+        if residuals is None:
+            if self.fit_residuals is not None:
+                residuals = self.fit_residuals
+            else:
+                raise ValueError("residuals must be specified.")
+        return gof.qq_plot(residuals[i], n_models=1, labels=labels,
+                           style=style, substract_yx=substract_yx,
+                           normalize=normalize, max_points=max_points,
+                           display_line45=display_line45, log_scale=log_scale,
+                           ax=ax, save=save, filename=filename, show=show,
+                           **kwargs)
+
+# =============================================================================
+# Metrics
+# =============================================================================
     # L2
     def get_l2_projection(self, mhp_2, param_2, n_iter=1000, try_sbf=True,
                           solver=None, log_error=False, rng=None,
@@ -1632,7 +1675,9 @@ class MHP:
         Q = weights*matrix_wass
         return np.sum(Q)
 
-    # Plots
+# =============================================================================
+# Graphic methods
+# =============================================================================
     def plot_kernels(self, kernel_param=None, t_min=0., t_max=10.,
                      n_samples=1000, index_from_one=False, log_scale=False,
                      axs=None, save=False, filename='image.png',
@@ -1695,7 +1740,9 @@ class MHP:
                                    axs=axs, save=save, filename=filename,
                                    show=show, **kwargs)
 
-    # Serialization
+# =============================================================================
+# Serialization
+# =============================================================================
     def save(self, file, **kwargs):
         if file.endswith('.pickle'):
             file_mu = file+'_fitted_mu.pickle'

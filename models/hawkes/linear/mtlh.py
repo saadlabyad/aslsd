@@ -15,8 +15,10 @@ from aslsd.functionals.impact_functions.basis_impacts.basis_impact_constant impo
 from aslsd.optimize.estimators.mtlh_estimator import MtlhStratified
 from aslsd.optimize.estimators.estimator import Estimator
 from aslsd.optimize.optim_logging.optim_logger import OptimLogger
-from aslsd.optimize.solvers.adam import ADAM
 from aslsd.optimize.solvers.solver import Solver
+from aslsd.optimize.solvers.momentum import Momentum
+from aslsd.optimize.solvers.rmsprop import RMSprop
+from aslsd.optimize.solvers.adam import ADAM
 from aslsd.stats.events.process_path import ProcessPath
 from aslsd.stats.marks.void_mark import VoidMark
 from aslsd.stats.residual_analysis import goodness_of_fit as gof
@@ -324,6 +326,9 @@ class MTLH:
     def impact_matrix(self):
         del self._impact_matrix
 
+# =============================================================================
+# Parameters book-keeping
+# =============================================================================
     # N params
     def get_vector_n_param_mu(self):
         """
@@ -1034,6 +1039,266 @@ class MTLH:
             diff_impact = impact_function.make_diff_impact()
             self.diff_impact[i][j] = diff_impact
 
+# =============================================================================
+# Branching representation
+# =============================================================================
+    def make_adjacency_matrix(self, kernel_param=None):
+        """
+        Compute the adjacency matrix of the MHP.
+
+        The adjacency matrix :math:`A` of an MHP is the :math:`d\\times d`
+        matrix of :math:`L_{1}` norms of kernels; that is, for all
+        :math:`i,j \\in [d]` the corresponding entry of this matrix is given by
+
+        .. math::
+            A_{ij} := \\int_{[0,+\\infty]} |\\phi_{ij}(u)|du..
+
+
+        Parameters
+        ----------
+        kernel_param : `numpy.ndarray`, optional
+            Matrix of kernel parameters at which to evaluate the adjacency
+            matrix. The default is None, in that case fitted kernel
+            parameters will be used if they are stored in the corresponding
+            attribute of the MHP object.
+
+        Raises
+        ------
+        ValueError
+            Raise an error if the kernel parameters not specified and there
+            are no kernel parameters saved as an atrribute.
+
+        Returns
+        -------
+        adjacency : `numpy.ndarray`
+            Adjacency matrix of the MHP.
+
+        """
+        log_fitted_adjacency = False
+        if kernel_param is None:
+            if self.is_fitted:
+                kernel_param = self.fitted_ker_param
+                log_fitted_adjacency = True
+            else:
+                raise ValueError("kernel_param must be specified.")
+        d = self.d
+        adjacency = [[self._kernel_matrix[i][j].l1_norm(kernel_param[i][j])
+                      for j in range(d)] for i in range(d)]
+        if log_fitted_adjacency:
+            self.fitted_adjacency = adjacency
+        return adjacency
+
+    def get_branching_ratio(self, adjacency=None, kernel_param=None):
+        """
+        Compute the branching ratio of the MHP.
+
+        The branching ratio of an MHP is equal to the spectral radius of
+        its adjacency matrix; that is, the maximum of the absolute values of
+        the eigenvalues of the adjacency matrix.
+
+        Parameters
+        ----------
+        adjacency : `numpy.ndarray`, optional
+            Adjacency matrix of the MHP. The default is None, in that case it
+            will be computed.
+
+        kernel_param : `numpy.ndarray`, optional
+            Matrix of kernel parameters at which to evaluate the adjacency
+            matrix. The default is None, in that case fitted kernel
+            parameters will be used if they are stored in the corresponding
+            attribute of the MHP object.
+
+        Raises
+        ------
+        ValueError
+            Raise an error if the adjacency matrix is not specified, the kernel
+            parameters not specified and there are no kernel parameters saved
+            as an atrribute.
+
+        Returns
+        -------
+         adjacency : `float`
+            Branching ratio of the MHP.
+
+        """
+        if adjacency is None:
+            if kernel_param is None:
+                if self.is_fitted:
+                    kernel_param = self.fitted_ker_param
+                else:
+                    raise ValueError("kernel_param must be specified.")
+            adjacency = self.make_adjacency_matrix(kernel_param)
+        bratio = np.max(np.absolute(np.linalg.eigvals(adjacency)))
+        return bratio
+
+# =============================================================================
+# Statistics
+# =============================================================================
+
+# =============================================================================
+# Simulation
+# =============================================================================
+    # Simulation
+    def simulate(self, T_f, mu_param=None, kernel_param=None,
+                 impact_param=None, rng=None, seed=1234,
+                 verbose=False):
+        """
+        Simulate a path of the MHP.
+
+        Parameters
+        ----------
+        T_f : `float`
+            Terminal time.
+        mu : `numpy.ndarray`, optional
+            Vector of baseline parameters. The default is None, in that case
+            fitted baseline parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        kernel_param : `numpy.ndarray`, optional
+            Matrix of kernel parameters. The default is None, in that case
+            fitted kernel parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        seed : `int`, optional
+            Seed for the random number generator. The default is 1234.
+        verbose : `bool`, optional
+            If True, print progression information. The default is False.
+
+        Raises
+        ------
+        ValueError
+            Raise an error if the baseline or the kernel parameters are not
+            specified and there is no fitted baseline or kernel parameters
+            saved as an atrribute.
+
+        Returns
+        -------
+        list_times : `list` of `numpy.ndarray`
+            List of simulated jump times for each dimension.
+
+        """
+
+        if mu_param is None:
+            mu_param = self.fitted_mu_param
+            if mu_param is None:
+                raise ValueError("Missing value for Baseline parameters")
+        if kernel_param is None:
+            kernel_param = self.fitted_ker_param
+            if kernel_param is None:
+                raise ValueError("Missing value for Kernel parameters")
+        if impact_param is None:
+            impact_param = self.fitted_imp_param
+            if impact_param is None:
+                raise ValueError("Missing value for Impact parameters")
+
+        d = self.d
+        offset_gens = [[None for j in range(d)] for i in range(d)]
+        for i, j in itertools.product(range(d), range(d)):
+            offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
+                kernel_param[i][j])
+
+        adjacency = self.make_adjacency_matrix(kernel_param)
+        # RNG
+        rng = us.make_rng(rng=rng, seed=seed)
+
+        branching_ratio = self.get_branching_ratio(adjacency=adjacency)
+        if branching_ratio >= 1:
+            raise ValueError("Cannot simulate from unstable MHP: ",
+                             "The branching ratio of this MHP is ",
+                             branching_ratio, " > 1.")
+        if verbose:
+            print('Simulating events...')
+        # Step 1. Generate immigrants
+        # Location of immigrants
+        generations = [[self._baselines_vec[i].simulate(T_f, mu_param[i],
+                                                        rng=rng)] for i in range(d)]
+        raw_marks = [[self.vec_marks[i].simulate(size=len(generations[i][0]),
+                                                 rng=rng)] for i in range(d)]
+        # generations is a list such that generations[i][ix_gen] contains
+        # the times of events of type i of generation ix_gen
+
+        def sum_generation(L, index):
+            return sum([len(L[i][index]) for i in range(d)])
+
+        ix_gen = 1
+        #   Step 2. Fill via repeated generations
+        while sum_generation(generations, ix_gen-1):
+            for k in range(d):
+                generations[k].append(np.array([]))
+                raw_marks[k].append(np.array([]))
+            for j in range(d):
+                # Simulate the offspring of the "ix_gen-1"th generation of
+                # events of type j
+                if len(generations[j][ix_gen-1]) > 0:
+                    for i in range(d):
+                        # Set number of offspring
+                        parent_marks = raw_marks[j][ix_gen-1]
+                        parent_impacts = self._impact_matrix[i][j].impact(parent_marks,
+                                                                          impact_param[i][j])
+                        Noff = rng.poisson(adjacency[i][j]*parent_impacts,
+                                           size=len(generations[j][ix_gen-1]))
+                        parenttimes = generations[j][ix_gen-1].repeat(Noff)
+                        offsets = offset_gens[i][j](rng, N=Noff.sum())
+                        offspringtime = parenttimes + offsets
+                        generations[i][ix_gen] = np.append(generations[i][ix_gen], np.array([x for x in offspringtime if x < T_f]))
+                        n_valid_kids = len(np.array([x for x in offspringtime if x < T_f]))
+                        if n_valid_kids > 0:
+                            if len(raw_marks[i][ix_gen]) > 0:
+                                raw_marks[i][ix_gen] = np.append(raw_marks[i][ix_gen],
+                                                                 self.vec_marks[i].simulate(size=n_valid_kids,
+                                                                                            rng=rng),
+                                                                 axis=0)
+                            else:
+                                raw_marks[i][ix_gen] = self.vec_marks[i].simulate(size=n_valid_kids,
+                                                                                            rng=rng)
+
+            ix_gen += 1
+
+        if verbose:
+            print('Sorting results ...')
+        list_times_ = [[x for sublist in generations[i]
+                        for x in sublist] for i in range(d)]
+        list_marks_ = [[x for sublist in raw_marks[i]
+                   for x in sublist] for i in range(d)]
+
+        list_marks = [np.array([x for _, x in sorted(zip(list_times_[i], list_marks_[i]))]) for i in range(d)]
+        list_times = [np.array(sorted(list_times_[i])) for i in range(d)]
+        for i in range(d):
+            list_marks[i] = list_marks[i].reshape((len(list_times[i]),
+                                                   self.vec_marks[i].get_mark_dim()))
+        if verbose:
+            n_tot = sum([len(L) for L in list_times])
+            print('Simulation Complete, ', n_tot, ' events simulated.')
+        process_path = ProcessPath(list_times, T_f, list_marks=list_marks)
+        return process_path
+
+    def simu_multipath(self, path_res, t_res, x_min, x_max, mu=None,
+                       kernel_param=None, seed=1234, verbose=False,
+                       disc_type='log', base_seed=1234):
+        d = self.d
+        rng = np.random.default_rng(base_seed)
+        vec_seeds = rng.choice(10**5, size=path_res, replace=False)
+
+        if disc_type == 'log':
+            T_f = 10**x_max
+        elif disc_type == 'linear':
+            T_f = x_max
+        list_Tf = uf.discretize_space(x_min, x_max, t_res, disc_type)
+        list_paths = [[[] for j in range(path_res)] for i in range(t_res)]
+        for j in range(path_res):
+            seed = vec_seeds[j]
+            list_times = self.simulate(T_f, mu=mu, kernel_param=kernel_param,
+                                       seed=seed, verbose=verbose)
+            for i in range(t_res):
+                local_Tf = list_Tf[i]
+                list_n_f = [bisect.bisect_left(list_times[index_dim],
+                                               local_Tf)-1
+                            for index_dim in range(d)]
+                list_paths[i][j] = [list_times[0][:list_n_f[index_dim]+1]
+                                    for index_dim in range(d)]
+        return list_Tf, list_paths
+
+# =============================================================================
+# Estimation
+# =============================================================================
     # Estimator functions
     def init_estimator(self, estimator, k):
         # Ixs book-keeping
@@ -1131,6 +1396,155 @@ class MTLH:
                 logger.allocs[k] = {}
                 logger.allocs[k]['phi'] = logger.estimator_logs[k]['allocs']['phi']
                 logger.allocs[k]['upsilon'] = logger.estimator_logs[k]['allocs']['upsilon']
+
+    def get_random_param(self, ref_mu_param=None, ref_ker_param=None,
+                         ref_imp_param=None, range_ref_mu=0.1,
+                         range_ref_ker=0.1, range_ref_imp=0.1,
+                         min_mu_param=None, max_mu_param=None,
+                         target_bratio=0.6, max_omega=1., true_omega=None,
+                         max_ker_param=5., max_imp_param=5.,
+                         flatten=False,
+                         seed=1234,
+                         rng=None):
+        if rng is None:
+            rng = np.random.default_rng(seed)
+        d = self.d
+
+        mu_lower_bnds = self.get_mu_param_lower_bounds()
+        mu_upper_bnds = self.get_mu_param_upper_bounds()
+        ker_lower_bnds = self.get_ker_param_lower_bounds()
+        ker_upper_bnds = self.get_ker_param_upper_bounds()
+        imp_lower_bnds = self.get_imp_param_lower_bounds()
+        imp_upper_bnds = self.get_imp_param_upper_bounds()
+
+        # Mu
+        if ref_mu_param is None:
+            if min_mu_param is None:
+                min_mu_param = copy.deepcopy(mu_lower_bnds)
+            else:
+                if not uf.is_array(min_mu_param):
+                    min_mu_float = copy.deepcopy(min_mu_param)
+                    min_mu_param = [min_mu_float*np.ones(self.vector_n_param_mu[i]) for i in range(d)]
+            if max_mu_param is None:
+                max_mu_param = [1.+min_mu_param[i] for i in range(d)]
+            if not uf.is_array(max_mu_param):
+                max_mu_float = copy.deepcopy(max_mu_param)
+                max_mu_param = [max_mu_float*np.ones(self.vector_n_param_mu[i]) for i in range(d)]
+            mu_param = np.array([np.zeros(self.vector_n_param_mu[i]) for i in range(d)], dtype=object)
+            for i in range(d):
+                n_param = self.vector_n_param_mu[i]
+                for ix in range(n_param):
+                    mu_param[i][ix] = rng.uniform(low=min_mu_param[i][ix],
+                                                  high=max_mu_param[i][ix],
+                                                  size=1)[0]
+        else:
+            dist_mu_bnds = [ref_mu_param[i]-mu_lower_bnds[i] for i in range(d)]
+            lower_mu_params = [ref_mu_param[i]-range_ref_mu*dist_mu_bnds[i] for i in range(d)]
+            upper_mu_params = [ref_mu_param[i] for i in range(d)]
+
+            mu_param = np.array([np.zeros(self.vector_n_param_mu[i]) for i in range(d)], dtype=object)
+            for i in range(d):
+                mu_param[i][ix] = rng.uniform(low=lower_mu_params[i][ix],
+                                              high=upper_mu_params[i][ix],
+                                              size=1)[0]
+
+        # Kernels
+        kernel_param = np.array([[None for j in range(d)]
+                                 for i in range(d)], dtype=object)
+        if ref_ker_param is None:
+            if not isinstance(max_ker_param, (list, np.ndarray)):
+                float_max = copy.deepcopy(max_ker_param)
+                max_ker_param = [[[None for x
+                                   in range(self.matrix_n_param_ker[i][j])]
+                                  for j in range(d)] for i in range(d)]
+                for i, j in itertools.product(range(d), range(d)):
+                    n_param = self.matrix_n_param_ker[i][j]
+                    vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
+                    for x in range(n_param):
+                        if x in vec_ix_omega:
+                            max_ker_param[i][j][x] = max_omega
+                        else:
+                            max_ker_param[i][j][x] = max(float_max,
+                                                         ker_lower_bnds[i][j][x])
+
+            for i, j in itertools.product(range(d), range(d)):
+                n_param = self.matrix_n_param_ker[i][j]
+                kernel_param[i][j] = np.zeros(n_param)
+                for ix in range(n_param):
+                    val = rng.uniform(low=ker_lower_bnds[i][j][ix],
+                                      high=max_ker_param[i][j][ix],
+                                      size=1)[0]
+                    kernel_param[i][j][ix] = val
+        else:
+            dist_ker_bnds = [[ref_ker_param[i][j]-ker_lower_bnds[i][j] for j in range(d)] for i in range(d)]
+            lower_ker_params = [[ref_ker_param[i][j]-range_ref_ker*dist_ker_bnds[i][j] for j in range(d)] for i in range(d)]
+            upper_ker_params = [[ref_ker_param[i][j]+range_ref_ker*dist_ker_bnds[i][j] for j in range(d)] for i in range(d)]
+            for i, j in itertools.product(range(d), range(d)):
+                n_param = self.matrix_n_param_ker[i][j]
+                kernel_param[i][j] = np.zeros(n_param)
+                for ix in range(n_param):
+                    val = rng.uniform(low=lower_ker_params[i][j][ix],
+                                      high=upper_ker_params[i][j][ix],
+                                      size=1)[0]
+                    kernel_param[i][j][ix] = val
+        # Rescaling
+        branching_ratio = self.get_branching_ratio(kernel_param=kernel_param)
+        if branching_ratio > 0.:
+            scaling = target_bratio/branching_ratio
+        for i, j in itertools.product(range(d), range(d)):
+            kernel_param[i][j] = np.array(kernel_param[i][j])
+            if branching_ratio > 0.:
+                vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
+                if len(vec_ix_omega) > 0:
+                    kernel_param[i][j][vec_ix_omega] = (scaling
+                                                        * kernel_param[i][j][vec_ix_omega])
+
+        # Impacts
+        impact_param = np.array([[None for j in range(d)]
+                                 for i in range(d)], dtype=object)
+        if ref_imp_param is None:
+            if not uf.is_array(max_imp_param):
+                float_max = copy.deepcopy(max_imp_param)
+                max_imp_param = [[[None for x
+                                   in range(self.matrix_n_param_imp[i][j])]
+                                  for j in range(d)] for i in range(d)]
+                for i, j in itertools.product(range(d), range(d)):
+                    n_param = self.matrix_n_param_imp[i][j]
+                    for ix in range(n_param):
+                        max_imp_param[i][j][ix] = max(float_max,
+                                                      imp_lower_bnds[i][j][ix])
+
+            for i, j in itertools.product(range(d), range(d)):
+                n_param = self.matrix_n_param_imp[i][j]
+                impact_param[i][j] = np.zeros(n_param)
+                for ix in range(n_param):
+                    lo_lim = imp_lower_bnds[i][j][ix]
+                    hi_lim = min(max_imp_param[i][j][ix],
+                                 imp_upper_bnds[i][j][ix])
+                    hi_lim = max(hi_lim, lo_lim)
+                    val = rng.uniform(low=lo_lim, high=hi_lim, size=1)[0]
+                    impact_param[i][j][ix] = val
+        else:
+            dist_imp_bnds = [[ref_imp_param[i][j]-imp_lower_bnds[i][j] for j in range(d)] for i in range(d)]
+            lower_imp_params = [[ref_imp_param[i][j]-range_ref_imp*dist_imp_bnds[i][j] for j in range(d)] for i in range(d)]
+            upper_imp_params = [[ref_imp_param[i][j]+range_ref_imp*dist_imp_bnds[i][j] for j in range(d)] for i in range(d)]
+            for i, j in itertools.product(range(d), range(d)):
+                n_param = self.matrix_n_param_imp[i][j]
+                impact_param[i][j] = np.zeros(n_param)
+                for ix in range(n_param):
+                    lo_lim = lower_imp_params[i][j][ix]
+                    hi_lim = min(upper_imp_params[i][j][ix],
+                                 imp_upper_bnds[i][j][ix])
+                    hi_lim = max(hi_lim, lo_lim)
+                    val = rng.uniform(low=lo_lim, high=hi_lim, size=1)[0]
+                    impact_param[i][j][ix] = val
+
+        # Flatten
+        if flatten:
+            return self.matrix2tensor_params(mu_param, kernel_param,
+                                             impact_param)
+        else:
+            return mu_param, kernel_param, impact_param
 
     # Fit
     def clear_fit(self):
@@ -1285,6 +1699,13 @@ class MTLH:
         else:
             if issubclass(type(solvers), Solver):
                 solvers = [copy.deepcopy(solvers) for k in range(d)]
+            elif type(solvers) == str:
+                if solvers == 'Momentum':
+                    solvers = [Momentum(**kwargs) for k in range(d)]
+                elif solvers == 'RMSprop':
+                    solvers = [RMSprop(**kwargs) for k in range(d)]
+                elif solvers == 'ADAM':
+                    solvers = [ADAM(**kwargs) for k in range(d)]
 
         # Initialize logger
         logger = OptimLogger(d, n_iter, **kwargs)
@@ -1325,244 +1746,9 @@ class MTLH:
             self.fit_log = logger
         return fitted_mu_param, fitted_ker_param, fitted_imp_param
 
-    def make_adjacency_matrix(self, kernel_param=None):
-        """
-        Compute the adjacency matrix of the MHP.
-
-        The adjacency matrix :math:`A` of an MHP is the :math:`d\\times d`
-        matrix of :math:`L_{1}` norms of kernels; that is, for all
-        :math:`i,j \\in [d]` the corresponding entry of this matrix is given by
-
-        .. math::
-            A_{ij} := \\int_{[0,+\\infty]} |\\phi_{ij}(u)|du..
-
-
-        Parameters
-        ----------
-        kernel_param : `numpy.ndarray`, optional
-            Matrix of kernel parameters at which to evaluate the adjacency
-            matrix. The default is None, in that case fitted kernel
-            parameters will be used if they are stored in the corresponding
-            attribute of the MHP object.
-
-        Raises
-        ------
-        ValueError
-            Raise an error if the kernel parameters not specified and there
-            are no kernel parameters saved as an atrribute.
-
-        Returns
-        -------
-        adjacency : `numpy.ndarray`
-            Adjacency matrix of the MHP.
-
-        """
-        log_fitted_adjacency = False
-        if kernel_param is None:
-            if self.is_fitted:
-                kernel_param = self.fitted_ker_param
-                log_fitted_adjacency = True
-            else:
-                raise ValueError("kernel_param must be specified.")
-        d = self.d
-        adjacency = [[self._kernel_matrix[i][j].l1_norm(kernel_param[i][j])
-                      for j in range(d)] for i in range(d)]
-        if log_fitted_adjacency:
-            self.fitted_adjacency = adjacency
-        return adjacency
-
-    def get_branching_ratio(self, adjacency=None, kernel_param=None):
-        """
-        Compute the branching ratio of the MHP.
-
-        The branching ratio of an MHP is equal to the spectral radius of
-        its adjacency matrix; that is, the maximum of the absolute values of
-        the eigenvalues of the adjacency matrix.
-
-        Parameters
-        ----------
-        adjacency : `numpy.ndarray`, optional
-            Adjacency matrix of the MHP. The default is None, in that case it
-            will be computed.
-
-        kernel_param : `numpy.ndarray`, optional
-            Matrix of kernel parameters at which to evaluate the adjacency
-            matrix. The default is None, in that case fitted kernel
-            parameters will be used if they are stored in the corresponding
-            attribute of the MHP object.
-
-        Raises
-        ------
-        ValueError
-            Raise an error if the adjacency matrix is not specified, the kernel
-            parameters not specified and there are no kernel parameters saved
-            as an atrribute.
-
-        Returns
-        -------
-         adjacency : `float`
-            Branching ratio of the MHP.
-
-        """
-        if adjacency is None:
-            if kernel_param is None:
-                if self.is_fitted:
-                    kernel_param = self.fitted_ker_param
-                else:
-                    raise ValueError("kernel_param must be specified.")
-            adjacency = self.make_adjacency_matrix(kernel_param)
-        bratio = np.max(np.absolute(np.linalg.eigvals(adjacency)))
-        return bratio
-
-    def get_random_param(self, ref_mu_param=None, ref_ker_param=None,
-                         ref_imp_param=None, range_ref_mu=0.1,
-                         range_ref_ker=0.1, range_ref_imp=0.1,
-                         min_mu_param=None, max_mu_param=None,
-                         target_bratio=0.6, max_omega=1., true_omega=None,
-                         max_ker_param=5., max_imp_param=5.,
-                         flatten=False,
-                         seed=1234,
-                         rng=None):
-        if rng is None:
-            rng = np.random.default_rng(seed)
-        d = self.d
-
-        mu_lower_bnds = self.get_mu_param_lower_bounds()
-        mu_upper_bnds = self.get_mu_param_upper_bounds()
-        ker_lower_bnds = self.get_ker_param_lower_bounds()
-        ker_upper_bnds = self.get_ker_param_upper_bounds()
-        imp_lower_bnds = self.get_imp_param_lower_bounds()
-        imp_upper_bnds = self.get_imp_param_upper_bounds()
-
-        # Mu
-        if ref_mu_param is None:
-            if min_mu_param is None:
-                min_mu_param = copy.deepcopy(mu_lower_bnds)
-            else:
-                if not uf.is_array(min_mu_param):
-                    min_mu_float = copy.deepcopy(min_mu_param)
-                    min_mu_param = [min_mu_float*np.ones(self.vector_n_param_mu[i]) for i in range(d)]
-            if max_mu_param is None:
-                max_mu_param = [1.+min_mu_param[i] for i in range(d)]
-            if not uf.is_array(max_mu_param):
-                max_mu_float = copy.deepcopy(max_mu_param)
-                max_mu_param = [max_mu_float*np.ones(self.vector_n_param_mu[i]) for i in range(d)]
-            mu_param = np.array([np.zeros(self.vector_n_param_mu[i]) for i in range(d)], dtype=object)
-            for i in range(d):
-                n_param = self.vector_n_param_mu[i]
-                for ix in range(n_param):
-                    mu_param[i][ix] = rng.uniform(low=min_mu_param[i][ix],
-                                                  high=max_mu_param[i][ix],
-                                                  size=1)[0]
-        else:
-            dist_mu_bnds = [ref_mu_param[i]-mu_lower_bnds[i] for i in range(d)]
-            lower_mu_params = [ref_mu_param[i]-range_ref_mu*dist_mu_bnds[i] for i in range(d)]
-            upper_mu_params = [ref_mu_param[i] for i in range(d)]
-
-            mu_param = np.array([np.zeros(self.vector_n_param_mu[i]) for i in range(d)], dtype=object)
-            for i in range(d):
-                mu_param[i][ix] = rng.uniform(low=lower_mu_params[i][ix],
-                                              high=upper_mu_params[i][ix],
-                                              size=1)[0]
-
-        # Kernels
-        kernel_param = np.array([[None for j in range(d)]
-                                 for i in range(d)], dtype=object)
-        if ref_ker_param is None:
-            if not isinstance(max_ker_param, (list, np.ndarray)):
-                float_max = copy.deepcopy(max_ker_param)
-                max_ker_param = [[[None for x
-                                   in range(self.matrix_n_param_ker[i][j])]
-                                  for j in range(d)] for i in range(d)]
-                for i, j in itertools.product(range(d), range(d)):
-                    n_param = self.matrix_n_param_ker[i][j]
-                    vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
-                    for x in range(n_param):
-                        if x in vec_ix_omega:
-                            max_ker_param[i][j][x] = max_omega
-                        else:
-                            max_ker_param[i][j][x] = max(float_max,
-                                                         ker_lower_bnds[i][j][x])
-
-            for i, j in itertools.product(range(d), range(d)):
-                n_param = self.matrix_n_param_ker[i][j]
-                kernel_param[i][j] = np.zeros(n_param)
-                for ix in range(n_param):
-                    val = rng.uniform(low=ker_lower_bnds[i][j][ix],
-                                      high=max_ker_param[i][j][ix],
-                                      size=1)[0]
-                    kernel_param[i][j][ix] = val
-        else:
-            dist_ker_bnds = [[ref_ker_param[i][j]-ker_lower_bnds[i][j] for j in range(d)] for i in range(d)]
-            lower_ker_params = [[ref_ker_param[i][j]-range_ref_ker*dist_ker_bnds[i][j] for j in range(d)] for i in range(d)]
-            upper_ker_params = [[ref_ker_param[i][j]+range_ref_ker*dist_ker_bnds[i][j] for j in range(d)] for i in range(d)]
-            for i, j in itertools.product(range(d), range(d)):
-                n_param = self.matrix_n_param_ker[i][j]
-                kernel_param[i][j] = np.zeros(n_param)
-                for ix in range(n_param):
-                    val = rng.uniform(low=lower_ker_params[i][j][ix],
-                                      high=upper_ker_params[i][j][ix],
-                                      size=1)[0]
-                    kernel_param[i][j][ix] = val
-        # Rescaling
-        branching_ratio = self.get_branching_ratio(kernel_param=kernel_param)
-        if branching_ratio > 0.:
-            scaling = target_bratio/branching_ratio
-        for i, j in itertools.product(range(d), range(d)):
-            kernel_param[i][j] = np.array(kernel_param[i][j])
-            if branching_ratio > 0.:
-                vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
-                if len(vec_ix_omega) > 0:
-                    kernel_param[i][j][vec_ix_omega] = (scaling
-                                                        * kernel_param[i][j][vec_ix_omega])
-
-        # Impacts
-        impact_param = np.array([[None for j in range(d)]
-                                 for i in range(d)], dtype=object)
-        if ref_imp_param is None:
-            if not uf.is_array(max_imp_param):
-                float_max = copy.deepcopy(max_imp_param)
-                max_imp_param = [[[None for x
-                                   in range(self.matrix_n_param_imp[i][j])]
-                                  for j in range(d)] for i in range(d)]
-                for i, j in itertools.product(range(d), range(d)):
-                    n_param = self.matrix_n_param_imp[i][j]
-                    for ix in range(n_param):
-                        max_imp_param[i][j][ix] = max(float_max,
-                                                      imp_lower_bnds[i][j][ix])
-
-            for i, j in itertools.product(range(d), range(d)):
-                n_param = self.matrix_n_param_imp[i][j]
-                impact_param[i][j] = np.zeros(n_param)
-                for ix in range(n_param):
-                    lo_lim = imp_lower_bnds[i][j][ix]
-                    hi_lim = min(max_imp_param[i][j][ix],
-                                 imp_upper_bnds[i][j][ix])
-                    hi_lim = max(hi_lim, lo_lim)
-                    val = rng.uniform(low=lo_lim, high=hi_lim, size=1)[0]
-                    impact_param[i][j][ix] = val
-        else:
-            dist_imp_bnds = [[ref_imp_param[i][j]-imp_lower_bnds[i][j] for j in range(d)] for i in range(d)]
-            lower_imp_params = [[ref_imp_param[i][j]-range_ref_imp*dist_imp_bnds[i][j] for j in range(d)] for i in range(d)]
-            upper_imp_params = [[ref_imp_param[i][j]+range_ref_imp*dist_imp_bnds[i][j] for j in range(d)] for i in range(d)]
-            for i, j in itertools.product(range(d), range(d)):
-                n_param = self.matrix_n_param_imp[i][j]
-                impact_param[i][j] = np.zeros(n_param)
-                for ix in range(n_param):
-                    lo_lim = lower_imp_params[i][j][ix]
-                    hi_lim = min(upper_imp_params[i][j][ix],
-                                 imp_upper_bnds[i][j][ix])
-                    hi_lim = max(hi_lim, lo_lim)
-                    val = rng.uniform(low=lo_lim, high=hi_lim, size=1)[0]
-                    impact_param[i][j][ix] = val
-
-        # Flatten
-        if flatten:
-            return self.matrix2tensor_params(mu_param, kernel_param,
-                                             impact_param)
-        else:
-            return mu_param, kernel_param, impact_param
-
+# =============================================================================
+# Residual analysis
+# =============================================================================
     # Residuals
     def get_residuals(self, process_path, mu_param=None, kernel_param=None,
                       impact_param=None, expected_impact_matrix=None,
@@ -1692,164 +1878,9 @@ class MTLH:
                            ax=ax, save=save, filename=filename, show=show,
                            **kwargs)
 
-    # Simulation
-    def simulate(self, T_f, mu_param=None, kernel_param=None,
-                 impact_param=None, rng=None, seed=1234,
-                 verbose=False):
-        """
-        Simulate a path of the MHP.
-
-        Parameters
-        ----------
-        T_f : `float`
-            Terminal time.
-        mu : `numpy.ndarray`, optional
-            Vector of baseline parameters. The default is None, in that case
-            fitted baseline parameters will be used if they are stored in the
-            corresponding attribute of the MHP object.
-        kernel_param : `numpy.ndarray`, optional
-            Matrix of kernel parameters. The default is None, in that case
-            fitted kernel parameters will be used if they are stored in the
-            corresponding attribute of the MHP object.
-        seed : `int`, optional
-            Seed for the random number generator. The default is 1234.
-        verbose : `bool`, optional
-            If True, print progression information. The default is False.
-
-        Raises
-        ------
-        ValueError
-            Raise an error if the baseline or the kernel parameters are not
-            specified and there is no fitted baseline or kernel parameters
-            saved as an atrribute.
-
-        Returns
-        -------
-        list_times : `list` of `numpy.ndarray`
-            List of simulated jump times for each dimension.
-
-        """
-
-        if mu_param is None:
-            mu_param = self.fitted_mu_param
-            if mu_param is None:
-                raise ValueError("Missing value for Baseline parameters")
-        if kernel_param is None:
-            kernel_param = self.fitted_ker_param
-            if kernel_param is None:
-                raise ValueError("Missing value for Kernel parameters")
-        if impact_param is None:
-            impact_param = self.fitted_imp_param
-            if impact_param is None:
-                raise ValueError("Missing value for Impact parameters")
-
-        d = self.d
-        offset_gens = [[None for j in range(d)] for i in range(d)]
-        for i, j in itertools.product(range(d), range(d)):
-            offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
-                kernel_param[i][j])
-
-        adjacency = self.make_adjacency_matrix(kernel_param)
-        # RNG
-        rng = us.make_rng(rng=rng, seed=seed)
-
-        branching_ratio = self.get_branching_ratio(adjacency=adjacency)
-        if branching_ratio >= 1:
-            raise ValueError("Cannot simulate from unstable MHP: ",
-                             "The branching ratio of this MHP is ",
-                             branching_ratio, " > 1.")
-        if verbose:
-            print('Simulating events...')
-        # Step 1. Generate immigrants
-        # Location of immigrants
-        generations = [[self._baselines_vec[i].simulate(T_f, mu_param[i],
-                                                        rng=rng)] for i in range(d)]
-        raw_marks = [[self.vec_marks[i].simulate(size=len(generations[i][0]),
-                                                 rng=rng)] for i in range(d)]
-        # generations is a list such that generations[i][ix_gen] contains
-        # the times of events of type i of generation ix_gen
-
-        def sum_generation(L, index):
-            return sum([len(L[i][index]) for i in range(d)])
-
-        ix_gen = 1
-        #   Step 2. Fill via repeated generations
-        while sum_generation(generations, ix_gen-1):
-            for k in range(d):
-                generations[k].append(np.array([]))
-                raw_marks[k].append(np.array([]))
-            for j in range(d):
-                # Simulate the offspring of the "ix_gen-1"th generation of
-                # events of type j
-                if len(generations[j][ix_gen-1]) > 0:
-                    for i in range(d):
-                        # Set number of offspring
-                        parent_marks = raw_marks[j][ix_gen-1]
-                        parent_impacts = self._impact_matrix[i][j].impact(parent_marks,
-                                                                          impact_param[i][j])
-                        Noff = rng.poisson(adjacency[i][j]*parent_impacts,
-                                           size=len(generations[j][ix_gen-1]))
-                        parenttimes = generations[j][ix_gen-1].repeat(Noff)
-                        offsets = offset_gens[i][j](rng, N=Noff.sum())
-                        offspringtime = parenttimes + offsets
-                        generations[i][ix_gen] = np.append(generations[i][ix_gen], np.array([x for x in offspringtime if x < T_f]))
-                        n_valid_kids = len(np.array([x for x in offspringtime if x < T_f]))
-                        if n_valid_kids > 0:
-                            if len(raw_marks[i][ix_gen]) > 0:
-                                raw_marks[i][ix_gen] = np.append(raw_marks[i][ix_gen],
-                                                                 self.vec_marks[i].simulate(size=n_valid_kids,
-                                                                                            rng=rng),
-                                                                 axis=0)
-                            else:
-                                raw_marks[i][ix_gen] = self.vec_marks[i].simulate(size=n_valid_kids,
-                                                                                            rng=rng)
-
-            ix_gen += 1
-
-        if verbose:
-            print('Sorting results ...')
-        list_times_ = [[x for sublist in generations[i]
-                        for x in sublist] for i in range(d)]
-        list_marks_ = [[x for sublist in raw_marks[i]
-                   for x in sublist] for i in range(d)]
-
-        list_marks = [np.array([x for _, x in sorted(zip(list_times_[i], list_marks_[i]))]) for i in range(d)]
-        list_times = [np.array(sorted(list_times_[i])) for i in range(d)]
-        for i in range(d):
-            list_marks[i] = list_marks[i].reshape((len(list_times[i]),
-                                                   self.vec_marks[i].get_mark_dim()))
-        if verbose:
-            n_tot = sum([len(L) for L in list_times])
-            print('Simulation Complete, ', n_tot, ' events simulated.')
-        return list_times, list_marks
-
-    def simu_multipath(self, path_res, t_res, x_min, x_max, mu=None,
-                       kernel_param=None, seed=1234, verbose=False,
-                       disc_type='log', base_seed=1234):
-        d = self.d
-        rng = np.random.default_rng(base_seed)
-        vec_seeds = rng.choice(10**5, size=path_res, replace=False)
-
-        if disc_type == 'log':
-            T_f = 10**x_max
-        elif disc_type == 'linear':
-            T_f = x_max
-        list_Tf = uf.discretize_space(x_min, x_max, t_res, disc_type)
-        list_paths = [[[] for j in range(path_res)] for i in range(t_res)]
-        for j in range(path_res):
-            seed = vec_seeds[j]
-            list_times = self.simulate(T_f, mu=mu, kernel_param=kernel_param,
-                                       seed=seed, verbose=verbose)
-            for i in range(t_res):
-                local_Tf = list_Tf[i]
-                list_n_f = [bisect.bisect_left(list_times[index_dim],
-                                               local_Tf)-1
-                            for index_dim in range(d)]
-                list_paths[i][j] = [list_times[0][:list_n_f[index_dim]+1]
-                                    for index_dim in range(d)]
-        return list_Tf, list_paths
-
-    # Metrics
+# =============================================================================
+# Metrics
+# =============================================================================
     # L2 projection
     def get_l2_projection(self, mhp_2, param_2, n_iter=1000,
                           solver=None, log_error=False, rng=None,
@@ -1909,6 +1940,9 @@ class MTLH:
         res = {'params': param_1, 'log': l2_err_log}
         return res
 
+# =============================================================================
+# Graphic functions
+# =============================================================================
     # Plots
     def plot_kernels(self, kernel_param=None, t_min=0., t_max=10.,
                      n_samples=1000, index_from_one=False, log_scale=False,
@@ -1972,7 +2006,9 @@ class MTLH:
                                    axs=axs, save=save, filename=filename,
                                    show=show, **kwargs)
 
-    # Serialization
+# =============================================================================
+# Serialization
+# =============================================================================
     def save(self, file, **kwargs):
         # Parameters
         if file.endswith('.pickle'):

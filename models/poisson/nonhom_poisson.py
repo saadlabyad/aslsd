@@ -9,11 +9,14 @@ from tqdm import tqdm
 
 from aslsd.optimize.estimators.general_estimator import GeneralEstimator
 from aslsd.optimize.optim_logging.general_optim_logger import GeneralOptimLogger
-from aslsd.optimize.solvers.adam import ADAM
 from aslsd.optimize.solvers.solver import Solver
+from aslsd.optimize.solvers.momentum import Momentum
+from aslsd.optimize.solvers.rmsprop import RMSprop
+from aslsd.optimize.solvers.adam import ADAM
 from aslsd.stats.residual_analysis import goodness_of_fit as gof
 import aslsd.utilities.useful_functions as uf
 import aslsd.utilities.useful_statistics as us
+from aslsd.stats.events.process_path import ProcessPath
 
 
 class NonHomPoisson:
@@ -281,6 +284,13 @@ class NonHomPoisson:
         else:
             if issubclass(type(solvers), Solver):
                 solvers = [copy.deepcopy(solvers) for k in range(d)]
+            elif type(solvers) == str:
+                if solvers == 'Momentum':
+                    solvers = [Momentum(**kwargs) for k in range(d)]
+                elif solvers == 'RMSprop':
+                    solvers = [RMSprop(**kwargs) for k in range(d)]
+                elif solvers == 'ADAM':
+                    solvers = [ADAM(**kwargs) for k in range(d)]
 
         # Initialize logger
         if log_args is None:
@@ -368,7 +378,8 @@ class NonHomPoisson:
         for i in range(d):
             list_times[i] = self.baselines[i].simulate(T_f, mu_param[i],
                                                            rng=rng)
-        return list_times
+        process_path = ProcessPath(list_times, T_f)
+        return process_path
 
     # Evaluation
     def get_residuals(self,  process_path, mu_param=None, write=True):

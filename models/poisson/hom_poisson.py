@@ -1,6 +1,5 @@
 # License: BSD 3 clause
 import copy
-import itertools
 import pickle
 
 import numpy as np
@@ -8,6 +7,8 @@ import numpy as np
 from aslsd.stats.residual_analysis import goodness_of_fit as gof
 import aslsd.utilities.useful_functions as uf
 from aslsd.utilities import useful_statistics as us
+from aslsd.stats.events.process_path import ProcessPath
+
 
 class HomPoisson:
     """
@@ -200,7 +201,8 @@ class HomPoisson:
             generations = rng.uniform(low=0., high=T_f, size=Nim)
             generations.sort()
             list_times[i] = generations
-        return list_times
+        process_path = ProcessPath(list_times, T_f)
+        return process_path
 
     # Evaluation
     def get_residuals(self,  process_path=None, mu_param=None, write=True):
