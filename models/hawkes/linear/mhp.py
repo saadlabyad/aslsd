@@ -6,11 +6,13 @@ import itertools
 import pickle
 
 import numpy as np
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from aslsd.optimize.estimators.\
-    adaptive_stratified_estimator import AdaptiveStratified
 from aslsd.optimize.estimators.estimator import Estimator
+from aslsd.optimize.estimators.mhp_exact_estimator import MHPExactEstim
+from aslsd.optimize.estimators. mhp_stratified_estimator import MHPStratEstim
+
 from aslsd.optimize.optim_logging.optim_logger import OptimLogger
 from aslsd.optimize.solvers.solver import Solver
 from aslsd.optimize.solvers.momentum import Momentum
@@ -25,6 +27,7 @@ from aslsd.functionals.baselines.baseline import BaselineModel
 from aslsd.functionals.baselines.\
     basis_baselines.basis_baseline_constant import ConstantBaseline
 from aslsd.stats.events.process_path import ProcessPath
+from aslsd.stats.events.episodes import Episodes
 
 
 class MHP:
@@ -632,7 +635,7 @@ class MHP:
         return bratio
 
 # =============================================================================
-# Statistics
+# First order statistics
 # =============================================================================
     def get_intensity_at_jumps(self, process_path, mu=None, kernel_param=None,
                                verbose=False):
@@ -663,12 +666,37 @@ class MHP:
         # Prepare parameters
         mu, kernel_param = self.load_param(mu=mu, kernel_param=kernel_param)
         if adjacency is None:
-            if self.is_fitted:
-                adjacency = self.fitted_adjacency
-        # formula
-        inv_adj = np.linalg.inv(np.eye(d)-adjacency)
-        res = inv_adj.dot(mu)
-        return res
+            adjacency = self.make_adjacency_matrix(kernel_param)
+        # LLN
+        power_adj = np.linalg.inv(np.eye(d)-adjacency)
+        eta_star = power_adj.dot(mu)
+        return eta_star
+
+    def get_exo_ratio(self, mu=None, kernel_param=None):
+        # Prepare parameters
+        mu, kernel_param = self.load_param(mu=mu, kernel_param=kernel_param)
+        # LLN
+        eta_star = self.get_stationary_intensity(mu=mu,
+                                                 kernel_param=kernel_param)
+        l1_eta_star = np.sum(eta_star)
+        l1_mu = np.sum(mu)
+        exo_ratio = l1_mu/l1_eta_star
+        return exo_ratio
+
+    def get_mu_lln(self, eta_star, adjacency):
+        d = self.d
+        mu = (np.eye(d)-adjacency).dot(eta_star)
+        return mu
+
+    def estimate_eta_star(self, data):
+        if type(data) == ProcessPath:
+            return data.eta
+        elif type(data) == Episodes:
+            eta = data.average_eta
+            return eta
+        else:
+            raise ValueError('data must be a aslsd.ProcessPath or a list of'
+                             ' aslsd.ProcessPath objects.')
 
 # =============================================================================
 # Simulation
@@ -826,7 +854,8 @@ class MHP:
         return desc_times_multi
 
     def simulate(self, T_f, T_i=0., history=None, mu=None, kernel_param=None,
-                 rng=None, seed=1234, verbose=False):
+                 check_stability=True, adjacency=None, rng=None, seed=1234,
+                 verbose=False):
         """
         Simulate a path of the MHP.
 
@@ -842,6 +871,9 @@ class MHP:
             Matrix of kernel parameters. The default is None, in that case
             fitted kernel parameters will be used if they are stored in the
             corresponding attribute of the MHP object.
+        check_stability : `bool`, optional
+            If True, only simulate from the MHP if it is stable. The default
+            is True.
         seed : `int`, optional
             Seed for the random number generator. The default is 1234.
         verbose : `bool`, optional
@@ -866,12 +898,14 @@ class MHP:
         # Prepare parameters
         mu, kernel_param = self.load_param(mu=mu, kernel_param=kernel_param)
         # Adjacency matrix
-        adjacency = self.make_adjacency_matrix(kernel_param)
-        branching_ratio = self.get_branching_ratio(adjacency=adjacency)
-        if branching_ratio >= 1:
-            raise ValueError("Cannot simulate from unstable MHP: ",
-                             "The branching ratio of this MHP is ",
-                             branching_ratio, " > 1.")
+        if adjacency is None:
+            adjacency = self.make_adjacency_matrix(kernel_param)
+        if check_stability:
+            branching_ratio = self.get_branching_ratio(adjacency=adjacency)
+            if branching_ratio >= 1:
+                raise ValueError("Cannot simulate from unstable MHP: ",
+                                 "The branching ratio of this MHP is ",
+                                 branching_ratio, " > 1.")
         # Offset generators
         offset_gens = [[None for j in range(d)] for i in range(d)]
         for i, j in itertools.product(range(d), range(d)):
@@ -942,6 +976,38 @@ class MHP:
         process_path = ProcessPath(list_times, T_f)
         return process_path
 
+    def simulate_episodes(self, T_f, T_i=0., history=None, n_episodes=1,
+                          mu=None,
+                          kernel_param=None, check_stability=True,
+                          adjacency=None,
+                          rng=None, seed=1234,
+                          verbose=False):
+        # RNG
+        rng = us.make_rng(rng=rng, seed=seed)
+        # Prepare parameters
+        mu, kernel_param = self.load_param(mu=mu, kernel_param=kernel_param)
+        # Adjacency matrix
+        if adjacency is None:
+            adjacency = self.make_adjacency_matrix(kernel_param)
+        if check_stability:
+            branching_ratio = self.get_branching_ratio(adjacency=adjacency)
+            if branching_ratio >= 1:
+                raise ValueError("Cannot simulate from unstable MHP: ",
+                                 "The branching ratio of this MHP is ",
+                                 branching_ratio, " > 1.")
+        list_paths = [None]*n_episodes
+        vec_seeds = rng.choice(max(10**7, n_episodes+1), size=n_episodes,
+                               replace=False)
+        for ix in tqdm(range(n_episodes), disable=not verbose):
+            seed = vec_seeds[ix]
+            list_paths[ix] = self.simulate(T_f, T_i=T_i, history=history,
+                                           mu=mu, kernel_param=kernel_param,
+                                           check_stability=False,
+                                           adjacency=adjacency, rng=None,
+                                           seed=seed, verbose=False)
+        episodes = Episodes(list_paths=list_paths, T_f=T_f)
+        return episodes
+
     def simu_multipath(self, path_res, t_res, x_min, x_max, mu=None,
                        kernel_param=None, rng=None, base_seed=1234,
                        verbose=False,
@@ -957,17 +1023,14 @@ class MHP:
             T_f = x_max
         list_Tf = uf.discretize_space(x_min, x_max, t_res, disc_type)
         list_paths = [[[] for j in range(path_res)] for i in range(t_res)]
-        for j in range(path_res):
-            seed = vec_seeds[j]
-            list_times = self.simulate(T_f, mu=mu, kernel_param=kernel_param,
-                                       seed=seed, verbose=verbose)
-            for i in range(t_res):
-                local_Tf = list_Tf[i]
-                list_n_f = [bisect.bisect_left(list_times[index_dim],
-                                               local_Tf)-1
-                            for index_dim in range(d)]
-                list_paths[i][j] = [list_times[0][:list_n_f[index_dim]+1]
-                                    for index_dim in range(d)]
+        for ix_path in range(path_res):
+            seed = vec_seeds[ix_path]
+            process_path = self.simulate(T_f, mu=mu, kernel_param=kernel_param,
+                                         seed=seed, verbose=verbose)
+            for ix_t in range(t_res):
+                T_trunc = list_Tf[ix_t]
+                trunc_path = process_path.truncate(T_trunc)
+                list_paths[ix_t][ix_path] = trunc_path
         return list_Tf, list_paths
 
     def simulate_one_step(self, T_f, T_i=0., history=None, mu=None,
@@ -1091,78 +1154,48 @@ class MHP:
             print('Simulation Complete.')
         return dim_next, t_next
 
-# =============================================================================
-# Estimation
-# =============================================================================
-    def get_random_param(self, ref_mu=None, ref_ker_param=None, range_ref=0.1,
-                         target_bratio=0.6, max_omega=1., true_omega=None,
-                         max_param=5.,
-                         min_mu=0., max_mu=None, flatten=False, seed=1234,
-                         rng=None):
+    def get_baseline_events(self, T_f, mu=None, kernel_param=None,
+                            rng=None, seed=1234):
+        if mu is None:
+            mu = self.fitted_mu
+            if mu is None:
+                raise ValueError("Missing value for Mu")
+        if kernel_param is None:
+            kernel_param = self.fitted_ker_param
+            if kernel_param is None:
+                raise ValueError("Missing value for Kernel parameters")
+        mu = np.array(mu)
+        d = self.d
+        offset_gens = [[None for j in range(d)] for i in range(d)]
+        for i, j in itertools.product(range(d), range(d)):
+            offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
+                kernel_param[i][j])
+
+        adjacency = self.make_adjacency_matrix(kernel_param)
         if rng is None:
             rng = np.random.default_rng(seed)
+
+        branching_ratio = self.get_branching_ratio(adjacency=adjacency)
+        if branching_ratio >= 1:
+            raise ValueError("Cannot simulate from unstable MHP: ",
+                             "The branching ratio of this MHP is ",
+                             branching_ratio, " > 1.")
+
+        # Step 1. Generate immigrants
+        # Number of immigrants
+        Nim = rng.poisson(mu*T_f)
+
+        # Immigrants
+        immigrants = [sorted(list(rng.uniform(low=0.0, high=T_f, size=Nim[i])))
+                      for i in range(d)]
+        immigrants = [np.array(immigrants[i]) for i in range(d)]
+        return immigrants
+
+# =============================================================================
+# Fully random sampling of parameters
+# =============================================================================
+    def rescale_ker_param(self, kernel_param, target_bratio=0.6):
         d = self.d
-
-        # Mu
-        if ref_mu is None:
-            if not isinstance(min_mu, (list, np.ndarray)):
-                min_mu = np.ones(d)*min_mu
-            if max_mu is None:
-                max_mu = max(max(min_mu), 1.)
-            if not isinstance(max_mu, (list, np.ndarray)):
-                max_mu = np.ones(d)*max_mu
-            mu = np.zeros(d)
-            for i in range(d):
-                mu[i] = rng.uniform(low=min_mu[i], high=max_mu[i], size=1)[0]
-        else:
-            mu = np.zeros(d)
-            for i in range(d):
-                mu[i] = rng.uniform(low=max(0., (1.-range_ref)*ref_mu[i]),
-                                    high=(1+range_ref)*ref_mu[i], size=1)[0]
-
-        # Kernels
-        kernel_param = np.array([[None for j in range(d)]
-                                 for i in range(d)], dtype=object)
-        if ref_ker_param is None:
-            if not isinstance(max_param, (list, np.ndarray)):
-                float_max = max_param
-                max_param = [[[None for x
-                               in range(self._kernel_matrix[i][j].n_param)]
-                              for j in range(d)] for i in range(d)]
-                for i, j in itertools.product(range(d), range(d)):
-                    n_param = self._kernel_matrix[i][j].n_param
-                    vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
-                    bnds = self.param_lower_bounds[i][j]
-                    for x in range(n_param):
-                        if x in vec_ix_omega:
-                            max_param[i][j][x] = max_omega
-                        else:
-                            max_param[i][j][x] = max(float_max, bnds[x])
-
-            for i, j in itertools.product(range(d), range(d)):
-                kernel_param[i][j] = []
-                n_param = self._kernel_matrix[i][j].n_param
-                vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
-                bnds = self.param_lower_bounds[i][j]
-                for x in range(n_param):
-                    val = rng.uniform(low=bnds[x], high=max_param[i][j][x],
-                                      size=1)[0]
-                    kernel_param[i][j].append(val)
-        else:
-            for i, j in itertools.product(range(d), range(d)):
-                kernel_param[i][j] = []
-                n_param = self._kernel_matrix[i][j].n_param
-                bnds = self.param_lower_bounds[i][j]
-                for x in range(n_param):
-                    val = rng.uniform(low=max(bnds[x],
-                                              (1.-range_ref)
-                                              * ref_ker_param[i][j][x]),
-                                      high=(1.+range_ref)
-                                      * ref_ker_param[i][j][x],
-                                      size=1)[0]
-                    kernel_param[i][j].append(val)
-
-        # Rescaling
         branching_ratio = self.get_branching_ratio(kernel_param=kernel_param)
         if branching_ratio > 0.:
             scaling = target_bratio/branching_ratio
@@ -1170,7 +1203,67 @@ class MHP:
             kernel_param[i][j] = np.array(kernel_param[i][j])
             if branching_ratio > 0.:
                 vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
-                kernel_param[i][j][vec_ix_omega] = (scaling*kernel_param[i][j][vec_ix_omega])
+                kernel_param[i][j][vec_ix_omega] *= scaling
+        return kernel_param
+
+    def make_max_param_array(self, float_max, max_omega=1.):
+        # Make array of max param values
+        d = self.d
+        max_param = [[[None for x
+                       in range(self._kernel_matrix[i][j].n_param)]
+                      for j in range(d)] for i in range(d)]
+        for i, j in itertools.product(range(d), range(d)):
+            n_param = self._kernel_matrix[i][j].n_param
+            vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
+            lower_bnds = self.param_lower_bounds[i][j]
+            upper_bnds = self.param_upper_bounds[i][j]
+            for x in range(n_param):
+                if x in vec_ix_omega:
+                    max_param[i][j][x] = max_omega
+                else:
+                    # If float_max < lower_bound, set max_param to lower_bound
+                    max_param[i][j][x] = max(float_max, lower_bnds[x])
+                    # clip the result to ensure it is less than upper_bound
+                    max_param[i][j][x] = min(max_param[i][j][x], upper_bnds[x])
+        return max_param
+
+    def get_random_param(self, min_mu=0., max_mu=None, max_omega=1.,
+                         max_param=5., target_bratio=0.6, seed=1234, rng=None,
+                         flatten=False):
+        rng = us.make_rng(rng=rng, seed=seed)
+        d = self.d
+
+        # Mu
+        if not uf.is_array(min_mu):
+            min_mu = np.ones(d)*min_mu
+        if max_mu is None:
+            max_mu = max(max(min_mu), 1.)
+        if not uf.is_array(max_mu):
+            max_mu = np.ones(d)*max_mu
+        mu = np.zeros(d)
+        for i in range(d):
+            mu[i] = rng.uniform(low=min_mu[i], high=max_mu[i], size=1)[0]
+
+        # Kernels
+        kernel_param = np.array([[None for j in range(d)]
+                                 for i in range(d)], dtype=object)
+        if not uf.is_array(max_param):
+            float_max = max_param
+            max_param = self.make_max_param_array(float_max,
+                                                  max_omega=max_omega)
+
+        for i, j in itertools.product(range(d), range(d)):
+            n_param = self._kernel_matrix[i][j].n_param
+            kernel_param[i][j] = np.zeros(n_param)
+            lower_bnds = self.param_lower_bounds[i][j]
+            for ix in range(n_param):
+                val = rng.uniform(low=lower_bnds[ix],
+                                  high=max_param[i][j][ix],
+                                  size=1)[0]
+                kernel_param[i][j][ix] = val
+
+        # Rescaling
+        kernel_param = self.rescale_ker_param(kernel_param, target_bratio)
 
         # Flatten
         if flatten:
@@ -1178,6 +1271,194 @@ class MHP:
         else:
             return mu, kernel_param
 
+# =============================================================================
+# Random sampling of parameters wrt to reference values
+# =============================================================================
+    def get_random_mu_from_ref(self, ref_mu, range_ref=0.1,
+                               rng=None, seed=1234):
+        rng = us.make_rng(rng=rng, seed=seed)
+        d = self.d
+        mu = np.zeros(d)
+        for i in range(d):
+            mu[i] = rng.uniform(low=max(0., (1.-range_ref)*ref_mu[i]),
+                                high=(1+range_ref)*ref_mu[i], size=1)[0]
+        return mu
+
+    def get_random_ker_from_ref(self, ref_ker_param, range_ref=0.1,
+                                rng=None, seed=1234):
+        rng = us.make_rng(rng=rng, seed=seed)
+        d = self.d
+        kernel_param = np.array([[None for j in range(d)]
+                                 for i in range(d)], dtype=object)
+        for i, j in itertools.product(range(d), range(d)):
+            n_param = self._kernel_matrix[i][j].n_param
+            kernel_param[i][j] = np.zeros(n_param)
+            lower_bnds = self.param_lower_bounds[i][j]
+            upper_bnds = self.param_upper_bounds[i][j]
+            for ix in range(n_param):
+                lo = max(lower_bnds[ix],
+                         (1.-range_ref)*ref_ker_param[i][j][ix])
+                hi = min(upper_bnds[ix],
+                         (1.+range_ref)*ref_ker_param[i][j][ix])
+                val = rng.uniform(low=lo, high=hi, size=1)[0]
+                kernel_param[i][j][ix] = val
+        return kernel_param
+
+    def get_random_param_from_ref(self, ref_mu=None, ref_ker_param=None,
+                                  x_ref=None, range_ref=0.1,
+                                  rng=None, seed=1234):
+        if ref_mu is None:
+            ref_mu, ref_ker_param = self.tensor2matrix_params(x_ref)
+        mu = self.get_random_mu_from_ref(ref_mu, range_ref=range_ref,
+                                         rng=rng, seed=seed)
+        kernel_param = self.get_random_ker_from_ref(ref_ker_param,
+                                                    range_ref=range_ref,
+                                                    rng=rng, seed=seed)
+        return mu, kernel_param
+
+# =============================================================================
+# Random sampling of parameters with first order feasibility
+# =============================================================================
+    def get_random_fo_1d(self, eta_star, a=None, b=None, rng=None, seed=1234):
+        rng = us.make_rng(rng=rng, seed=seed)
+        # Bounds
+        if a is None:
+            a = 0.3
+        if b is None:
+            b = 0.7
+        a = min(a, b)
+        # Sample omega
+        omega_00 = rng.uniform(low=a, high=b)
+        # Get mu from LLN
+        mu_0 = (1.-omega_00)*eta_star[0]
+        # Wrap results
+        mu = np.array([mu_0])
+        omega = np.array([[omega_00]])
+        return mu, omega
+
+    def get_random_fo_2d(self, eta_star, a=None, b=None, rng=None, seed=1234):
+        rng = us.make_rng(rng=rng, seed=seed)
+        # Bounds
+        if a is None:
+            a = np.zeros(2)
+        if b is None:
+            b = np.ones(2)
+        omega = np.zeros((2, 2))
+        # Stationary regime intensity
+        r = eta_star[1]/eta_star[0]
+        # Sample omega values, impact on dimension 0
+        omega[0, 0] = rng.uniform(low=a[0], high=b[0])
+        hi_bnd_0 = (1-omega[0, 0])/r
+        omega[0, 1] = rng.uniform(low=0., high=hi_bnd_0)
+        # Sample omega values, impact on dimension 1
+        omega[1, 1] = rng.uniform(low=a[1], high=b[1])
+        hi_bnd_1 = (1-omega[1, 1])*r
+        omega[1, 0] = rng.uniform(low=0., high=hi_bnd_1)
+        # Get mu from LLN
+        mu = self.get_mu_lln(eta_star, omega)
+        return mu, omega
+
+    def get_random_fo_bivar(self, eta_star, a=None, b=None, rng=None,
+                            seed=1234):
+        rng = us.make_rng(rng=rng, seed=seed)
+        d = self.d
+        # Bounds
+        if a is None:
+            a = 0.
+        if b is None:
+            b = 1.
+        # Stationary regime intensity
+        m = np.min(eta_star)/np.sum(eta_star)
+        r = m/(1.-m)
+        # Sample omega_S
+        omega_S = rng.uniform(low=a, high=b)
+        # Sample omega_C
+        omega_C = rng.uniform(low=0., high=r*(1.-omega_S))
+        # Wrap omega
+        omega = np.zeros((d, d))
+        for i, j in itertools.product(range(d), range(d)):
+            if i == j:
+                omega[i, i] = omega_S
+            else:
+                omega[i, j] = omega_C
+        # Get mu from LLN
+        mu = self.get_mu_lln(eta_star, omega)
+        return mu, omega
+
+    def get_random_fo(self, eta_star, a=None, b=None, rng=None, seed=1234,
+                      bivariate=False):
+        d = self.d
+        if d > 2:
+            bivariate = True
+        if bivariate:
+            mu, omega = self.get_random_fo_bivar(eta_star, a=a, b=b, rng=rng,
+                                                 seed=seed)
+        else:
+            if d == 1:
+                mu, omega = self.get_random_fo_1d(eta_star, a=a, b=b, rng=rng,
+                                                  seed=seed)
+            elif d == 2:
+                mu, omega = self.get_random_fo_2d(eta_star, a=a, b=b, rng=rng,
+                                                  seed=seed)
+        return mu, omega
+
+    def get_random_param_with_fo(self, eta_star, a=None, b=None, rng=None,
+                                 seed=1234, bivariate=False,
+                                 max_density_param=5., flatten=False):
+        rng = us.make_rng(rng=rng, seed=seed)
+        mu, omega = self.get_random_fo(eta_star, a=a, b=b, rng=rng,
+                                       bivariate=bivariate)
+        # Kernel param
+        d = self.d
+        kernel_param = np.array([[None for j in range(d)]
+                                 for i in range(d)], dtype=object)
+        if not uf.is_array(max_density_param):
+            float_max = max_density_param
+            max_density_param = self.make_max_param_array(float_max,
+                                                          max_omega=1.)
+        for i, j in itertools.product(range(d), range(d)):
+            n_param = self._kernel_matrix[i][j].n_param
+            kernel_param[i, j] = np.zeros(n_param)
+            # L_1 weights
+            n_b = self._kernel_matrix[i][j].n_basis_ker
+            l1_weights = us.get_random_mixture_weights(n_b, coeff=omega[i, j],
+                                                       rng=rng, seed=1234)
+            ix_omegas = self._kernel_matrix[i][j].ix_omegas()
+            kernel_param[i, j][ix_omegas] = l1_weights+0.
+            # Kernel densities parameters
+            lower_bnds = self.param_lower_bounds[i][j]
+            for ix in range(n_param):
+                if ix not in ix_omegas:
+                    val = rng.uniform(low=lower_bnds[ix],
+                                      high=max_density_param[i][j][ix],
+                                      size=1)[0]
+                    kernel_param[i][j][ix] = val
+        # Flatten
+        if flatten:
+            return self.matrix2tensor_params(mu, kernel_param)
+        else:
+            return mu, kernel_param
+
+# =============================================================================
+# Initialize parameters
+# =============================================================================
+    def initialize_param(self, init_method, data=None, rng=None, seed=1234,
+                         flatten=False, **kwargs):
+        kwargs['flatten'] = flatten
+        rng = us.make_rng(rng=rng, seed=seed)
+        kwargs['rng'] = rng
+        if init_method == 'full_random':
+            return self.get_random_param(**kwargs)
+        elif init_method == 'from_ref':
+            return self.get_random_param_from_ref(**kwargs)
+        elif init_method == 'fo_feasible':
+            eta_star = self.estimate_eta_star(data)
+            kwargs['eta_star'] = eta_star
+            return self.get_random_param_with_fo(**kwargs)
+
+# =============================================================================
+# Estimation
+# =============================================================================
     # Estimator functions
     def init_estimator(self, estimator, k):
         # Ixs book-keeping
@@ -1234,8 +1515,9 @@ class MHP:
                 for ix in range(logger.n_iter[i]):
                     logger.grad_ker[i][j][ix] = logger.grad_logs[i][ix][self.interval_map[i][j][0]:self.interval_map[i][j][1]]
         if logger.is_log_lse:
+            logger.lse = [None]*d
             for k in range(d):
-                self.lse[k] = self.estimator_logs[k]['lse']
+                logger.lse[k] = self.fit_estim[k].logged_lse
         if logger.is_log_ixs:
             for k in range(d):
                 logger.samples[k] = {}
@@ -1261,10 +1543,20 @@ class MHP:
         self.fit_residuals = None
         self.fitted_adjacency = None
         self.fit_log = None
+        self.fit_estim = None
 
-    def fit(self, process_path, kappa=None, varpi=None, x_0=None,
-            n_iter=1000, solvers=None, estimators=None, logger=None, seed=1234,
-            verbose=False, clear=True, write=True, **kwargs):
+    def fit(self, process_path, x_0=None, init_method='fo_feasible',
+            param_init_args=None, n_iter=1000, solvers=None, solver_args=None,
+            exact_grad=False, estimators=None, is_log_lse=False,
+            is_grad_target=False, is_log_ixs=False, is_log_allocs=False,
+            is_log_total_estimates=False, is_log_strata_estimates=False,
+            n_exact_single=None, n_samples_adaptive_single=None,
+            nonadaptive_sample_size_single=None, single_strfs=None,
+            n_samples_adaptive_double=None,
+            nonadaptive_sample_size_double=None, double_strfs=None,
+            logger=None,
+            logger_args=None, rng=None, seed=1234, verbose=False, clear=True,
+            write=True):
         """
         Fit the MHP model to some observations.
 
@@ -1289,13 +1581,8 @@ class MHP:
             List of jump times for each dimension.
         T_f : `float`
             Terminal time.
-        kappa : TYPE, optional
-            DESCRIPTION. The default is None.
-        varpi : TYPE, optional
-            DESCRIPTION. The default is None.
         x_0 : `list` of `numpy.ndarray`, optional
-            x_0[k] is the initial guess for parameters of problem k. The
-            default is None.
+            Initial guess for parameters. The default is None.
         n_iter : `list` or `int`, optional
             n_iter[k] is the number of iterations of the the optimisation
             algorithm for problem k. If  n_iter is of type `int`, it will be
@@ -1330,19 +1617,24 @@ class MHP:
             Fitted kernel parameters.
 
         """
-        rng = np.random.default_rng(seed)
+        d = self.d
+        # Random number generator
+        rng = us.make_rng(rng=rng, seed=seed)
 
         # Clear saved data in case already fitted
         if clear:
             self.clear_fit()
 
-        # Data
-        d = self.d
-        list_times = process_path.list_times
-        T_f = process_path.T_f
+        # Initialize mappings
+        if param_init_args is None:
+            param_init_args = {}
+        if solver_args is None:
+            solver_args = {}
+        if logger_args is None:
+            logger_args = {}
 
-        # Model
-        mu_lower_bnds = np.array([10**-10 for k in range(d)])
+        # Model bounds
+        mu_lower_bnds = 10**-10*np.ones(d)
         mu_upper_bnds = np.array([np.inf for k in range(d)])
         lower_bnds = self.matrix2tensor_params(mu_lower_bnds,
                                                self.param_lower_bounds)
@@ -1354,58 +1646,62 @@ class MHP:
             n_iter = [n_iter for k in range(d)]
 
         # Initialisation
+        if verbose:
+            print('Sampling initial guess...')
         if x_0 is None:
-            ref_mu = kwargs.get('ref_mu', None)
-            ref_ker_param = kwargs.get('ref_ker_param', None)
-            range_ref = kwargs.get('range_ref', 0.1)
-            target_bratio = kwargs.get('target_bratio', 0.6)
-            max_omega = kwargs.get('max_omega', 1.)
-            true_omega = kwargs.get('true_omega', None)
-            max_param = kwargs.get('max_param', 5.)
-            min_mu = kwargs.get('min_mu', 0.)
-            max_mu = kwargs.get('max_mu', None)
-            mu_0, ker_0 = self.get_random_param(ref_mu=ref_mu,
-                                                ref_ker_param=ref_ker_param,
-                                                range_ref=range_ref,
-                                                target_bratio=target_bratio,
-                                                max_omega=max_omega,
-                                                true_omega=true_omega,
-                                                max_param=max_param,
-                                                min_mu=min_mu, max_mu=max_mu,
-                                                flatten=False, rng=rng)
+            mu_0, ker_0 = self.initialize_param(init_method, data=process_path,
+                                                rng=rng, **param_init_args)
             x_0 = self.matrix2tensor_params(mu_0, ker_0)
         else:
             mu_0, ker_0 = self.tensor2matrix_params(x_0)
 
         # Initialize Estimators
         if estimators is None:
-            estimators = [AdaptiveStratified(**kwargs) for k in range(d)]
+            if exact_grad:
+                estimators = [MHPExactEstim(is_grad_target=is_grad_target,
+                                            is_log_ixs=is_log_ixs,
+                                            is_log_allocs=is_log_allocs,
+                                            is_log_total_estimates=is_log_total_estimates,
+                                            is_log_strata_estimates=is_log_strata_estimates,
+                                            is_log_lse=is_log_lse)
+                              for k in range(d)]
+            else:
+                estimators = [MHPStratEstim(is_grad_target=is_grad_target,
+                                            is_log_ixs=is_log_ixs,
+                                            is_log_allocs=is_log_allocs,
+                                            is_log_total_estimates=is_log_total_estimates,
+                                            is_log_strata_estimates=is_log_strata_estimates,
+                                            is_log_lse=is_log_lse)
+                              for k in range(d)]
         else:
             if issubclass(type(estimators), Estimator):
                 estimators = [copy.deepcopy(estimators) for k in range(d)]
         for k in range(d):
-            estimators[k].k = k
-            estimators[k].n_iter = n_iter[k]
-            estimators[k].initialize(process_path, self)
-            estimators[k].intialize_logs()
-            estimators[k].set_stratification(**kwargs)
+            estimators[k].initialize(k, n_iter[k], self, process_path,
+                                     n_exact_single=n_exact_single,
+                                     n_samples_adaptive_single=n_samples_adaptive_single,
+                                     nonadaptive_sample_size_single=nonadaptive_sample_size_single,
+                                     single_strfs=single_strfs,
+                                     n_samples_adaptive_double=n_samples_adaptive_double,
+                                     nonadaptive_sample_size_double=nonadaptive_sample_size_double,
+                                     double_strfs=double_strfs)
 
         # Initialize Solvers
         if solvers is None:
-            solvers = [ADAM(**kwargs) for k in range(d)]
+            solvers = [ADAM(**solver_args) for k in range(d)]
         else:
             if issubclass(type(solvers), Solver):
                 solvers = [copy.deepcopy(solvers) for k in range(d)]
             elif type(solvers) == str:
                 if solvers == 'Momentum':
-                    solvers = [Momentum(**kwargs) for k in range(d)]
+                    solvers = [Momentum(**solver_args) for k in range(d)]
                 elif solvers == 'RMSprop':
-                    solvers = [RMSprop(**kwargs) for k in range(d)]
+                    solvers = [RMSprop(**solver_args) for k in range(d)]
                 elif solvers == 'ADAM':
-                    solvers = [ADAM(**kwargs) for k in range(d)]
+                    solvers = [ADAM(**solver_args) for k in range(d)]
 
         # Initialize logger
-        logger = OptimLogger(d, n_iter, **kwargs)
+        logger = OptimLogger(d, n_iter, is_log_lse=is_log_lse, **logger_args)
         self.init_logger(logger)
 
         # Scheme
@@ -1430,6 +1726,214 @@ class MHP:
             logger.estimator_logs[k] = esimator_k_log
             x[k] = x_k
         fitted_mu, fitted_ker_param = self.tensor2matrix_params(x)
+        # Update logger
+        logger.is_logged_estimators = True
+        logger.estimator_types = [type(estimators[k]) for k in range(d)]
+        if write:
+            self.is_fitted = True
+            self.fitted_mu = fitted_mu
+            self.fitted_ker_param = fitted_ker_param
+            self.fit_estim = estimators
+            self.process_logs(logger)
+            logger.mu_0 = mu_0
+            logger.ker_0 = ker_0
+            self.fit_log = logger
+        return fitted_mu, fitted_ker_param
+
+    def fit_episodes(self, episodes, x_0=None, init_method='fo_feasible',
+                     param_init_args=None, n_iter=1000, solvers=None,
+                     solver_args=None, exact_grad=False, estimators=None,
+                     is_log_lse=False, is_grad_target=False, is_log_ixs=False,
+                     is_log_allocs=False, is_log_total_estimates=False,
+                     is_log_strata_estimates=False, n_exact_single=None,
+                     n_samples_adaptive_single=None,
+                     nonadaptive_sample_size_single=None, single_strfs=None,
+                     n_samples_adaptive_double=None,
+                     nonadaptive_sample_size_double=None, double_strfs=None,
+                     logger=None, logger_args=None,
+                     rng=None, seed=1234, verbose=False, clear=True,
+                     write=True):
+        """
+        Fit the MHP model to some observations.
+
+        We suppose that we observe a path of a d-dimensional counting process
+        :math:`\\mathbf{N}` started at time :math:`0` up to some terminal time
+        :math:`T`.
+
+        The least squares error (LSE) of this model for these observations is
+        defined as
+
+        .. math::
+            \\mathcal{R}_{T}(\\boldsymbol{\\mu}):=\\frac{1}{T} \\sum_{k=1}^{d} \\int_{0}^{T} \\lambda_{k}(t)^{2} \\mathrm{~d} t-\\frac{2}{T} \\sum_{k=1}^{d} \\sum_{m=1}^{N_{T}^{k}} \\lambda_{k}\\left(t_{m}^{k}\\right).
+
+        For a homogeneous Poisson model, this simplifies to
+
+        .. math::
+            \\mathcal{R}_{T}(\\boldsymbol{\\mu}):=\\sum_{k=1}^{d} \\bigg( \\mu_{k}^{2} -2 \\frac{N_{T}^{k}}{T} \\bigg).
+
+        Parameters
+        ----------
+        list_times : `list` of `numpy.ndarray`
+            List of jump times for each dimension.
+        T_f : `float`
+            Terminal time.
+        x_0 : `list` of `numpy.ndarray`, optional
+            Initial guess for parameters. The default is None.
+        n_iter : `list` or `int`, optional
+            n_iter[k] is the number of iterations of the the optimisation
+            algorithm for problem k. If  n_iter is of type `int`, it will be
+            converted to a d-dimensional array where each entry is equal to
+            that integer. The default is 1000.
+        solvers : `list` of `aslsd.Solver`, optional
+            solvers[k] is the optimization solver for problem k. The default
+            is None.
+        estimators : `list` of `aslsd.Esimtator`, optional
+            estimators[k] is the gradient estimator for problem k. The default
+            is None.
+        logger : `aslsd.OptimLogger`, optional
+            DESCRIPTION. The default is None.
+        seed : `int`, optional
+            Seed for the random number generator. The default is 1234.
+        verbose : `bool`, optional
+            If True, print progression information. The default is False.
+        clear : `bool`, optional
+            If true, delete all previously saved results and logs from the
+            corresponding attributes of the MHP object. The default is True.
+        write : `bool`, optional
+            If true, save the estimation results and logs in the corresponding
+            attributes of the MHP object. The default is True.
+        **kwargs : `dict`
+            Additional keyword arguments.
+
+        Returns
+        -------
+        fitted_mu : `numpy.ndarray`
+            Fitted baselines.
+        fitted_ker_param : `numpy.ndarray`
+            Fitted kernel parameters.
+
+        """
+        d = self.d
+        n_episodes = episodes.n_episodes
+        # Random number generator
+        rng = us.make_rng(rng=rng, seed=seed)
+
+        # Clear saved data in case already fitted
+        if clear:
+            self.clear_fit()
+
+        # Initialize mappings
+        if param_init_args is None:
+            param_init_args = {}
+        if solver_args is None:
+            solver_args = {}
+        if logger_args is None:
+            logger_args = {}
+
+        # Model bounds
+        mu_lower_bnds = 10**-10*np.ones(d)
+        mu_upper_bnds = np.array([np.inf for k in range(d)])
+        lower_bnds = self.matrix2tensor_params(mu_lower_bnds,
+                                               self.param_lower_bounds)
+        upper_bnds = self.matrix2tensor_params(mu_upper_bnds,
+                                               self.param_upper_bounds)
+
+        # Solver
+        if not isinstance(n_iter, (list, np.ndarray)):
+            n_iter = [n_iter for k in range(d)]
+
+        # Initialisation
+        if verbose:
+            print('Sampling initial guess...')
+        if x_0 is None:
+            mu_0, ker_0 = self.initialize_param(init_method, data=episodes,
+                                                rng=rng, **param_init_args)
+            x_0 = self.matrix2tensor_params(mu_0, ker_0)
+        else:
+            mu_0, ker_0 = self.tensor2matrix_params(x_0)
+
+        # Initialize Estimators
+        if estimators is None:
+            if exact_grad:
+                estimators = [[MHPExactEstim(is_grad_target=is_grad_target,
+                                             is_log_ixs=is_log_ixs,
+                                             is_log_allocs=is_log_allocs,
+                                             is_log_total_estimates=is_log_total_estimates,
+                                             is_log_strata_estimates=is_log_strata_estimates,
+                                             is_log_lse=is_log_lse)
+                               for ix_path in range(n_episodes)]
+                              for k in range(d)]
+            else:
+                estimators = [[MHPStratEstim(is_grad_target=is_grad_target,
+                                             is_log_ixs=is_log_ixs,
+                                             is_log_allocs=is_log_allocs,
+                                             is_log_total_estimates=is_log_total_estimates,
+                                             is_log_strata_estimates=is_log_strata_estimates,
+                                             is_log_lse=is_log_lse)
+                               for ix_path in range(n_episodes)]
+                              for k in range(d)]
+        else:
+            if issubclass(type(estimators), Estimator):
+                estimators = [[copy.deepcopy(estimators)
+                               for ix_path in range(n_episodes)]
+                              for k in range(d)]
+        for k in range(d):
+            for ix_path in range(n_episodes):
+                process_path = episodes.list_paths[ix_path]
+                estimators[k][ix_path].initialize(k, n_iter[k], self,
+                                                  process_path,
+                                                  n_exact_single=n_exact_single,
+                                                  n_samples_adaptive_single=n_samples_adaptive_single,
+                                                  nonadaptive_sample_size_single=nonadaptive_sample_size_single,
+                                                  single_strfs=single_strfs,
+                                                  n_samples_adaptive_double=n_samples_adaptive_double,
+                                                  nonadaptive_sample_size_double=nonadaptive_sample_size_double,
+                                                  double_strfs=double_strfs)
+
+        # Initialize Solvers
+        if solvers is None:
+            solvers = [ADAM(**solver_args) for k in range(d)]
+        else:
+            if issubclass(type(solvers), Solver):
+                solvers = [copy.deepcopy(solvers) for k in range(d)]
+            elif type(solvers) == str:
+                if solvers == 'Momentum':
+                    solvers = [Momentum(**solver_args) for k in range(d)]
+                elif solvers == 'RMSprop':
+                    solvers = [RMSprop(**solver_args) for k in range(d)]
+                elif solvers == 'ADAM':
+                    solvers = [ADAM(**solver_args) for k in range(d)]
+
+        # Initialize logger
+        logger = OptimLogger(d, n_iter, **logger_args)
+        self.init_logger(logger)
+
+        # Scheme
+        x = [None]*d
+        for k in range(d):
+            x_k = x_0[k]
+            logger.log_param(k, 0, x_k)
+            lower_bounds_k = lower_bnds[k]
+            upper_bounds_k = upper_bnds[k]
+            n_iter_k = n_iter[k]
+
+            for t in tqdm(range(n_iter_k), disable=not verbose):
+                # Compute LSE gradient estimate for parameters x_k
+                g_per_path = np.zeros((n_episodes, len(x_k)))
+                for ix in range(n_episodes):
+                    g_per_path[ix] = estimators[k][ix].lse_k_grad_estimate(x_k,
+                                                                           rng)
+                g_t = np.mean(g_per_path, axis=0)
+                logger.log_grad(k, t, g_t)
+                # Apply solver iteration
+                x_k = solvers[k].iterate(t, x_k, g_t)
+                # Project into space of parameters
+                x_k = np.clip(x_k, lower_bounds_k, upper_bounds_k)
+                logger.log_param(k, t+1, x_k)
+            # esimator_k_log = estimators[k].get_log()
+            # logger.estimator_logs[k] = esimator_k_log
+            x[k] = x_k
+        fitted_mu, fitted_ker_param = self.tensor2matrix_params(x)
         if write:
             self.is_fitted = True
             self.fitted_mu = fitted_mu
@@ -1439,7 +1943,6 @@ class MHP:
             logger.ker_0 = ker_0
             self.fit_log = logger
         return fitted_mu, fitted_ker_param
-
 # =============================================================================
 # Goodness of fit
 # =============================================================================
@@ -1560,8 +2063,7 @@ class MHP:
                           seed=1234,
                           verbose=False, **kwargs):
         d = self.d
-        if rng is None:
-            rng = np.random.default_rng(seed)
+        rng = us.make_rng(rng=rng, seed=seed)
         # Model
         bnds = self.param_lower_bounds
 
@@ -1575,18 +2077,14 @@ class MHP:
         max_param = kwargs.get('max_param', 5.)
         min_mu = kwargs.get('min_mu', 0.)
         max_mu = kwargs.get('max_mu', None)
-        mu_0, ker_0 = self.get_random_param(ref_mu=ref_mu,
-                                            ref_ker_param=ref_ker_param,
-                                            range_ref=range_ref,
-                                            target_bratio=target_bratio,
+        mu_0, ker_0 = self.get_random_param(min_mu=min_mu, max_mu=max_mu,
                                             max_omega=max_omega,
-                                            true_omega=true_omega,
                                             max_param=max_param,
-                                            min_mu=min_mu, max_mu=max_mu,
+                                            target_bratio=target_bratio,
+                                            seed=1234,
                                             flatten=False, rng=rng)
-
         param_1 = [[None for j in range(d)] for i in range(d)]
-
+        error = np.zeros((d, d))
         if solver is None:
             solver = ADAM(**kwargs)
 
@@ -1610,7 +2108,8 @@ class MHP:
             param_1[i][j] = copy.deepcopy(res_ij['params'])
             if log_error:
                 l2_err_log[i][j] = copy.deepcopy(res_ij['log'])
-        res = {'params': param_1, 'log': l2_err_log}
+            error[i, j] = res_ij['error']
+        res = {'params': param_1, 'error': error, 'log': l2_err_log}
         return res
 
     def get_l2_dist(self, mhp_2, ker_param_1=None, ker_param_2=None,
@@ -1740,6 +2239,84 @@ class MHP:
                                    axes=axes, save=save, filename=filename,
                                    show=show, **kwargs)
 
+    def plot_solver_path_seq(self, true_mu=None, true_ker_param=None,
+                             min_mu=None, min_ker_param=None, axes=None,
+                             save=False,
+                             filename='image.png', show=False, **kwargs):
+        d = self.d
+        if not self.is_fitted:
+            raise ValueError("MHP must be fitted before plotting solver path")
+        fit_log = self.fit_log
+        n_iter = fit_log.n_iter
+        matrix_n_param = self.matrix_n_param
+        mu_names = self.mu_names
+        ker_param_names = self.ker_param_names
+
+        # Mu
+        for i in range(d):
+            fig, axes = plt.subplots(nrows=1, ncols=2, sharex=True,
+                                     sharey=False, **kwargs)
+            # Parameter
+            axes[0].plot(fit_log.mu[i], color=gt.standard_colors[0])
+            if true_mu is not None:
+                axes[0].hlines(true_mu[i], 0, n_iter[i]+1,
+                               colors=gt.standard_colors[1],
+                               linestyles='solid')
+            if min_mu is not None:
+                axes[0].hlines(min_mu[i], 0, n_iter[i]+1,
+                               colors=gt.standard_colors[2],
+                               linestyles='solid')
+            axes[0].set(ylabel='Parameter')
+
+            # Derivative
+            axes[1].plot(fit_log.grad_mu[i], color=gt.standard_colors[0])
+            axes[1].hlines(0., 0, n_iter[i], colors='grey',
+                           linestyles='dashed')
+            axes[1].set(ylabel='Derivative')
+
+            # Legend
+            axes[0].set(xlabel='Iteration')
+            axes[1].set(xlabel='Iteration')
+            fig.suptitle('Updates of '+mu_names[i]+' (baseline '+str(i)+')')
+            fig.tight_layout()
+            fig.show()
+
+        # Kernel Parameters
+        for i, j in itertools.product(range(d), range(d)):
+            for ix_param in range(matrix_n_param[i][j]):
+                fig, axes = plt.subplots(nrows=1, ncols=2, sharex=True,
+                                         sharey=False, **kwargs)
+                # Parameter
+                axes[0].plot([fit_log.ker[i][j][n][ix_param]
+                              for n in range(n_iter[i]+1)],
+                             color=gt.standard_colors[0])
+                if true_ker_param is not None:
+                    axes[0].hlines(true_ker_param[i][j][ix_param],
+                                   0, n_iter[i]+1,
+                                   colors=gt.standard_colors[1],
+                                   linestyles='solid')
+                if min_ker_param is not None:
+                    axes[0].hlines(min_ker_param[i][j][ix_param], 0,
+                                   n_iter[i]+1,
+                                   colors=gt.standard_colors[2],
+                                   linestyles='solid')
+                axes[0].set(ylabel='Parameter')
+
+                # Derivative
+                axes[1].plot([fit_log.grad_ker[i][j][n][ix_param]
+                              for n in range(n_iter[i])],
+                             color=gt.standard_colors[0])
+                axes[1].hlines(0., 0, n_iter[i], colors='grey',
+                               linestyles='dashed')
+                axes[1].set(ylabel='Derivative')
+                # Legend
+                axes[0].set(xlabel='Iteration')
+                axes[1].set(xlabel='Iteration')
+                fig.suptitle('Updates of '+ker_param_names[i][j][ix_param]
+                             + ' (kernel '+str(i)+'←'+str(j)+')')
+                fig.tight_layout()
+                fig.show()
+
 # =============================================================================
 # Serialization
 # =============================================================================
@@ -1783,6 +2360,18 @@ class MHP:
         pickle_out = open(file_fit_log, "wb", **kwargs)
         pickle.dump(self.fit_log, pickle_out)
         pickle_out.close()
+
+        # Save fit estimators
+        for k in range(self.d):
+            suffix = 'estimator_'+str(k)
+            if file.endswith('.pickle'):
+                file_fit_estim_k = file[:-7]+'_'+suffix+'.pickle'
+            else:
+                file_fit_estim_k = file+'_'+suffix
+            try:
+                self.fit_estim[k].save(file_fit_estim_k)
+            except:
+                pass
 
     def load(self, file, **kwargs):
         if file.endswith('.pickle'):
@@ -1832,3 +2421,23 @@ class MHP:
             self.fit_log = fit_log
         except:
             pass
+
+    def load_fit_estimators(self, file, process_path, **kwargs):
+        # Load fit estimators
+        if (self.fit_log is not None) and (self.fit_log.is_logged_estimators):
+            estimators = [None]*self.d
+            for k in range(self.d):
+                # Create object
+                estimator_type = self.fit_log.estimator_types[k]
+                if estimator_type == MHPStratEstim:
+                    estimators[k] = MHPStratEstim()
+                elif estimator_type == MHPExactEstim:
+                    estimators[k] = MHPExactEstim()
+                # Load value
+                suffix = 'estimator_'+str(k)
+                if file.endswith('.pickle'):
+                    file_fit_estim_k = file[:-7]+'_'+suffix+'.pickle'
+                else:
+                    file_fit_estim_k = file+'_'+suffix
+                estimators[k].load(file_fit_estim_k, self, process_path)
+            self.fit_estim = estimators

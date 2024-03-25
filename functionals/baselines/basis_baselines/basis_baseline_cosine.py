@@ -152,6 +152,28 @@ class CosineBaseline(BasisBaseline):
                               vars_=vars_, pos_min_f=self.pos_min_f,
                               intercept=self.intercept)
 
+    # Interactions with kernels
+    def make_K(self, basis_kernel, t, s, vars_ker, vars_mu):
+        psi = basis_kernel.make_psi
+        if uf.is_array(t) or uf.is_array(s):
+            pass
+        else:
+            res = self.make_K(basis_kernel, np.array([t]), np.array([s]),
+                              vars_ker, vars_mu)
+            return res[0]
+
+    def make_diff_K(self, basis_kernel, t, s, ix_func, ix_diff, vars_ker,
+                    vars_mu):
+        if uf.is_array(t) or uf.is_array(s):
+            if ix_func == 1:
+                pass
+            elif ix_func == 2:
+                pass
+        else:
+            res = self.make_diff_K(basis_kernel, np.array([t]), np.array([s]),
+                                   ix_func, ix_diff, vars_ker, vars_mu)
+            return res[0]
+
     # Simulatiom
     def make_compensator(self, t, vars_):
         alpha, a, b, c = pmi.make_variables(vars_, pos_min_f=self.pos_min_f,

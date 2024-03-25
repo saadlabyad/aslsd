@@ -52,14 +52,8 @@ def diff_tphi_func(t, ix_diff, vars_):
             return res
     # Float implementation
     else:
-        if t < delta:
-            return 0.
-        if ix_diff == 0:
-            # Derivative wrt \beta
-            return (1.-beta*(t[mask_pos]-delta))*np.exp(-beta*(t-delta))
-        if ix_diff == 1:
-            # Derivative wrt \delta
-            return (beta**2)*np.exp(-beta*(t-delta))
+        res = diff_tphi_func(np.array([t]), ix_diff, vars_)
+        return res[0]
 
 
 dict_ker['diff_tphi_func'] = diff_tphi_func
@@ -83,14 +77,8 @@ def diff_log_tphi_func(t, ix_diff, vars_):
             return res
     # Float implementation
     else:
-        if t < delta:
-            return 0.
-        if ix_diff == 0:
-            # Derivative wrt \beta
-            return (1./beta-(t-delta))
-        if ix_diff == 1:
-            # Derivative wrt \delta
-            return beta
+        res = diff_log_tphi_func(np.array([t]), ix_diff, vars_)
+        return res[0]
 
 
 dict_ker['diff_log_tphi_func'] = diff_log_tphi_func

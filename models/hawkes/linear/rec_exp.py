@@ -715,6 +715,9 @@ class RecurrentExponential:
     def impact_matrix(self):
         del self._impact_matrix
 
+# =============================================================================
+# Parameters book-keeping
+# =============================================================================
     # N params
     def get_vector_n_param_mu(self):
         """
@@ -953,6 +956,24 @@ class RecurrentExponential:
                     x += 1
         return ix_map_imp, interval_map_imp
 
+# =============================================================================
+# Parameters vectorization
+# =============================================================================
+    def load_param(self, mu_param=None, kernel_param=None, impact_param=None):
+        if mu_param is None:
+            mu_param = self.fitted_mu_param
+            if mu_param is None:
+                raise ValueError("Missing value for Baseline parameters")
+        if kernel_param is None:
+            kernel_param = self.fitted_ker_param
+            if kernel_param is None:
+                raise ValueError("Missing value for Kernel parameters")
+        if impact_param is None:
+            impact_param = self.fitted_imp_param
+            if impact_param is None:
+                raise ValueError("Missing value for Impact parameters")
+        return mu_param, kernel_param, impact_param
+
     def xk2matrix_params(self, k, x_k):
         """
         Convert the list of flat vectors of parameters to a vector of
@@ -1099,20 +1120,16 @@ class RecurrentExponential:
         return mu_param_paths, kernel_param_paths, impact_param_paths
 
     def make_xk(self, k, mu_param=None, kernel_param=None, impact_param=None):
-        d = self.d
-
-        if mu_param is None:
-            mu_param = self.fitted_mu_param
-        if kernel_param is None:
-            kernel_param = self.fitted_ker_param
-        if impact_param is None:
-            impact_param = self.fitted_imp_param
-
+        mu_param, kernel_param, impact_param = self.load_param(mu_param=mu_param,
+                                                               kernel_param=kernel_param,
+                                                               impact_param=impact_param)
         x = self.matrix2tensor_params(mu_param, kernel_param, impact_param)
         x_k = x[k]
         return x_k
 
-    # Omega
+# =============================================================================
+# Model type
+# =============================================================================
     def is_sbf(self):
         d = self.d
         for i, j in itertools.product(range(d), range(d)):
@@ -1120,7 +1137,32 @@ class RecurrentExponential:
                 return False
         return True
 
-    # Bounds
+    def is_const_baseline(self):
+        for i in range(self.d):
+            if self.baselines_vec[i].n_basis_mus > 1:
+                return False
+            else:
+                baseline_type = type(self.baselines_vec[i].basis_mus[0])
+                if baseline_type != ConstantBaseline:
+                    return False
+        return True
+
+    def is_const_impact(self):
+        for i, j in itertools.product(range(self.d), range(self.d)):
+            if self.impact_matrix[i][j].n_basis_imp > 1:
+                return False
+            else:
+                impact_type = type(self.impact_matrix[i][j].basis_impacts[0])
+                if impact_type != ConstantImpact:
+                    return False
+        return True
+
+    def is_mhp(self):
+        return (self.is_const_baseline() and self.is_const_impact())
+
+# =============================================================================
+# Parameter bounds
+# =============================================================================
     def get_mu_param_lower_bounds(self):
         d = self.d
         mu_bnds = [self._baselines_vec[i].get_param_lower_bounds()
@@ -1426,6 +1468,103 @@ class RecurrentExponential:
             self.diff_impact[i][j] = diff_impact
 
 # =============================================================================
+# First order statistics
+# =============================================================================
+    def get_intensity_at_jumps(self, process_path, mu_param=None,
+                               kernel_param=None, impact_param=None,
+                               verbose=False):
+        mu_param, kernel_param, impact_param = self.load_param(mu_param=mu_param,
+                                                               kernel_param=kernel_param,
+                                                               impact_param=impact_param)
+        # Path
+        d = process_path.d
+        list_times = process_path.list_times
+        list_marks = process_path.list_marks
+        varpi = process_path.varpi
+        kappa = process_path.kappa
+        # Precomp
+        self.is_computable_precomps(process_path)
+        intensity = [np.zeros(process_path.n_events[i])
+                     for i in range(d)]
+        if verbose:
+            print('Starting Computations...')
+        # Compute Intensity
+        for k in range(d):
+            if verbose:
+                print('Computing intensity, dimension k=', str(k), ' ...')
+            # Parameters
+            mu_param_k = mu_param[k]
+            ker_param_k = kernel_param[k]
+            imp_param_k = impact_param[k]
+            # Data
+            N_k = process_path.n_events[k]
+            varpi_kj1 = np.array([process_path.varpi[k][j][1]
+                                  for j in range(d)], dtype=int)
+            kernel_part = np.zeros((d, N_k))
+            self.init_precomp(k, ker_param_k, imp_param_k, process_path)
+            # Baseline part
+            intensity[k] += self.mu[k](list_times[k], mu_param[k])
+            for j in range(d):
+                # Impact
+                impact_kj = self.assign_impact_ki(k, j, imp_param_k, list_marks)
+                # II. Kernels
+                kernel_kj = self.kernel_matrix[k][j]
+                r_kj = kernel_kj.n_basis_ker
+                ker_param_kj = kernel_param[k][j]
+                ker_vars_kj = kernel_kj.make_vars(ker_param_kj)
+                for q in range(r_kj):
+                    omega_kjq = ker_vars_kj[2*q]
+                    beta_kjq = ker_vars_kj[2*q+1]
+                    S_imp_kjk_q = self.assign_S_imp_ijk_q(k, j, q, beta_kjq,
+                                                          varpi, kappa,
+                                                          list_times)
+                    intensity[k] += S_imp_kjk_q
+            return intensity
+
+    def get_stationary_intensity(self, mu_param=None, adjacency=None,
+                                 kernel_param=None):
+        d = self.d
+        # Prepare parameters
+        mu_param, kernel_param, impact_param = self.load_param(mu_param=mu_param,
+                                                               kernel_param=kernel_param,
+                                                               impact_param=impact_param)
+        if adjacency is None:
+            adjacency = self.make_adjacency_matrix(kernel_param)
+        if self.is_mhp():
+            # LLN
+            power_adj = np.linalg.inv(np.eye(d)-adjacency)
+            eta_star = power_adj.dot(mu)
+            return eta_star
+
+    def get_exo_ratio(self, mu=None, kernel_param=None):
+        # Prepare parameters
+        mu_param, kernel_param, impact_param = self.load_param(mu_param=mu_param,
+                                                               kernel_param=kernel_param,
+                                                               impact_param=impact_param)
+        # LLN
+        eta_star = self.get_stationary_intensity(mu=mu,
+                                                 kernel_param=kernel_param)
+        l1_eta_star = np.sum(eta_star)
+        l1_mu = np.sum(mu)
+        exo_ratio = l1_mu/l1_eta_star
+        return exo_ratio
+
+    def get_mu_lln(self, eta_star, adjacency):
+        d = self.d
+        mu = (np.eye(d)-adjacency).dot(eta_star)
+        return mu
+
+    def estimate_eta_star(self, data):
+        if type(data) == ProcessPath:
+            return data.eta
+        elif uf.is_array(data):
+            list_eta = np.array([path.eta for path in data])
+            return np.mean(list_eta, axis=0)
+        else:
+            raise ValueError('data must be a aslsd.ProcessPath or a list of'
+                             ' aslsd.ProcessPath objects.')
+
+# =============================================================================
 # pre-computations
 # =============================================================================
     def is_computable_imp(self, process_path):
@@ -1647,7 +1786,7 @@ class RecurrentExponential:
                                                       kappa, list_times)
                 # Comp
                 phi_term_j += get_sum_phi_kj_q(k, j, omega_kjq, beta_kjq,
-                                            S_imp_kjk_q, varpi)
+                                               S_imp_kjk_q, varpi)
             res -= 2.*(phi_term_j/T_f)
 
         return res
@@ -2539,10 +2678,11 @@ class RecurrentExponential:
                                                       ker_param_k,
                                                       list_times2end)
 
-    def fit(self, process_path, x_0=None,
-            n_iter=1000, solvers=None, estimators=None, logger=None,
-            rng=None, seed=1234,
-            verbose=False, clear=True, write=True, **kwargs):
+    def fit(self, process_path, x_0=None, init_method='fo_feasible',
+            param_init_args=None, n_iter=1000, solvers=None, solver_args=None,
+            exact_grad=False, estimator_args=None, logger=None,
+            logger_args=None, rng=None, seed=1234, verbose=False, clear=True,
+            write=True):
         """
         Fit the RecExp model to one data path.
 
@@ -2607,6 +2747,16 @@ class RecurrentExponential:
         if clear:
             self.clear_fit()
 
+        # Initialize mappings
+        if param_init_args is None:
+            param_init_args = {}
+        if estimator_args is None:
+            estimator_args = {}
+        if solver_args is None:
+            solver_args = {}
+        if logger_args is None:
+            logger_args = {}
+
         # Data
         d = self.d
 
@@ -2624,19 +2774,19 @@ class RecurrentExponential:
 
         # Initialisation
         if x_0 is None:
-            ref_mu_param = kwargs.get('ref_mu_param', None)
-            ref_ker_param = kwargs.get('ref_ker_param', None)
-            ref_imp_param = kwargs.get('ref_imp_param', None)
-            range_ref_mu = kwargs.get('range_ref_mu', 0.1)
-            range_ref_ker = kwargs.get('range_ref_ker', 0.1)
-            range_ref_imp = kwargs.get('range_ref_imp', 0.1)
-            min_mu_param = kwargs.get('min_mu_param', None)
-            max_mu_param = kwargs.get('max_mu_param', None)
-            target_bratio = kwargs.get('target_bratio', 0.6)
-            max_omega = kwargs.get('max_omega', 1.)
-            true_omega = kwargs.get('true_omega', None)
-            max_ker_param = kwargs.get('max_ker_param', 5.)
-            max_imp_param = kwargs.get('max_imp_param', 5.)
+            ref_mu_param = param_init_args.get('ref_mu_param', None)
+            ref_ker_param = param_init_args.get('ref_ker_param', None)
+            ref_imp_param = param_init_args.get('ref_imp_param', None)
+            range_ref_mu = param_init_args.get('range_ref_mu', 0.1)
+            range_ref_ker = param_init_args.get('range_ref_ker', 0.1)
+            range_ref_imp = param_init_args.get('range_ref_imp', 0.1)
+            min_mu_param = param_init_args.get('min_mu_param', None)
+            max_mu_param = param_init_args.get('max_mu_param', None)
+            target_bratio = param_init_args.get('target_bratio', 0.6)
+            max_omega = param_init_args.get('max_omega', 1.)
+            true_omega = param_init_args.get('true_omega', None)
+            max_ker_param = param_init_args.get('max_ker_param', 5.)
+            max_imp_param = param_init_args.get('max_imp_param', 5.)
 
             mu_0, ker_0, imp_0 = self.get_random_param(ref_mu_param=ref_mu_param,
                                                        ref_ker_param=ref_ker_param,
@@ -2658,20 +2808,20 @@ class RecurrentExponential:
 
         # Initialize Solvers
         if solvers is None:
-            solvers = [ADAM(**kwargs) for k in range(d)]
+            solvers = [ADAM(**solver_args) for k in range(d)]
         else:
             if issubclass(type(solvers), Solver):
                 solvers = [copy.deepcopy(solvers) for k in range(d)]
             elif type(solvers) == str:
                 if solvers == 'Momentum':
-                    solvers = [Momentum(**kwargs) for k in range(d)]
+                    solvers = [Momentum(**solver_args) for k in range(d)]
                 elif solvers == 'RMSprop':
-                    solvers = [RMSprop(**kwargs) for k in range(d)]
+                    solvers = [RMSprop(**solver_args) for k in range(d)]
                 elif solvers == 'ADAM':
-                    solvers = [ADAM(**kwargs) for k in range(d)]
+                    solvers = [ADAM(**solver_args) for k in range(d)]
 
         # Initialize logger
-        logger = OptimLogger(d, n_iter, **kwargs)
+        logger = OptimLogger(d, n_iter, **logger_args)
         self.init_logger(logger)
 
         # Precomp
@@ -2962,7 +3112,9 @@ class RecurrentExponential:
         else:
             return mu_param, kernel_param, impact_param
 
-    # Residuals
+# =============================================================================
+# Residuals
+# =============================================================================
     def get_residuals(self, process_path, mu_param=None, kernel_param=None,
                       impact_param=None, expected_impact_matrix=None,
                       verbose=False, write=True):
@@ -3032,24 +3184,9 @@ class RecurrentExponential:
             Residuals of the fitted model.
 
         """
-        if mu_param is None:
-            if self.is_fitted:
-                mu_param = self.fitted_mu_param
-                kernel_param = self.fitted_ker_param
-            else:
-                raise ValueError("mu_param must be specified.")
-
-        if kernel_param is None:
-            if self.is_fitted:
-                kernel_param = self.fitted_ker_param
-            else:
-                raise ValueError("kernel_param must be specified.")
-
-        if impact_param is None:
-            if self.is_fitted:
-                impact_param = self.fitted_imp_param
-            else:
-                raise ValueError("impact_param must be specified.")
+        mu_param, kernel_param, impact_param = self.load_param(mu_param=mu_param,
+                                                               kernel_param=kernel_param,
+                                                               impact_param=impact_param)
         if expected_impact_matrix is None:
             expected_impact_matrix = self.make_expected_impact(impact_param)
         # Path
@@ -3164,37 +3301,26 @@ class RecurrentExponential:
             List of simulated jump times for each dimension.
 
         """
-
-        if mu_param is None:
-            mu_param = self.fitted_mu_param
-            if mu_param is None:
-                raise ValueError("Missing value for Baseline parameters")
-        if kernel_param is None:
-            kernel_param = self.fitted_ker_param
-            if kernel_param is None:
-                raise ValueError("Missing value for Kernel parameters")
-        if impact_param is None:
-            impact_param = self.fitted_imp_param
-            if impact_param is None:
-                raise ValueError("Missing value for Impact parameters")
-
+        rng = us.make_rng(rng=rng, seed=seed)
         d = self.d
+        mu_param, kernel_param, impact_param = self.load_param(mu_param=mu_param,
+                                                               kernel_param=kernel_param,
+                                                               impact_param=impact_param)
+        # Compute adjacency matrix and branching ratio       
+        adjacency = self.make_adjacency_matrix(kernel_param)
+        branching_ratio = self.get_branching_ratio(adjacency=adjacency)
+        # We do not allow simulation of unstable models
+        if branching_ratio >= 1:
+            raise ValueError("Cannot simulate from unstable\
+                             RecurrentExponential model: The branching ratio\
+                                 of this model is ", branching_ratio, " > 1.")
+        if verbose:
+            print('Simulating events...')
+        # Load offset generators from the kernel matrix
         offset_gens = [[None for j in range(d)] for i in range(d)]
         for i, j in itertools.product(range(d), range(d)):
             offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
                 kernel_param[i][j])
-
-        adjacency = self.make_adjacency_matrix(kernel_param)
-        # RNG
-        rng = us.make_rng(rng=rng, seed=seed)
-
-        branching_ratio = self.get_branching_ratio(adjacency=adjacency)
-        if branching_ratio >= 1:
-            raise ValueError("Cannot simulate from unstable MHP: ",
-                             "The branching ratio of this MHP is ",
-                             branching_ratio, " > 1.")
-        if verbose:
-            print('Simulating events...')
         # Step 1. Generate immigrants
         # Location of immigrants
         generations = [[self._baselines_vec[i].simulate(T_f, mu_param[i],

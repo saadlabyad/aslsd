@@ -30,14 +30,17 @@ class ExponentialImpact(BasisImpact):
 
     # Impact functionals
     def make_impact(self, xi, vars_):
-        if uf.is_array(xi):
-            res = np.exp(-vars_[0]*xi)
-            if xi.ndim == 1:
-                return res[0]
-            elif xi.ndim == 2:
-                return res
+        beta = vars_[0]
+        if xi.ndim == 1:
+            # xi is one rrealisation of the mark variable.
+            res = np.exp(-beta*xi[0])
+        elif xi.ndim == 2:
+            # xi is a vector of realizations of the mark variable.
+            res = np.exp(-beta*xi)
+            res = res.flatten()
         else:
-            self.make_impact(np.array([xi]), vars_)
+            raise ValueError('xi does not have the right dimension.')
+        return res
 
     def make_diff_impact(self, xi, ix_diff, vars_):
         if uf.is_array(xi):

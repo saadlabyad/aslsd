@@ -17,6 +17,21 @@ def make_rng(rng=None, seed=1234):
 
 
 # =============================================================================
+# Sampling mixture weights
+# =============================================================================
+def get_random_mixture_weights(n, coeff=1., rng=None, seed=1234):
+    # Get random mixture weights for one function with n basis functions
+    rng = make_rng(rng=rng, seed=seed)
+    weights = rng.uniform(size=n)
+    # Rescale as probabilities
+    weights /= np.sum(weights)
+    weights *= coeff
+    # Enforce weights to sum to 1 in case of numerical error
+    weights[-1] = coeff-np.sum(weights[:-1])
+    return weights
+
+
+# =============================================================================
 # Sampling single indices
 # =============================================================================
 def sample_single_ix_stratum(m_inf, m_sup, n_samples, rng=None, seed=1234):

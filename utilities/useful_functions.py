@@ -284,7 +284,7 @@ def concatenate_linspace(vec_T, vec_n_res):
 
 
 def get_ix_positions(L, Q):
-    return [np.where(Q == x)[0][0] for x in L]
+    return np.array([np.where(Q == x)[0][0] for x in L])
 
 
 def get_grid_position(x, ref_x):

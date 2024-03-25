@@ -1,5 +1,6 @@
 # License: BSD 3 clause
 
+import bisect
 import copy
 import pickle
 
@@ -11,7 +12,7 @@ from aslsd.stats.events import time_ordering
 
 class ProcessPath():
     """
-    Class for paths of point processes.
+    Class for a finite path of a point processes.
 
     A d-dimensional orderly point process is a random sequence of times
 
@@ -55,19 +56,31 @@ class ProcessPath():
 
     """
 
-    def __init__(self, list_times, T_f, d=None, list_marks=None, n_events=None,
-                 eta=None,
+    def __init__(self, list_times=None, T_f=1., list_marks=None,
+                 n_events=None, eta=None,
                  list_times2end=None, kappa=None, varpi=None, lag_sizes=None,
                  book_keeping=True):
-        self.list_times = list_times
-        self.list_marks = list_marks
+        if list_times is None:
+            list_times = []
         self.T_f = T_f
-        self.d = len(self.list_times)
+        self.d = len(list_times)
+        # Event data
+        self.list_times = [0.+np.array(list_times[i]) for i in range(self.d)]
+        if list_marks is None:
+            self.list_marks = None
+        else:
+            self.list_marks = [0+np.array(list_marks[i])
+                               for i in range(self.d)]
+        # Basic statistics
         self.n_events = np.array([len(L) for L in self.list_times])
         self.eta = self.n_events/T_f
+        # Book-keeping
         self.book_keeping = book_keeping
         if book_keeping:
-            self.list_times2end = [T_f - L for L in list_times]
+            if list_times2end is None:
+                self.list_times2end = [T_f - L for L in list_times]
+            else:
+                self.list_times2end = list_times2end
 
             if kappa is None or varpi is None:
                 kappa, varpi = time_ordering.get_kappa_varpi(list_times, T_f)
@@ -78,7 +91,15 @@ class ProcessPath():
                 lag_sizes = time_ordering.get_lag_sizes(list_times, self.kappa,
                                                         self.varpi)
             self.lag_sizes = lag_sizes
+        else:
+            self.list_times2end = list_times2end
+            self.kappa = kappa
+            self.varpi = varpi
+            self.lag_sizes = lag_sizes
 
+# =============================================================================
+# List operations
+# =============================================================================
     def get_book_keeping(self):
         self.list_times2end = [self.T_f - L for L in self.list_times]
 
@@ -90,14 +111,67 @@ class ProcessPath():
                                                 self.varpi)
         self.lag_sizes = lag_sizes
 
+    def clone(self):
+        list_times = self.list_times
+        process_path = ProcessPath(self.list_times, self.T_f, d=self.d,
+                                   list_marks=self.list_marks,
+                                   n_events=self.n_events,
+                                   eta=self.eta,
+                                   list_times2end=self.list_times2end,
+                                   kappa=self.kappa, varpi=self.varpi,
+                                   lag_sizes=self.lag_sizes,
+                                   book_keeping=self.book_keeping)
+        return process_path
+
+    def truncate(self, T_trunc):
+        d = self.d
+        if T_trunc >= self.T_f:
+            self.clone()
+        list_n_f = [bisect.bisect_left(self.list_times[i], T_trunc)-1
+                    for i in range(self.d)]
+
+        trunc_times = [self.list_times[i][:list_n_f[i]+1] for i in range(d)]
+        if self.list_marks is not None:
+            trunc_marks = [self.list_marks[i][:list_n_f[i]+1]
+                           for i in range(d)]
+        else:
+            trunc_marks = None
+        # Book-keeping
+        if self.kappa is None or self.varpi is None:
+            trunc_kappa = None
+            trunc_varpi = None
+        else:
+            # Kappa
+            trunc_kappa = [[self.kappa[j][i][:list_n_f[i]+1]
+                            for i in range(d)] for j in range(d)]
+            # Varpi
+            trunc_varpi = [[self.varpi[i][j][:list_n_f[j]+1]
+                            for j in range(d)] for i in range(d)]
+
+        # Return
+        trunc_path = ProcessPath(trunc_times, T_trunc, d=self.d,
+                                 list_marks=trunc_marks,
+                                 n_events=None,
+                                 eta=None,
+                                 list_times2end=None,
+                                 kappa=trunc_kappa, varpi=trunc_varpi,
+                                 lag_sizes=None,
+                                 book_keeping=self.book_keeping)
+        return trunc_path
+
     def get_counting_process(self):
         d = self.d
         counting_process = [None]*d
         for i in range(d):
-            times = self.list_times[i]
-            times = np.insert(times, 0, 0.)
-            vals = np.arange(1+len(self.list_times[i]))
+            # Times
+            times = np.zeros(len(self.list_times[i])+2)
+            times[1:-1] = self.list_times[i]
+            times[-1] = self.T_f
+            # Counts
+            vals = np.arange(len(self.list_times[i])+2)
+            vals[-1] = len(self.list_times[i])
             time_func = interp1d(times, vals, kind='previous')
+            # Counting process
             counting_process[i] = time_func
         self.counting_process = counting_process
         return counting_process
@@ -117,7 +191,16 @@ class ProcessPath():
                            list_marks=censored_marks,
                            book_keeping=book_keeping)
 
-    # Data processing
+    def get_inter_arrival_times(self):
+        list_times = self.list_times
+        ia_times = [None]*self.d
+        for i in range(self.d):
+            ia_times[i] = list_times[i][1:]-list_times[i][:-1]
+        return ia_times
+
+# =============================================================================
+# Statistics
+# =============================================================================
     def get_events_rate(self, interval_bounds):
         rate = [None]*self.d
         for i in range(self.d):
@@ -126,16 +209,9 @@ class ProcessPath():
                                    interval_bounds[i])[0]/interval_sizes
         return rate
 
-    def get_inter_arrival_times(self):
-        list_times = self.list_times
-        ia_times = [None]*self.d
-        for i in range(self.d):
-            ia_times[i] = list_times[i][1:]-list_times[i][:-1]
-        return ia_times
-
-    # Get stats functions
-
-    # Serialization
+# =============================================================================
+# Serialization
+# =============================================================================
     def save(self, file, **kwargs):
         dict_attr = {'list_times': self.list_times,
                      'list_marks': self.list_marks, 'T_f': self.T_f,

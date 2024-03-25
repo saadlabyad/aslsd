@@ -6,21 +6,24 @@ import itertools
 import pickle
 
 import numpy as np
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 from aslsd.functionals.baselines.baseline import BaselineModel
 from aslsd.functionals.baselines.basis_baselines.basis_baseline_constant import ConstantBaseline
+from aslsd.stats.marks.void_mark import VoidMark
 from aslsd.functionals.impact_functions.impact_function import ImpactFunction
 from aslsd.functionals.impact_functions.basis_impacts.basis_impact_constant import ConstantImpact
-from aslsd.optimize.estimators.mtlh_estimator import MtlhStratified
 from aslsd.optimize.estimators.estimator import Estimator
+from aslsd.optimize.estimators.mtlh_stratified_estimator import MTLHStratEstim
+from aslsd.optimize.estimators.mtlh_exact_estimator import MTLHExactEstim
 from aslsd.optimize.optim_logging.optim_logger import OptimLogger
 from aslsd.optimize.solvers.solver import Solver
 from aslsd.optimize.solvers.momentum import Momentum
 from aslsd.optimize.solvers.rmsprop import RMSprop
 from aslsd.optimize.solvers.adam import ADAM
 from aslsd.stats.events.process_path import ProcessPath
-from aslsd.stats.marks.void_mark import VoidMark
+
 from aslsd.stats.residual_analysis import goodness_of_fit as gof
 from aslsd.utilities import useful_functions as uf
 from aslsd.utilities import useful_statistics as us
@@ -567,6 +570,24 @@ class MTLH:
                     x += 1
         return ix_map_imp, interval_map_imp
 
+# =============================================================================
+# Parameters vectorization
+# =============================================================================
+    def load_param(self, mu_param=None, kernel_param=None, impact_param=None):
+        if mu_param is None:
+            mu_param = self.fitted_mu_param
+            if mu_param is None:
+                raise ValueError("Missing value for Baseline parameters")
+        if kernel_param is None:
+            kernel_param = self.fitted_ker_param
+            if kernel_param is None:
+                raise ValueError("Missing value for Kernel parameters")
+        if impact_param is None:
+            impact_param = self.fitted_imp_param
+            if impact_param is None:
+                raise ValueError("Missing value for Impact parameters")
+        return mu_param, kernel_param, impact_param
+
     def xk2matrix_params(self, k, x_k):
         """
         Convert the list of flat vectors of parameters to a vector of
@@ -713,20 +734,16 @@ class MTLH:
         return mu_param_paths, kernel_param_paths, impact_param_paths
 
     def make_xk(self, k, mu_param=None, kernel_param=None, impact_param=None):
-        d = self.d
-
-        if mu_param is None:
-            mu_param = self.fitted_mu_param
-        if kernel_param is None:
-            kernel_param = self.fitted_ker_param
-        if impact_param is None:
-            impact_param = self.fitted_imp_param
-
+        mu_param, kernel_param, impact_param = self.load_param(mu_param=mu_param,
+                                                               kernel_param=kernel_param,
+                                                               impact_param=impact_param)
         x = self.matrix2tensor_params(mu_param, kernel_param, impact_param)
         x_k = x[k]
         return x_k
 
-    # Omega
+# =============================================================================
+# Model type
+# =============================================================================
     def is_sbf(self):
         d = self.d
         for i, j in itertools.product(range(d), range(d)):
@@ -734,7 +751,32 @@ class MTLH:
                 return False
         return True
 
-    # Bounds
+    def is_const_baseline(self):
+        for i in range(self.d):
+            if self.baselines_vec[i].n_basis_mus > 1:
+                return False
+            else:
+                baseline_type = type(self.baselines_vec[i].basis_mus[0])
+                if baseline_type != ConstantBaseline:
+                    return False
+        return True
+
+    def is_const_impact(self):
+        for i, j in itertools.product(range(self.d), range(self.d)):
+            if self.impact_matrix[i][j].n_basis_imp > 1:
+                return False
+            else:
+                impact_type = type(self.impact_matrix[i][j].basis_impacts[0])
+                if impact_type != ConstantImpact:
+                    return False
+        return True
+
+    def is_mhp(self):
+        return (self.is_const_baseline() and self.is_const_impact())
+
+# =============================================================================
+# Parameters bounds
+# =============================================================================
     def get_mu_param_lower_bounds(self):
         d = self.d
         mu_bnds = [self._baselines_vec[i].get_param_lower_bounds()
@@ -1042,6 +1084,48 @@ class MTLH:
 # =============================================================================
 # Branching representation
 # =============================================================================
+    def make_l1_kernel_matrix(self, kernel_param=None):
+        """
+        Compute the adjacency matrix of the MHP.
+
+        The adjacency matrix :math:`A` of an MHP is the :math:`d\\times d`
+        matrix of :math:`L_{1}` norms of kernels; that is, for all
+        :math:`i,j \\in [d]` the corresponding entry of this matrix is given by
+
+        .. math::
+            A_{ij} := \\int_{[0,+\\infty]} |\\phi_{ij}(u)|du..
+
+
+        Parameters
+        ----------
+        kernel_param : `numpy.ndarray`, optional
+            Matrix of kernel parameters at which to evaluate the adjacency
+            matrix. The default is None, in that case fitted kernel
+            parameters will be used if they are stored in the corresponding
+            attribute of the MHP object.
+
+        Raises
+        ------
+        ValueError
+            Raise an error if the kernel parameters not specified and there
+            are no kernel parameters saved as an atrribute.
+
+        Returns
+        -------
+        adjacency : `numpy.ndarray`
+            Adjacency matrix of the MHP.
+
+        """
+        if kernel_param is None:
+            if self.is_fitted:
+                kernel_param = self.fitted_ker_param
+            else:
+                raise ValueError("kernel_param must be specified.")
+        d = self.d
+        adjacency = [[self._kernel_matrix[i][j].l1_norm(kernel_param[i][j])
+                      for j in range(d)] for i in range(d)]
+        return adjacency
+
     def make_adjacency_matrix(self, kernel_param=None):
         """
         Compute the adjacency matrix of the MHP.
@@ -1132,9 +1216,56 @@ class MTLH:
         return bratio
 
 # =============================================================================
-# Statistics
+# First order statistics
 # =============================================================================
-
+    def get_intensity_at_jumps(self, process_path, mu_param=None,
+                               kernel_param=None, impact_param=None,
+                               verbose=False):
+        mu_param, kernel_param, impact_param = self.load_param(mu_param=mu_param,
+                                                               kernel_param=kernel_param,
+                                                               impact_param=impact_param)
+        # Path
+        d = process_path.d
+        list_times = process_path.list_times
+        list_marks = process_path.list_marks
+        varpi = process_path.varpi
+        kappa = process_path.kappa
+        # Precomp
+        self.is_computable_precomps(process_path)
+        intensity = [np.zeros(process_path.n_events[i])
+                     for i in range(d)]
+        if verbose:
+            print('Starting Computations...')
+        # Compute Intensity
+        for k in range(d):
+            if verbose:
+                print('Computing intensity, dimension k=', str(k), ' ...')
+            # Parameters
+            mu_param_k = mu_param[k]
+            ker_param_k = kernel_param[k]
+            imp_param_k = impact_param[k]
+            # Baseline part
+            intensity[k] += self.mu[k](list_times[k], mu_param[k])
+            # Kernel Part
+            for j in range(d):
+                # Impact
+                vals_impact_kj = self.impact_matrix[k][j](list_marks[j],
+                                                          impact_param[k][j])
+                # II. Kernels
+                kernel_kj = self.kernel_matrix[k][j]
+                ker_param_kj = kernel_param[k][j]
+                vals_kernel_kj = np.zeros(process_path.n_events[k])
+                for m in tqdm(range(process_path.varpi[k][j][1],
+                                    process_path.n_events[k]),
+                              disable=not verbose):
+                    t_m = process_path.list_times[k][m]
+                    ix_bnd = process_path.kappa[j][k][m]+1
+                    t_n = process_path.list_times[j][:ix_bnd]
+                    t_diff = t_m-t_n
+                    vals_kernel_kj[m] = np.sum(self.phi[k][j](t_diff,
+                                                              kernel_param[k][j]))
+                intensity[k] += vals_kernel_kj
+            return intensity
 # =============================================================================
 # Simulation
 # =============================================================================
@@ -1175,41 +1306,31 @@ class MTLH:
             List of simulated jump times for each dimension.
 
         """
-
-        if mu_param is None:
-            mu_param = self.fitted_mu_param
-            if mu_param is None:
-                raise ValueError("Missing value for Baseline parameters")
-        if kernel_param is None:
-            kernel_param = self.fitted_ker_param
-            if kernel_param is None:
-                raise ValueError("Missing value for Kernel parameters")
-        if impact_param is None:
-            impact_param = self.fitted_imp_param
-            if impact_param is None:
-                raise ValueError("Missing value for Impact parameters")
-
+        rng = us.make_rng(rng=rng, seed=seed)
         d = self.d
+        mu_param, kernel_param, impact_param = self.load_param(mu_param=mu_param,
+                                                               kernel_param=kernel_param,
+                                                               impact_param=impact_param)
+        # Compute adjacency matrix and branching ratio
+        adjacency = self.make_adjacency_matrix(kernel_param)
+        branching_ratio = self.get_branching_ratio(adjacency=adjacency)
+        # Do not simulate if the specified model is unstable
+        if branching_ratio >= 1:
+            raise ValueError("Cannot simulate from unstable MTLH:\
+                             The branching ratio of this MTLH is ",
+                             branching_ratio, " > 1.")
+        if verbose:
+            print('Simulating events...')
+        # Load offset generators
         offset_gens = [[None for j in range(d)] for i in range(d)]
         for i, j in itertools.product(range(d), range(d)):
             offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
                 kernel_param[i][j])
-
-        adjacency = self.make_adjacency_matrix(kernel_param)
-        # RNG
-        rng = us.make_rng(rng=rng, seed=seed)
-
-        branching_ratio = self.get_branching_ratio(adjacency=adjacency)
-        if branching_ratio >= 1:
-            raise ValueError("Cannot simulate from unstable MHP: ",
-                             "The branching ratio of this MHP is ",
-                             branching_ratio, " > 1.")
-        if verbose:
-            print('Simulating events...')
-        # Step 1. Generate immigrants
+        # Step 1: Generate immigrants
         # Location of immigrants
         generations = [[self._baselines_vec[i].simulate(T_f, mu_param[i],
-                                                        rng=rng)] for i in range(d)]
+                                                        rng=rng)]
+                       for i in range(d)]
         raw_marks = [[self.vec_marks[i].simulate(size=len(generations[i][0]),
                                                  rng=rng)] for i in range(d)]
         # generations is a list such that generations[i][ix_gen] contains
@@ -1560,12 +1681,14 @@ class MTLH:
         self.fitted_adjacency = None
         self.fit_log = None
 
-    def fit(self, process_path, x_0=None,
-            n_iter=1000, solvers=None, estimators=None, logger=None, rng=None,
-            seed=1234,
-            verbose=False, clear=True, write=True, **kwargs):
+    def fit(self, process_path, x_0=None, init_method='fo_feasible',
+            param_init_args=None, n_iter=1000, solvers=None, solver_args=None,
+            exact_grad=False,
+            estimators=None, estimator_args=None, logger=None,
+            logger_args=None, rng=None, seed=1234, verbose=False, clear=True,
+            write=True):
         """
-        Fit the MHP model to some observations.
+        Fit the MTLH model to some observations.
 
         We suppose that we observe a path of a d-dimensional counting process
         :math:`\\mathbf{N}` started at time :math:`0` up to some terminal time
@@ -1629,6 +1752,16 @@ class MTLH:
         if clear:
             self.clear_fit()
 
+        # Initialize mappings
+        if param_init_args is None:
+            param_init_args = {}
+        if estimator_args is None:
+            estimator_args = {}
+        if solver_args is None:
+            solver_args = {}
+        if logger_args is None:
+            logger_args = {}
+
         # Data
         d = self.d
         list_times = process_path.list_times
@@ -1648,19 +1781,19 @@ class MTLH:
 
         # Initialisation
         if x_0 is None:
-            ref_mu_param = kwargs.get('ref_mu_param', None)
-            ref_ker_param = kwargs.get('ref_ker_param', None)
-            ref_imp_param = kwargs.get('ref_imp_param', None)
-            range_ref_mu = kwargs.get('range_ref_mu', 0.1)
-            range_ref_ker = kwargs.get('range_ref_ker', 0.1)
-            range_ref_imp = kwargs.get('range_ref_imp', 0.1)
-            min_mu_param = kwargs.get('min_mu_param', None)
-            max_mu_param = kwargs.get('max_mu_param', None)
-            target_bratio = kwargs.get('target_bratio', 0.6)
-            max_omega = kwargs.get('max_omega', 1.)
-            true_omega = kwargs.get('true_omega', None)
-            max_ker_param = kwargs.get('max_ker_param', 5.)
-            max_imp_param = kwargs.get('max_imp_param', 5.)
+            ref_mu_param = param_init_args.get('ref_mu_param', None)
+            ref_ker_param = param_init_args.get('ref_ker_param', None)
+            ref_imp_param = param_init_args.get('ref_imp_param', None)
+            range_ref_mu = param_init_args.get('range_ref_mu', 0.1)
+            range_ref_ker = param_init_args.get('range_ref_ker', 0.1)
+            range_ref_imp = param_init_args.get('range_ref_imp', 0.1)
+            min_mu_param = param_init_args.get('min_mu_param', None)
+            max_mu_param = param_init_args.get('max_mu_param', None)
+            target_bratio = param_init_args.get('target_bratio', 0.6)
+            max_omega = param_init_args.get('max_omega', 1.)
+            true_omega = param_init_args.get('true_omega', None)
+            max_ker_param = param_init_args.get('max_ker_param', 5.)
+            max_imp_param = param_init_args.get('max_imp_param', 5.)
 
             mu_0, ker_0, imp_0 = self.get_random_param(ref_mu_param=ref_mu_param,
                                                        ref_ker_param=ref_ker_param,
@@ -1682,33 +1815,38 @@ class MTLH:
 
         # Initialize Estimators
         if estimators is None:
-            estimators = [MtlhStratified(**kwargs) for k in range(d)]
+            if exact_grad:
+                estimators = [MTLHExactEstim(**estimator_args)
+                              for k in range(d)]
+            else:
+                estimators = [MTLHStratEstim(**estimator_args)
+                              for k in range(d)]
         else:
             if issubclass(type(estimators), Estimator):
                 estimators = [copy.deepcopy(estimators) for k in range(d)]
         for k in range(d):
             estimators[k].k = k
             estimators[k].n_iter = n_iter[k]
-            estimators[k].initialize(process_path, self)
-            estimators[k].set_stratification(list_times, **kwargs)
-            estimators[k].intialize_logs()
+            estimators[k].initialize_model_data(self, process_path)
+            estimators[k].set_stratification(**estimator_args)
+            estimators[k].initialize_logs()
 
         # Initialize Solvers
         if solvers is None:
-            solvers = [ADAM(**kwargs) for k in range(d)]
+            solvers = [ADAM(**solver_args) for k in range(d)]
         else:
             if issubclass(type(solvers), Solver):
                 solvers = [copy.deepcopy(solvers) for k in range(d)]
             elif type(solvers) == str:
                 if solvers == 'Momentum':
-                    solvers = [Momentum(**kwargs) for k in range(d)]
+                    solvers = [Momentum(**solver_args) for k in range(d)]
                 elif solvers == 'RMSprop':
-                    solvers = [RMSprop(**kwargs) for k in range(d)]
+                    solvers = [RMSprop(**solver_args) for k in range(d)]
                 elif solvers == 'ADAM':
-                    solvers = [ADAM(**kwargs) for k in range(d)]
+                    solvers = [ADAM(**solver_args) for k in range(d)]
 
         # Initialize logger
-        logger = OptimLogger(d, n_iter, **kwargs)
+        logger = OptimLogger(d, n_iter, **logger_args)
         self.init_logger(logger)
 
         # Scheme
@@ -1821,24 +1959,9 @@ class MTLH:
             Residuals of the fitted model.
 
         """
-        if mu_param is None:
-            if self.is_fitted:
-                mu_param = self.fitted_mu_param
-                kernel_param = self.fitted_ker_param
-            else:
-                raise ValueError("mu_param must be specified.")
-
-        if kernel_param is None:
-            if self.is_fitted:
-                kernel_param = self.fitted_ker_param
-            else:
-                raise ValueError("kernel_param must be specified.")
-
-        if impact_param is None:
-            if self.is_fitted:
-                impact_param = self.fitted_imp_param
-            else:
-                raise ValueError("impact_param must be specified.")
+        mu_param, kernel_param, impact_param = self.load_param(mu_param=mu_param,
+                                                               kernel_param=kernel_param,
+                                                               impact_param=impact_param)
         if expected_impact_matrix is None:
             expected_impact_matrix = self.make_expected_impact(impact_param)
         residuals = gof.get_residuals_mtlh(process_path, self.mu_compensator,
@@ -2005,6 +2128,125 @@ class MTLH:
                                    derivatives_zero=derivatives_zero,
                                    axs=axs, save=save, filename=filename,
                                    show=show, **kwargs)
+
+    def plot_solver_path_seq(self, true_mu_param=None, true_ker_param=None,
+                             true_imp_param=None, min_mu_param=None,
+                             min_ker_param=None, min_imp_param=None, axes=None,
+                             save=False, filename='image.png', show=False,
+                             **kwargs):
+        d = self.d
+        if not self.is_fitted:
+            raise ValueError("MHP must be fitted before plotting solver path")
+        fit_log = self.fit_log
+        n_iter = fit_log.n_iter
+        matrix_n_param = self.matrix_n_param
+        mu_param_names = self.mu_param_names
+        ker_param_names = self.ker_param_names
+
+        # Mu
+        for i in range(d):
+            for ix_param in range(self.vector_n_param_mu):
+                fig, axes = plt.subplots(nrows=1, ncols=2, sharex=True,
+                                         sharey=False, **kwargs)
+                # Parameter
+                axes[0].plot([fit_log.mu[i][n][ix_param]
+                              for n in range(n_iter[i]+1)],
+                             color=gt.standard_colors[0])
+                if true_mu_param is not None:
+                    axes[0].hlines(true_mu_param[i][ix_param], 0, n_iter[i]+1,
+                                   colors=gt.standard_colors[1],
+                                   linestyles='solid')
+                if min_mu_param is not None:
+                    axes[0].hlines(min_mu_param[i][ix_param], 0, n_iter[i]+1,
+                                   colors=gt.standard_colors[2],
+                                   linestyles='solid')
+                axes[0].set(ylabel='Parameter')
+
+                # Derivative
+                axes[1].plot([fit_log.grad_mu[i][n][ix_param]
+                              for n in range(n_iter[i])],
+                             color=gt.standard_colors[0])
+                axes[1].hlines(0., 0, n_iter[i], colors='grey',
+                               linestyles='dashed')
+                axes[1].set(ylabel='Derivative')
+
+                # Legend
+                axes[0].set(xlabel='Iteration')
+                axes[1].set(xlabel='Iteration')
+                fig.suptitle('Updates of '+mu_param_names[i])
+                fig.tight_layout()
+                fig.show()
+
+        # Kernel Parameters
+        for i, j in itertools.product(range(d), range(d)):
+            for ix_param in range(matrix_n_param[i][j]):
+                fig, axes = plt.subplots(nrows=1, ncols=2, sharex=True,
+                                         sharey=False, **kwargs)
+                # Parameter
+                axes[0].plot([fit_log.ker[i][j][n][ix_param]
+                              for n in range(n_iter[i]+1)],
+                             color=gt.standard_colors[0])
+                if true_ker_param is not None:
+                    axes[0].hlines(true_ker_param[i][j][ix_param],
+                                   0, n_iter[i]+1,
+                                   colors=gt.standard_colors[1],
+                                   linestyles='solid')
+                if min_ker_param is not None:
+                    axes[0].hlines(min_ker_param[i][j][ix_param], 0,
+                                   n_iter[i]+1,
+                                   colors=gt.standard_colors[2],
+                                   linestyles='solid')
+                axes[0].set(ylabel='Parameter')
+
+                # Derivative
+                axes[1].plot([fit_log.grad_ker[i][j][n][ix_param]
+                              for n in range(n_iter[i])],
+                             color=gt.standard_colors[0])
+                axes[1].hlines(0., 0, n_iter[i], colors='grey',
+                               linestyles='dashed')
+                axes[1].set(ylabel='Derivative')
+                # Legend
+                axes[0].set(xlabel='Iteration')
+                axes[1].set(xlabel='Iteration')
+                fig.suptitle('Updates of '+ker_param_names[i][j][ix_param]
+                             + ' (kernel '+str(i)+'←'+str(j)+')')
+                fig.tight_layout()
+                fig.show()
+
+            # Impact Parameters
+            for ix_param in range(self.matrix_n_param_imp[i][j]):
+                fig, axes = plt.subplots(nrows=1, ncols=2, sharex=True,
+                                         sharey=False, **kwargs)
+                # Parameter
+                axes[0].plot([fit_log.imp[i][j][n][ix_param]
+                              for n in range(n_iter[i]+1)],
+                             color=gt.standard_colors[0])
+                if true_imp_param is not None:
+                    axes[0].hlines(true_imp_param[i][j][ix_param],
+                                   0, n_iter[i]+1,
+                                   colors=gt.standard_colors[1],
+                                   linestyles='solid')
+                if min_imp_param is not None:
+                    axes[0].hlines(min_imp_param[i][j][ix_param], 0,
+                                   n_iter[i]+1,
+                                   colors=gt.standard_colors[2],
+                                   linestyles='solid')
+                axes[0].set(ylabel='Parameter')
+
+                # Derivative
+                axes[1].plot([fit_log.grad_imp[i][j][n][ix_param]
+                              for n in range(n_iter[i])],
+                             color=gt.standard_colors[0])
+                axes[1].hlines(0., 0, n_iter[i], colors='grey',
+                               linestyles='dashed')
+                axes[1].set(ylabel='Derivative')
+                # Legend
+                axes[0].set(xlabel='Iteration')
+                axes[1].set(xlabel='Iteration')
+                fig.suptitle('Updates of '+self.imp_param_names[i][j][ix_param]
+                             + ' (impact '+str(i)+'←'+str(j)+')')
+                fig.tight_layout()
+                fig.show()
 
 # =============================================================================
 # Serialization

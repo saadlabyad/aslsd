@@ -46,10 +46,13 @@ class Solver(ABC):
             rate_0 = kwargs.get('inital_learning_rate', 10**-1)
             divider = kwargs.get('learning_rate_divider', 2)
             period = kwargs.get('learning_rate_period', 200)
+            cutoff = kwargs.get('learning_rate_cutoff', 1.*10**-3)
 
             def func(t):
                 q = t//period
-                return rate_0/float(divider**q)
+                div_coeff = float(divider**q)
+                rate = rate_0/div_coeff
+                return max(rate, cutoff)
 
         # Linear rate
         elif rate_type == 'linear':

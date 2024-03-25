@@ -84,24 +84,26 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
             if 'pad' in kwargs_2.keys():
                 kwargs_2.pop('pad', None)
             fig, axes = plt.subplots(n_param, 2, sharex=True, sharey=False,
-                                    **kwargs_2)
+                                     **kwargs_2)
         # Mu
         for i in range(d):
             # Parameter
             axes[i, 0].plot(fit_log.mu[i], color=standard_colors[0])
             if true_mu is not None:
                 axes[i, 0].hlines(true_mu[i], 0, n_iter[i]+1,
-                                 colors=standard_colors[1], linestyles='solid')
+                                  colors=standard_colors[1],
+                                  linestyles='solid')
             if min_mu is not None:
                 axes[i, 0].hlines(min_mu[i], 0, n_iter[i]+1,
-                                 colors=standard_colors[2], linestyles='solid')
+                                  colors=standard_colors[2],
+                                  linestyles='solid')
             axes[fig_count, 0].set(ylabel=mu_names[i]+' updates')
 
             # Derivative
             axes[i, 1].plot(fit_log.grad_mu[i], color=standard_colors[0])
             if derivatives_zero:
                 axes[i, 1].hlines(0., 0, n_iter[i], colors='grey',
-                                 linestyles='dashed')
+                                  linestyles='dashed')
             axes[i, 1].set(ylabel=mu_names[i]+' derivative')
 
             fig_count += 1
@@ -115,25 +117,27 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
                                         color=standard_colors[0])
                 if true_ker_param is not None:
                     axes[fig_count, 0].hlines(true_ker_param[i][j][ix_param],
-                                             0, n_iter[i]+1,
-                                             colors=standard_colors[1],
-                                             linestyles='solid')
+                                              0, n_iter[i]+1,
+                                              colors=standard_colors[1],
+                                              linestyles='solid')
                 if min_ker_param is not None:
                     axes[fig_count, 0].hlines(min_ker_param[i][j][ix_param], 0,
-                                             n_iter[i]+1,
-                                             colors=standard_colors[2],
-                                             linestyles='solid')
+                                              n_iter[i]+1,
+                                              colors=standard_colors[2],
+                                              linestyles='solid')
                 axes[fig_count, 0].set(ylabel=ker_param_names[i][j][ix_param]
-                                      + ' updates')
+                                       + ' updates')
 
                 # Derivative
-                axes[fig_count, 1].plot([fit_log.grad_ker[i][j][n][ix_param] for n in range(n_iter[i])], color=standard_colors[0])
+                axes[fig_count, 1].plot([fit_log.grad_ker[i][j][n][ix_param]
+                                         for n in range(n_iter[i])],
+                                        color=standard_colors[0])
                 if derivatives_zero:
                     axes[fig_count, 1].hlines(0., 0, n_iter[i],
-                                             colors='grey',
-                                             linestyles='dashed')
+                                              colors='grey',
+                                              linestyles='dashed')
                 axes[fig_count, 1].set(ylabel=ker_param_names[i][j][ix_param]
-                                      + ' derivative')
+                                       + ' derivative')
 
                 fig_count += 1
 
@@ -148,17 +152,24 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
         n_rows = (n_param // 2) + (n_param % 2)
         if n_rows > 1:
             fig, axes = plt.subplots(n_rows, 2, sharex=True,
-                                    sharey=False, **kwargs)
+                                     sharey=False, **kwargs)
             fig_count = 0
             #   Mu
             for i in range(d):
                 row_index, col_index = fig_count // 2, fig_count % 2
                 # Parameter
-                axes[row_index, col_index].plot(fit_log.mu[i], color=standard_colors[0])
+                axes[row_index, col_index].plot(fit_log.mu[i],
+                                                color=standard_colors[0])
                 if true_mu is not None:
-                    axes[row_index, col_index].hlines(true_mu[i], 0, n_iter[i]+1, colors=standard_colors[1], linestyles='solid')
+                    axes[row_index, col_index].hlines(true_mu[i], 0,
+                                                      n_iter[i]+1,
+                                                      colors=standard_colors[1],
+                                                      linestyles='solid')
                 if min_mu is not None:
-                    axes[row_index, col_index].hlines(min_mu[i], 0, n_iter[i]+1, colors=standard_colors[2], linestyles='solid')
+                    axes[row_index, col_index].hlines(min_mu[i], 0,
+                                                      n_iter[i]+1,
+                                                      colors=standard_colors[2],
+                                                      linestyles='solid')
                 axes[row_index, col_index].set(ylabel=mu_names[i] + ' updates')
                 fig_count += 1
 
@@ -167,11 +178,19 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
                 for ix_param in range(len(ker_param_names[i][j])):
                     row_index, col_index = fig_count // 2, fig_count % 2
                     #   Parameter
-                    axes[row_index, col_index].plot([fit_log.ker[i][j][n][ix_param] for n in range(n_iter[i]+1)], color=standard_colors[0])
+                    axes[row_index, col_index].plot([fit_log.ker[i][j][n][ix_param]
+                                                     for n in range(n_iter[i]+1)],
+                                                    color=standard_colors[0])
                     if true_ker_param is not None:
-                        axes[row_index, col_index].hlines(true_ker_param[i][j][ix_param], 0, n_iter[i]+1, colors=standard_colors[1], linestyles='solid')
+                        axes[row_index, col_index].hlines(true_ker_param[i][j][ix_param],
+                                                          0, n_iter[i]+1,
+                                                          colors=standard_colors[1],
+                                                          linestyles='solid')
                     if min_ker_param is not None:
-                        axes[row_index, col_index].hlines(min_ker_param[i][j][ix_param], 0, n_iter[i]+1, colors=standard_colors[2], linestyles='solid')
+                        axes[row_index, col_index].hlines(min_ker_param[i][j][ix_param],
+                                                          0, n_iter[i]+1,
+                                                          colors=standard_colors[2],
+                                                          linestyles='solid')
                     axes[row_index, col_index].set(ylabel=ker_param_names[i][j][ix_param]+' updates')
 
                     fig_count += 1
@@ -190,9 +209,12 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
             for i in range(d):
                 axes[fig_count % 2].plot(fit_log.mu[i], color=standard_colors[0])
                 if true_mu is not None:
-                    axes[fig_count % 2].hlines(true_mu[i], 0, n_iter[i]+1, colors=standard_colors[1], linestyles='solid')
+                    axes[fig_count % 2].hlines(true_mu[i], 0, n_iter[i]+1,
+                                               colors=standard_colors[1], linestyles='solid')
                 if min_mu is not None:
-                    axes[fig_count % 2].hlines(min_mu[i], 0, n_iter[i]+1, colors=standard_colors[2], linestyles='solid')
+                    axes[fig_count % 2].hlines(min_mu[i], 0, n_iter[i]+1,
+                                               colors=standard_colors[2],
+                                               linestyles='solid')
                 axes[fig_count % 2].set(ylabel=mu_names[i]+' updates')
 
                 fig_count += 1
@@ -201,11 +223,17 @@ def plot_solver_path(fit_log, matrix_n_param, mu_names, ker_param_names,
             for i, j in itertools.product(range(d), range(d)):
                 for ix_param in range(len(ker_param_names[i][j])):
                     #   Parameter
-                    axes[fig_count % 2].plot([fit_log.ker[i][j][n][ix_param] for n in range(n_iter[i]+1)], color=standard_colors[0])
+                    axes[fig_count % 2].plot([fit_log.ker[i][j][n][ix_param]
+                                              for n in range(n_iter[i]+1)],
+                                             color=standard_colors[0])
                     if true_ker_param is not None:
-                        axes[fig_count % 2].hlines(true_ker_param[i][j][ix_param], 0, n_iter[i]+1, colors=standard_colors[1], linestyles='solid')
+                        axes[fig_count % 2].hlines(true_ker_param[i][j][ix_param],
+                                                   0, n_iter[i]+1,
+                                                   colors=standard_colors[1],
+                                                   linestyles='solid')
                     if min_ker_param is not None:
-                        axes[fig_count % 2].hlines(min_ker_param[i][j][ix_param], 0, n_iter[i]+1, colors=standard_colors[2], linestyles='solid')
+                        axes[fig_count % 2].hlines(min_ker_param[i][j][ix_param],
+                                                   0, n_iter[i]+1, colors=standard_colors[2], linestyles='solid')
                     axes[fig_count % 2].set(ylabel=ker_param_names[i][j][ix_param]+' updates')
 
                     fig_count += 1
@@ -381,7 +409,7 @@ def plot_kernels(phi, kernel_param, t_min=0., t_max=10., n_samples=10**3,
             y_phi = phi[i][j](x_phi, kernel_param[i][j])
             axes[i, j].plot(x_phi, y_phi, color='steelblue')
             axes[i, j].set(ylabel=r'$\phi_{'+str(i+int(index_from_one))+','
-                                 + str(j + int(index_from_one)) + '}(t)$')
+                           + str(j + int(index_from_one)) + '}(t)$')
         axes[d-1, 0].set(xlabel=r'$t$')
         axes[d-1, 1].set(xlabel=r'$t$')
 
@@ -433,7 +461,8 @@ def plot_function_shaded_error(x_vals, list_y_vals, list_y_std,
 
 def animate_plot_sequence(ref_x, list_y, x_min=None, x_max=None, y_min=None,
                           y_max=None, list_y_ref=None, interval=20,
-                          save=False, filename='video', show=False, **kwargs):
+                          save=False, filename='video', show=False,
+                          fig_kwargs=None, plot_kwargs=None, anim_kwargs=None):
     """
     Generic function to construct an animation for a sequence of functions.
     Based on
@@ -443,6 +472,12 @@ def animate_plot_sequence(ref_x, list_y, x_min=None, x_max=None, y_min=None,
     ----------
 
     """
+    if fig_kwargs is None:
+        fig_kwargs = {}
+    if plot_kwargs is None:
+        plot_kwargs = {}
+    if anim_kwargs is None:
+        anim_kwargs = {}
     n_frames = len(list_y)
 
     if x_min is None:
@@ -454,12 +489,12 @@ def animate_plot_sequence(ref_x, list_y, x_min=None, x_max=None, y_min=None,
     if y_max is None:
         y_max = max([max(L) for L in list_y])
 
-    fig = plt.figure(**kwargs)
+    fig = plt.figure(**fig_kwargs)
     ax = plt.axes(xlim=(x_min-10**-5*abs(x_min), x_max+10**-5*abs(x_max)),
                   ylim=(y_min, y_max))
-    line, = ax.plot([], [], lw=2, color='steelblue')
+    line, = ax.plot([], [], lw=2, **plot_kwargs)
     if list_y_ref is not None:
-        line2, = ax.plot([], [], lw=2, color='orange')
+        line2, = ax.plot([], [], lw=2, color='darkorange')
 
     time_text = ax.text(0.02, 0.90, '', transform=ax.transAxes)
 
@@ -500,7 +535,7 @@ def animate_plot_sequence(ref_x, list_y, x_min=None, x_max=None, y_min=None,
     # http://matplotlib.sourceforge.net/api/animation_api.html
     if save:
         anim.save(filename+'.mp4', fps=30,
-                  extra_args=['-vcodec', 'libx264'], **kwargs)
+                  extra_args=['-vcodec', 'libx264'], **anim_kwargs)
     if show:
         plt.show()
     return anim
@@ -548,7 +583,7 @@ def annotate_subplots(axes, row_names=None, col_names=None, row_pad=1,
 # =============================================================================
 def make_heatmap(data, row_labels=None, col_labels=None, white_grid=True,
                  row_ticks='all', col_ticks='all',
-                 ax=None, cbar_kw={},
+                 ax=None, cbar_kw={}, row_fontsize=10, col_fontsize=10,
                  cbarlabel="", **kwargs):
     """
     Create a heatmap from a numpy array and two lists of labels.
@@ -597,24 +632,22 @@ def make_heatmap(data, row_labels=None, col_labels=None, white_grid=True,
 
     # ... and label them with the respective list entries.
     if col_labels is not None:
-        ax.set_xticklabels(col_labels)
+        ax.set_xticklabels(col_labels, fontsize=col_fontsize)
         # Rotate the tick labels and set their alignment.
         plt.setp(ax.get_xticklabels(), rotation=-30, ha="right",
                  rotation_mode="anchor")
     if row_labels is not None:
-        ax.set_yticklabels(row_labels)
+        ax.set_yticklabels(row_labels, fontsize=row_fontsize)
 
     # Let the horizontal axes labeling appear on top.
     ax.tick_params(top=True, bottom=False,
                    labeltop=True, labelbottom=False)
 
-
-
     # Turn spines off and create white grid.
     if white_grid:
         for edge, spine in ax.spines.items():
             spine.set_visible(False)
-    
+
         ax.set_xticks(np.arange(data.shape[1]+1)-.5, minor=True)
         ax.set_yticks(np.arange(data.shape[0]+1)-.5, minor=True)
         ax.grid(which="minor", color="w", linestyle='-', linewidth=3)

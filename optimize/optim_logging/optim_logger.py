@@ -39,8 +39,8 @@ class OptimLogger:
     ker_0 : `numpy.ndarray`
         DESCRIPTION.
 
-    **kwargs : TYPE
-        DESCRIPTION.
+    **kwargs : `dict`
+        Reference to dictionary of keyword arguments.
 
 
     """

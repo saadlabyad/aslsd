@@ -27,22 +27,22 @@ class Estimator(ABC):
         self.diff_sim_upsilon = None
         self.diff_cross_upsilon = None
 
-    def initialize(self, process_path, hawkes_model):
+    def initialize_model_data(self, model, data):
         # Data
-        self.list_times = process_path.list_times
-        self.list_marks = process_path.list_marks
-        self.T_f = process_path.T_f
-        self.d = process_path.d
-        self.n_events = process_path.n_events
-        self.eta = process_path.eta
-        self.list_times2end = process_path.list_times2end
-        self.kappa = process_path.kappa
-        self.varpi = process_path.varpi
-        self.lag_sizes = process_path.lag_sizes
+        self.list_times = data.list_times
+        self.list_marks = data.list_marks
+        self.T_f = data.T_f
+        self.d = data.d
+        self.n_events = data.n_events
+        self.eta = data.eta
+        self.list_times2end = data.list_times2end
+        self.kappa = data.kappa
+        self.varpi = data.varpi
+        self.lag_sizes = data.lag_sizes
 
         # Model
         k = self.k
-        hawkes_model.init_estimator(self, k)
+        model.init_estimator(self, k)
 
     @abstractmethod
     def get_log(self):

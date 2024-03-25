@@ -59,10 +59,10 @@ colors_dict['SbfGauss1D10R'] = 'darkgreen'
 for key in model_dict.keys():
     if key != 'Poisson':
         kwargs = {'is_log_param': True, 'is_log_grad': True}
-        model_dict[key].fit(list_times, T_f, n_iter=1000, seed=12,
+        model_dict[key].fit(process_path, n_iter=1000, seed=1234,
                             verbose=True, **kwargs)
     else:
-        model_dict[key].fit(list_times, T_f)
+        model_dict[key].fit(process_path)
 
 
 # Visualize results

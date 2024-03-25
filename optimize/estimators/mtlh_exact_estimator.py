@@ -2,6 +2,7 @@
 
 import copy
 import itertools
+import pickle
 
 import numpy as np
 from tqdm import tqdm
@@ -11,31 +12,68 @@ from aslsd.optimize.stratifications.\
     double_ix_stratification import DoubleIxStratification
 from aslsd.optimize.stratifications.\
     general_stratification import GeneralStratification
-from aslsd.utilities import useful_statistics as us
 
 
-class ExactMtlhStratified(Estimator):
-    def __init__(self, **kwargs):
+class MTLHExactEstim(Estimator):
+    def __init__(self, is_grad_target=False, is_log_ixs=False,
+                 is_log_allocs=False, is_log_total_estimates=False,
+                 is_log_strata_estimates=False, is_log_lse=False):
         self.t = 0
 
-        # Logging
-        self.is_grad_target = kwargs.get('is_grad_target', False)
+        # Gradient target
+        self.is_grad_target = is_grad_target
 
         # Logging
-        self.is_log_lse = kwargs.get('is_log_lse', False)
-        self.is_log_ixs = kwargs.get('is_log_ixs', False)
-        self.is_log_sum_f = kwargs.get('is_log_sum_f', False)
-        self.is_log_sum_diff_f = kwargs.get('is_log_sum_diff_f', False)
+        self.is_log_ixs = is_log_ixs
+        self.is_log_allocs = is_log_allocs
+        self.is_log_total_estimates = is_log_total_estimates
+        self.is_log_strata_estimates = is_log_strata_estimates
+        self.is_log_lse = is_log_lse
 
-    # Stratification parameters
-    def set_singlesum_estimation(self, list_times, **kwargs):
+        # Estimation
+        # Sum f
+        self.sum_f = {}
+        # Gradient
+        self.sum_diff_f = {}
+
+    def initialize(self, k, n_iter, model, data, n_exact_single=None,
+                   n_samples_adaptive_single=None,
+                   nonadaptive_sample_size_single=None,
+                   single_strfs=None, n_samples_adaptive_double=None,
+                   nonadaptive_sample_size_double=None, double_strfs=None):
+        self.k = k
+        self.n_iter = n_iter
+        self.initialize_model_data(model, data)
+        self.set_stratification(n_exact_single=n_exact_single,
+                                n_samples_adaptive_single=n_samples_adaptive_single,
+                                nonadaptive_sample_size_single=nonadaptive_sample_size_single,
+                                single_strfs=single_strfs,
+                                n_samples_adaptive_double=n_samples_adaptive_double,
+                                nonadaptive_sample_size_double=nonadaptive_sample_size_double,
+                                double_strfs=double_strfs)
+        self.list_log_names = self.get_list_log_names()
+        self.make_param_indexing()
+        self.initialize_logs()
+
+# =============================================================================
+# Stratification
+# =============================================================================
+    def set_singlesum_estimation(self, n_exact=None, n_samples_adaptive=None,
+                                 nonadaptive_sample_size=None, **kwargs):
         d = self.d
         k = self.k
-
+        local_kwargs = {}
+        if n_exact is not None:
+            local_kwargs['n_exact'] = n_exact
+        if n_samples_adaptive is not None:
+            local_kwargs['n_samples_adaptive'] = n_samples_adaptive
+        if nonadaptive_sample_size is not None:
+            local_kwargs['nonadaptive_sample_size'] = nonadaptive_sample_size
         # Mu
         mu_stratif = kwargs.get('mu_stratification', None)
         if mu_stratif is None:
-            mu_stratif = GeneralStratification(list_times[k], **kwargs)
+            n_events_k = self.n_events[k]
+            mu_stratif = GeneralStratification(n=n_events_k, **local_kwargs)
         self.stratif['mu'] = mu_stratif
 
         # K
@@ -44,23 +82,30 @@ class ExactMtlhStratified(Estimator):
             log_name = 'K_'+str(i)
             if K_stratif[i] is None:
                 n_events_i = self.n_events[i]
-                K_stratif[i] = GeneralStratification(list_times[i], **kwargs)
+                K_stratif[i] = GeneralStratification(n=n_events_i,
+                                                     **local_kwargs)
             self.stratif[log_name] = K_stratif[i]
 
-        # upsilonzero
+        # Upsilonzero
         upsilonzero_stratif = kwargs.get('upsilonzero_stratification',
                                          [None for i in range(d)])
         for i in range(d):
             log_name = 'upsilonzero_'+str(i)
             if upsilonzero_stratif[i] is None:
                 n_events_i = self.n_events[i]
-                upsilonzero_stratif[i] = GeneralStratification(list_times[i], **kwargs)
+                upsilonzero_stratif[i] = GeneralStratification(n=n_events_i,
+                                                               **local_kwargs)
             self.stratif[log_name] = upsilonzero_stratif[i]
 
-    def set_doublesum_estimation(self, **kwargs):
+    def set_doublesum_estimation(self, n_samples_adaptive=None,
+                                 nonadaptive_sample_size=None, **kwargs):
         d = self.d
         k = self.k
-
+        local_kwargs = {}
+        if n_samples_adaptive is not None:
+            local_kwargs['n_samples_adaptive'] = n_samples_adaptive
+        if nonadaptive_sample_size is not None:
+            local_kwargs['nonadaptive_sample_size'] = nonadaptive_sample_size
         # upsilon
         upsilon_stratif = kwargs.get('upsilon_stratification',
                                      [[None for j in range(d)]
@@ -69,7 +114,8 @@ class ExactMtlhStratified(Estimator):
             log_name = 'upsilon_'+str(i)+'_'+str(j)
             if upsilon_stratif[i][j] is None:
                 h_max = self.kappa[j][i][self.n_events[i]-1]+1
-                upsilon_stratif[i][j] = DoubleIxStratification(h_max, **kwargs)
+                upsilon_stratif[i][j] = DoubleIxStratification(h_max=h_max,
+                                                               **local_kwargs)
                 upsilon_stratif[i][j].get_stratification_size(self.lag_sizes,
                                                               i, j)
             self.stratif[log_name] = upsilon_stratif[i][j]
@@ -80,49 +126,76 @@ class ExactMtlhStratified(Estimator):
             log_name = 'phi_'+str(i)
             if phi_stratif[i] is None:
                 h_max = self.kappa[i][k][self.n_events[k]-1]+1
-                phi_stratif[i] = DoubleIxStratification(h_max, **kwargs)
+                phi_stratif[i] = DoubleIxStratification(h_max=h_max,
+                                                        **local_kwargs)
                 phi_stratif[i].get_stratification_size(self.lag_sizes, k, i)
             self.stratif[log_name] = phi_stratif[i]
 
-    def set_stratification(self, list_times, **kwargs):
+    def set_stratification(self, n_exact_single=None,
+                           n_samples_adaptive_single=None,
+                           nonadaptive_sample_size_single=None,
+                           single_strfs=None, n_samples_adaptive_double=None,
+                           nonadaptive_sample_size_double=None,
+                           double_strfs=None):
         self.stratif = {}
-        self.set_singlesum_estimation(list_times, **kwargs)
-        self.set_doublesum_estimation(**kwargs)
+        if single_strfs is None:
+            single_strfs = {}
+        self.set_singlesum_estimation(n_exact=n_exact_single,
+                                      n_samples_adaptive=n_samples_adaptive_single,
+                                      nonadaptive_sample_size=nonadaptive_sample_size_single,
+                                      **single_strfs)
+        if double_strfs is None:
+            double_strfs = {}
+        self.set_doublesum_estimation(n_samples_adaptive=n_samples_adaptive_double,
+                                      nonadaptive_sample_size=nonadaptive_sample_size_double,
+                                      **double_strfs)
+
+# =============================================================================
+# Log names
+# =============================================================================
+    def get_list_log_names(self):
+        d = self.d
+        list_log_names = ['mu']
+        for i in range(d):
+            list_log_names.append('phi_'+str(i))
+            list_log_names.append('upsilonzero_'+str(i))
+            list_log_names.append('K_'+str(i))
+        for i, j in itertools.product(range(d), range(d)):
+            list_log_names.append('upsilon_'+str(i)+'_'+str(j))
+        return list_log_names
+
+    def get_singlesum_lognames(self):
+        d = self.d
+        single_ix_lognames = ['mu']
+        # psi
+        for i in range(d):
+            log_name = 'K_'+str(i)
+            single_ix_lognames.append(log_name)
+        # upsilonzero
+        for i in range(d):
+            log_name = 'upsilonzero_'+str(i)
+            single_ix_lognames.append(log_name)
+        return single_ix_lognames
+
+    def get_doublesum_lognames(self):
+        d = self.d
+        double_ix_lognames = []
+        # upsilon
+        for i, j in itertools.product(range(d), range(d)):
+            log_name = 'upsilon_'+str(i)+'_'+str(j)
+            double_ix_lognames.append(log_name)
+        # phi
+        for i in range(d):
+            log_name = 'phi_'+str(i)
+            double_ix_lognames.append(log_name)
+        return double_ix_lognames
+
+# =============================================================================
+# Parameters book-keeping
+# =============================================================================
+    def make_param_indexing(self):
         d = self.d
         k = self.k
-
-        # log names
-        self.list_log_names = []
-        self.list_log_names.append('mu')
-        for i in range(d):
-            self.list_log_names.append('phi_'+str(i))
-            self.list_log_names.append('upsilonzero_'+str(i))
-            self.list_log_names.append('K_'+str(i))
-        for i, j in itertools.product(range(d), range(d)):
-            self.list_log_names.append('upsilon_'+str(i)+'_'+str(j))
-
-        # Estimation
-        # Sum f
-        # Total estimates
-        self.sum_f = {}
-        # Local estimates
-        self.vecsum_f_adaptive = {}
-        self.sum_f_adaptive = {}
-        self.vecsum_f_nonadaptive = {}
-        self.sum_f_nonadaptive = {}
-        self.sum_f_exact = {}
-
-        # Gradient
-        # Total estimates
-        self.sum_diff_f = {}
-        # Local estimates
-        self.vecsum_diff_f_adaptive = {}
-        self.sum_diff_f_adaptive = {}
-        self.vecsum_diff_f_nonadaptive = {}
-        self.sum_diff_f_nonadaptive = {}
-        self.sum_diff_f_exact = {}
-        self.sum_diff_f = {}
-
         # parameters indexing
         self.n_f = {}
         self.vec_n_func = {}
@@ -215,7 +288,11 @@ class ExactMtlhStratified(Estimator):
         # Result
         self.dict_n_param = dict_n_param
 
-    def make_null_sumarray(self, n_f, list_n_param, vec_n_func=None, n_strata=None):
+# =============================================================================
+# Data allocation
+# =============================================================================
+    def make_null_sumarray(self, n_f, list_n_param, vec_n_func=None,
+                           n_strata=None):
         L = [None]*n_f
         for ix_f in range(n_f):
             if vec_n_func[ix_f] is None:
@@ -242,8 +319,6 @@ class ExactMtlhStratified(Estimator):
 
         # Sum terms
         for log_name in self.list_log_names:
-            strf = self.stratif[log_name]
-
             # Sum f
             # Total estimates
             self.sum_f[log_name] = 0.
@@ -253,11 +328,55 @@ class ExactMtlhStratified(Estimator):
             vec_n_func = self.vec_n_func[log_name]
             list_n_param = self.list_n_param[log_name]
             # Total estimates
-            self.sum_diff_f[log_name] = self.make_null_sumarray(
-                n_f, list_n_param, vec_n_func=vec_n_func, n_strata=None)
+            self.sum_diff_f[log_name] = self.make_null_sumarray(n_f, list_n_param, vec_n_func=vec_n_func, n_strata=None)
 
-    # Logging
-    def intialize_logs(self):
+# =============================================================================
+# Logging
+# =============================================================================
+    def make_null_sumarray_logs(self, n_f, list_n_param, vec_n_func=None,
+                                n_strata=None, n_iter=1):
+        # Make null arrays to store logs
+        L = [None]*n_f
+        for ix_f in range(n_f):
+            if vec_n_func[ix_f] is None:
+                n_param = list_n_param[ix_f]
+                if n_strata is None:
+                    L[ix_f] = np.zeros(n_param, n_iter)
+                else:
+                    L[ix_f] = np.zeros((n_param, n_strata, n_iter))
+            else:
+                L[ix_f] = [None]*3
+                for ix_func in [1, 2]:
+                    n_param = list_n_param[ix_f][ix_func]
+                    if n_strata is None:
+                        L[ix_f][ix_func] = np.zeros(n_param, n_iter)
+                    else:
+                        L[ix_f][ix_func] = np.zeros((n_param, n_strata,
+                                                     n_iter))
+        return L
+
+    def update_sumarray_logs(self, log_type, log_name, ix_iter, n_f,
+                             list_n_param, vec_n_func=None, n_strata=None):
+        logs = getattr(self, log_type+'_log')[log_name]
+        val = getattr(self, log_type)[log_name]
+
+        for ix_f in range(n_f):
+            if vec_n_func[ix_f] is None:
+                n_param = list_n_param[ix_f]
+                if n_strata is None:
+                    logs[ix_f][:, ix_iter] = val[ix_f]+0.
+                else:
+                    logs[ix_f][:, :, ix_iter] = val[ix_f]+0.
+            else:
+                for ix_func in [1, 2]:
+                    n_param = list_n_param[ix_f][ix_func]
+                    if n_strata is None:
+                        logs[ix_f][ix_func][:, ix_iter] = val[ix_f][ix_func]+0.
+                    else:
+                        logs[ix_f][ix_func][:, :, ix_iter] = val[ix_f][ix_func]+0.
+
+    def initialize_logs(self):
+        d = self.d
         n_iter = self.n_iter
         # Sampled indices
         self.logged_ixs = {}
@@ -272,10 +391,113 @@ class ExactMtlhStratified(Estimator):
                 self.logged_ixs[log_name] = {}
                 self.logged_ixs[log_name]['adaptive'] = None
                 self.logged_ixs[log_name]['nonadaptive'] = None
+        # Allocations
+        self.logged_allocs = {}
+        if self.is_log_allocs:
+            for log_name in self.list_log_names:
+                self.logged_allocs[log_name] = [None]*n_iter
+        else:
+            for log_name in self.list_log_names:
+                self.logged_allocs[log_name] = None
 
         # LSE
         if self.is_log_lse:
             self.logged_lse = np.zeros(n_iter+1)
+
+        # Estimates
+        if self.is_log_total_estimates:
+            # M term
+            self.M_term_log = np.zeros(n_iter)
+            self.diff_M_term_log = np.zeros(n_iter)
+
+            # Sum terms
+            self.sum_f_log = {}
+            self.sum_diff_f_log = {}
+            for log_name in self.list_log_names:
+                strf = self.stratif[log_name]
+
+                # Sum f
+                # Total estimates
+                self.sum_f_log[log_name] = np.zeros(n_iter)
+                # Gradient
+                n_f = self.n_f[log_name]
+                vec_n_func = self.vec_n_func[log_name]
+                list_n_param = self.list_n_param[log_name]
+                # Total estimates
+                self.sum_diff_f_log[log_name] = self.make_null_sumarray_logs(n_f, list_n_param, vec_n_func=vec_n_func, n_strata=None, n_iter=n_iter)
+
+    def log_estimates(self):
+        ix_iter = self.t
+        if self.is_log_total_estimates:
+            # M term
+            self.M_term_log[ix_iter] = self.M_term
+            self.diff_M_term_log[ix_iter] = self.diff_M_term
+
+            # Sum terms
+            for log_name in self.list_log_names:
+                strf = self.stratif[log_name]
+
+                # Sum f
+                # Total estimates
+                self.sum_f_log[log_name][ix_iter] = self.sum_f[log_name]
+
+                # Gradient
+                n_f = self.n_f[log_name]
+                vec_n_func = self.vec_n_func[log_name]
+                list_n_param = self.list_n_param[log_name]
+                # Total estimates
+                self.update_sumarray_logs('sum_diff_f', log_name, ix_iter,
+                                          n_f, list_n_param,
+                                          vec_n_func=vec_n_func,
+                                          n_strata=None)
+
+    def get_lse_k_components_log(self):
+        d = self.d
+        T_f = self.T_f
+        n_lse_k_components = 1+len(self.list_log_names)
+        # Initialize
+        lse_k_components = np.zeros((self.n_iter, n_lse_k_components))
+        lse_k_component_names = ['M_term']
+
+        # Get components
+        ix_component = 0
+        # Baseline terms: M
+        lse_k_components[:, ix_component] = self.M_term_log+0.
+        ix_component += 1
+
+        # Baseline term: sum
+        log_name = 'mu'
+        lse_k_components[:, ix_component] = -2.*(self.sum_f_log[log_name]/T_f)+0.
+        lse_k_component_names.append(log_name)
+        ix_component += 1
+
+        # Baseline-kernel correlation
+        for i in range(d):
+            log_name = 'K_'+str(i)
+            lse_k_components[:, ix_component] = 2.*(self.sum_f_log[log_name]/T_f)+0.
+            lse_k_component_names.append(log_name)
+            ix_component += 1
+
+        # kernel-kernel correlation
+        for i, j in itertools.product(range(d), range(d)):
+            log_name = 'upsilon_'+str(i)+'_'+str(j)
+            lse_k_components[:, ix_component] = 2.*(self.sum_f_log[log_name]/T_f)+0.
+            lse_k_component_names.append(log_name)
+            ix_component += 1
+
+        # Term 4 : Kernel terms
+        for j in range(d):
+            log_name = 'phi_'+str(j)
+            lse_k_components[:, ix_component] = -2.*(self.sum_f_log[log_name]/T_f)+0.
+            lse_k_component_names.append(log_name)
+            ix_component += 1
+        for i in range(d):
+            log_name = 'upsilonzero_'+str(i)
+            lse_k_components[:, ix_component] = self.sum_f_log[log_name]/T_f+0.
+            lse_k_component_names.append(log_name)
+            ix_component += 1
+
+        return lse_k_components, lse_k_component_names
 
     def get_log(self):
         logs = {}
@@ -284,6 +506,9 @@ class ExactMtlhStratified(Estimator):
 
         if self.is_log_ixs:
             logs['samples'] = copy.deepcopy(self.logged_ixs)
+
+        if self.is_log_allocs:
+            logs['allocs'] = copy.deepcopy(self.logged_allocs)
 
         return logs
 
@@ -792,6 +1017,10 @@ class ExactMtlhStratified(Estimator):
                                                compute_f_sum=compute_f_sum,
                                                compute_diff_f_sum=compute_diff_f_sum,
                                                verbose=verbose)
+
+        # Log sum estimates
+        self.log_estimates()
+
         # Iteration
         if count_iter:
             self.t += 1
@@ -804,18 +1033,189 @@ class ExactMtlhStratified(Estimator):
         self.compute_objective(x_k, compute_f_sum=True,
                                compute_diff_f_sum=compute_diff_f_sum,
                                count_iter=count_iter)
-        lse = self.recombine_lse_k()
-        return lse
+        lse_k = self.recombine_lse_k()
+        self.lse_k = lse_k
+        return lse_k
 
     def lse_k_grad_estimate(self, x_k, count_iter=True, verbose=False):
         self.compute_objective(x_k, compute_f_sum=self.is_log_lse,
                                compute_diff_f_sum=True, verbose=verbose)
 
         grad = self.recombine_grad_lse_k()
-
+        self.grad_lse_k = grad
         # Log LSE
         if self.is_log_lse:
-            lse = self.recombine_lse_k()
-            self.logged_lse[self.t] = lse
-
+            lse_k = self.recombine_lse_k()
+            self.logged_lse[self.t] = lse_k
+            self.lse_k = lse_k
         return grad
+
+# =============================================================================
+# Serialization
+# =============================================================================
+    def save(self, file, **kwargs):
+        # Basic attributes
+        dict_basic_attr = {}
+        dict_basic_attr['is_grad_target'] = self.is_grad_target
+        # Logging
+        for attr_name in ['is_log_ixs', 'is_log_allocs',
+                          'is_log_total_estimates', 'is_log_strata_estimates',
+                          'is_log_lse']:
+            dict_basic_attr[attr_name] = getattr(self, attr_name)
+        # Params
+        for attr_name in ['k', 'n_iter']:
+            dict_basic_attr[attr_name] = getattr(self, attr_name)
+        # Save file
+        if file.endswith('.pickle'):
+            file_basic_attr = file[:-7]+'_basic_attr.pickle'
+        else:
+            file_basic_attr = file+'_basic_attr'
+        pickle_out = open(file_basic_attr, "wb", **kwargs)
+        pickle.dump(dict_basic_attr, pickle_out)
+        pickle_out.close()
+
+        # Stratifications
+        for log_name in self.list_log_names:
+            if file.endswith('.pickle'):
+                file_strfs = file[:-7]+'_strf_'+log_name+'.pickle'
+            else:
+                file_strfs = file+'_strf_'+log_name
+            self.stratif[log_name].save(file_strfs)
+
+        # Current state
+        dict_current_state = {}
+        for attr_name in ['t', 'mu_term', 'diff_mu_term', 'sum_f',
+                          'sum_diff_f']:
+            dict_current_state[attr_name] = getattr(self, attr_name)
+        # Save file
+        if file.endswith('.pickle'):
+            file_current_state = file[:-7]+'_current_state.pickle'
+        else:
+            file_current_state = file+'_current_state'
+        pickle_out = open(file_current_state, "wb", **kwargs)
+        pickle.dump(dict_current_state, pickle_out)
+        pickle_out.close()
+
+        # General logs
+        dict_general_logs = {}
+        if self.is_log_ixs:
+            dict_general_logs['logged_ixs'] = self.logged_ixs
+        if self.is_log_allocs:
+            dict_general_logs['logged_allocs'] = self.logged_allocs
+        if self.is_log_lse:
+            dict_general_logs['logged_lse'] = self.logged_lse
+        # Save file (if non-empty)
+        if len(dict_general_logs) > 0:
+            if file.endswith('.pickle'):
+                file_general_logs = file[:-7]+'_general_logs.pickle'
+            else:
+                file_general_logs = file+'_general_logs'
+            pickle_out = open(file_general_logs, "wb", **kwargs)
+            pickle.dump(dict_general_logs, pickle_out)
+            pickle_out.close()
+
+        # Estimates logs
+        dict_estimates_logs = {}
+        if self.is_log_total_estimates:
+            for attr_name in ['mu_term_log', 'diff_mu_term_log',
+                              'sum_f_log', 'sum_diff_f_log']:
+                dict_estimates_logs[attr_name] = getattr(self, attr_name)
+        # Save file (if non-empty)
+        if len(dict_estimates_logs) > 0:
+            if file.endswith('.pickle'):
+                file_estimates_logs = file[:-7]+'_estimates_logs.pickle'
+            else:
+                file_estimates_logs = file+'_estimates_logs'
+            pickle_out = open(file_estimates_logs, "wb", **kwargs)
+            pickle.dump(dict_estimates_logs, pickle_out)
+            pickle_out.close()
+
+    def load(self, file, model, process_path, **kwargs):
+        # Basic attributes
+        # Load file
+        if file.endswith('.pickle'):
+            file_basic_attr = file[:-7]+'_basic_attr.pickle'
+        else:
+            file_basic_attr = file+'_basic_attr'
+        pickle_in = open(file_basic_attr, "rb")
+        dict_basic_attr = pickle.load(pickle_in)
+        for attr_name in dict_basic_attr.keys():
+            setattr(self, attr_name, dict_basic_attr[attr_name])
+
+        # Initialization functions requiring model and data
+        self.initialize_model_data(model, process_path)
+        # Load stratifications
+        self.stratif = {}
+        for log_name in self.get_singlesum_lognames():
+            if file.endswith('.pickle'):
+                file_strfs = file[:-7]+'_strf_'+log_name+'.pickle'
+            else:
+                file_strfs = file+'_strf_'+log_name
+            strf = GeneralStratification()
+            strf.load(file_strfs)
+            self.stratif[log_name] = strf
+        for log_name in self.get_doublesum_lognames():
+            if file.endswith('.pickle'):
+                file_strfs = file[:-7]+'_strf_'+log_name+'.pickle'
+            else:
+                file_strfs = file+'_strf_'+log_name
+            strf = DoubleIxStratification()
+            strf.load(file_strfs)
+            self.stratif[log_name] = strf
+        # Log names
+        self.list_log_names = self.get_list_log_names()
+        # Param indexing
+        self.make_param_indexing()
+
+        # Current state
+        # Load file
+        if file.endswith('.pickle'):
+            file_current_state = file[:-7]+'_current_state.pickle'
+        else:
+            file_current_state = file+'_current_state'
+        pickle_in = open(file_current_state, "rb")
+        dict_current_state = pickle.load(pickle_in)
+        for attr_name in dict_current_state.keys():
+            setattr(self, attr_name,  dict_current_state[attr_name])
+
+        # General logs
+        # Load file (if it exists)
+        try:
+            if file.endswith('.pickle'):
+                file_general_logs = file[:-7]+'_general_logs.pickle'
+            else:
+                file_general_logs = file+'_general_logs'
+            pickle_in = open(file_general_logs, "rb")
+            dict_general_logs = pickle.load(pickle_in)
+        except:
+            pass
+        # Indices
+        if self.is_log_ixs:
+            self.logged_ixs = dict_general_logs['logged_ixs']
+        else:
+            self.logged_ixs = {}
+            for log_name in self.list_log_names:
+                self.logged_ixs[log_name] = {}
+                self.logged_ixs[log_name]['adaptive'] = None
+                self.logged_ixs[log_name]['nonadaptive'] = None
+        # Allocations
+        if self.is_log_allocs:
+            self.logged_allocs = dict_general_logs['logged_allocs']
+        else:
+            self.logged_allocs = {}
+            for log_name in self.list_log_names:
+                self.logged_allocs[log_name] = None
+        # LSE
+        if self.is_log_lse:
+            self.logged_lse = dict_general_logs['logged_lse']
+
+        # Estimates logs
+        # Load file
+        if file.endswith('.pickle'):
+            file_estimates_logs = file[:-7]+'_estimates_logs.pickle'
+        else:
+            file_estimates_logs = file+'_estimates_logs'
+        pickle_in = open(file_estimates_logs, "rb")
+        dict_estimates_logs = pickle.load(pickle_in)
+        for attr_name in dict_estimates_logs.keys():
+            setattr(self, attr_name,  dict_estimates_logs[attr_name])

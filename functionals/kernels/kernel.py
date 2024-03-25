@@ -225,7 +225,8 @@ class KernelModel():
         def phi(t, params):
             res = 0.
             for ix_ker in range(self.n_basis_ker):
-                res += self._basis_kernels[ix_ker].phi(t, params[self.interval_map[ix_ker][0]:self.interval_map[ix_ker][1]])
+                basis_params = params[self.interval_map[ix_ker][0]:self.interval_map[ix_ker][1]]
+                res += self._basis_kernels[ix_ker].phi(t, basis_params)
             return res
         return phi
 
@@ -607,15 +608,15 @@ class KernelModel():
     def get_l2_projection_loss(self, params, kernel_2, ker_param_2,
                                sbf=False, Q=None, c=None):
         norm_ker_2 = kernel_2.l2_norm(ker_param_2)
-        res = norm_ker_2
         if sbf:
+            res = 0.
             # Quadratic term
-            res += params.dot(Q.dot(params))
+            res += 0.5*params.dot(Q.dot(params))
             # Linear term
             res += c.dot(params)
             # Constant term
-            res += norm_ker_2
-            return 0.5*res
+            res += 0.5*norm_ker_2
+            return res
         else:
             return 0.5*(self.l2_norm(params)
                         - 2.*self.l2_dot(kernel_2, params, ker_param_2)
@@ -671,11 +672,13 @@ class KernelModel():
         if rng is None:
             rng = np.random.default_rng(seed)
         # Bounds and number of parameters
-        bnds = self.get_param_bounds()
+        lower_bounds = self.get_param_lower_bounds()
+        upper_bounds = self.get_param_upper_bounds()
         n_param = self.n_param
         # Initialise parameters
         if params_0 is None:
-            params_0 = bnds+rng.uniform(low=0.0, high=1., size=n_param)
+            rand_mul = rng.uniform(low=0.0, high=1., size=n_param)
+            params_0 = lower_bounds+rand_mul*(upper_bounds-lower_bounds)
         params = copy.deepcopy(params_0)
         # Initialise solver and logger
         if solver is None:
@@ -705,13 +708,15 @@ class KernelModel():
                                                sbf=sbf, Q=Q, c=c)
             # Apply solver iteration then project into space of parameters
             params = solver.iterate(t, params, g_t)
-            params = np.maximum(params, bnds)
+            params = np.clip(params, lower_bounds, upper_bounds)
 
             if log_error:
                 l2_err_log[t] = self.get_l2_projection_loss(params, kernel_2,
                                                             ker_param_2,
                                                             sbf=sbf, Q=Q, c=c)
-        res = {'params': params, 'log': l2_err_log}
+        error = self.get_l2_projection_loss(params, kernel_2, ker_param_2,
+                                            sbf=sbf, Q=Q, c=c)
+        res = {'params': params, 'error': error, 'log': l2_err_log}
         return res
 
     # KL divergence

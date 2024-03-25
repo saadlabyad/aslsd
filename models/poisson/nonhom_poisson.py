@@ -275,8 +275,8 @@ class NonHomPoisson:
 
         for i in range(d):
             estimators[i].n_iter = n_iter[i]
-            estimators[i].intialize_logs(n_param=self.vec_n_param[i])
-            estimators[i].set_stratification(list_times[i], **strf_args_[i])
+            estimators[i].initialize_logs(n_param=self.vec_n_param[i])
+            estimators[i].set_stratification(**strf_args_[i])
 
         # Initialize Solvers
         if solvers is None:

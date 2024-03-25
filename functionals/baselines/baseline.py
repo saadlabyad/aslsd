@@ -34,10 +34,7 @@ class BaselineModel():
 
     """
 
-    def __init__(self, _basis_mus, default_simu_method='inverse_cdf',
-                 n_basis_mus=0,
-                 vec_n_param=None,
-                 n_param=0, ix_map=None, interval_map=None):
+    def __init__(self, _basis_mus, default_simu_method='inverse_cdf'):
 
         self.basis_mus = _basis_mus
         self.default_simu_method = default_simu_method

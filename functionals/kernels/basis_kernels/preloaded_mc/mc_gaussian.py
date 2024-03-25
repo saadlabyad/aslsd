@@ -13,7 +13,7 @@ dict_ker['var_upper_bounds'] = np.array([np.inf, np.inf, np.inf])
 
 def tphi_func(t, vars_):
     beta, delta = vars_
-    return uf.gaussian_pdf(t, delta, beta)/uf.normal_cdf(delta/beta)
+    return uf.gaussian_pdf(t, mean=delta, std=beta)/uf.normal_cdf(delta/beta)
 
 
 dict_ker['tphi_func'] = tphi_func
@@ -27,6 +27,28 @@ def tpsi_func(t, vars_):
 
 
 dict_ker['tpsi_func'] = tpsi_func
+
+
+def diff_tpsi_func(t, ix_diff, vars_):
+    beta, delta = vars_
+    d_b_ratio = delta/beta
+    trunc_fact = 1./uf.normal_cdf(d_b_ratio)
+    gauss_log_der = uf.gaussian_pdf(d_b_ratio)*trunc_fact
+    scaled_t = (t-delta)/beta
+    # Time dependent computations
+    pdf_scaled = uf.gaussian_pdf(scaled_t)
+    cdf_scaled = uf.normal_cdf(scaled_t)
+    cdf_term = gauss_log_der*(1.-cdf_scaled)
+    prefactor = -trunc_fact/beta
+    if ix_diff == 0:
+        # Derivative wrt \beta
+        return prefactor*(scaled_t*pdf_scaled+d_b_ratio*cdf_term)
+    elif ix_diff == 1:
+        # Derivative wrt \delta
+        return prefactor*(pdf_scaled-cdf_term)
+
+
+dict_ker['diff_tpsi_func'] = diff_tpsi_func
 
 
 def diff_log_tphi_func(t, ix_diff, vars_):

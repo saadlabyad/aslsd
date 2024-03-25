@@ -4,18 +4,18 @@ import numpy as np
 
 
 class SingleIxStratification:
-    def __init__(self, n_events_i, **kwargs):
-        self.n_events_i = n_events_i
+    def __init__(self, n=0, **kwargs):
+        self.n = n
         self.n_exact = kwargs.get('n_exact', 10**4)
         self.strata = kwargs.get('strata', None)
         self.n_strata = kwargs.get('n_strata', None)
         self.abs_alloc = kwargs.get('abs_alloc', None)
 
-        self.n_exact = min(self.n_exact, self.n_events_i-1)
+        self.n_exact = min(self.n_exact, self.n-1)
 
         # m_spec is the index of the term starting from which we evalue
         # functions at all indices
-        self.m_spec = self.n_events_i-self.n_exact
+        self.m_spec = self.n-self.n_exact
 
         if self.strata is None:
             self.strata = self.get_default_strata()
