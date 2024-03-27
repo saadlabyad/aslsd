@@ -91,13 +91,8 @@ class BasisKernel(ABC):
 
     """
 
-    def __init__(self, fixed_indices=None, fixed_vars=None, n_fixed_vars=0,
-                 ix_map=None, dict_interactions=None, phi=None, diff_phi=None,
-                 psi=None, diff_psi=None, upsilon=None, diff_sim_upsilon=None,
-                 diff_cross_upsilon=None, allow_simu=True, sim_func=None,
-                 l1_norm=None, diff_l1_norm=None, l2_norm=None, l2_dot=None,
-                 l2_distance=None, kl_divergence=None,
-                 diff_kl_divergence=None):
+    def __init__(self, fixed_indices=None, fixed_vars=None, allow_simu=True,
+                 sim_func=None):
         """
         Initialize BasisKernel.
 
