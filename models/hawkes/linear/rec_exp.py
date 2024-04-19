@@ -1485,8 +1485,7 @@ class RecurrentExponential:
         kappa = process_path.kappa
         # Precomp
         self.is_computable_precomps(process_path)
-        intensity = [np.zeros(process_path.n_events[i])
-                     for i in range(d)]
+        intensity = [np.zeros(process_path.n_events[i]) for i in range(d)]
         if verbose:
             print('Starting Computations...')
         # Compute Intensity
@@ -1504,7 +1503,7 @@ class RecurrentExponential:
             kernel_part = np.zeros((d, N_k))
             self.init_precomp(k, ker_param_k, imp_param_k, process_path)
             # Baseline part
-            intensity[k] += self.mu[k](list_times[k], mu_param[k])
+            intensity[k] = self.mu[k](list_times[k], mu_param[k])
             for j in range(d):
                 # Impact
                 impact_kj = self.assign_impact_ki(k, j, imp_param_k, list_marks)

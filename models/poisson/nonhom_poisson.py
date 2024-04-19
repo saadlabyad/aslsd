@@ -132,11 +132,7 @@ class NonHomPoisson:
         # Path
         d = process_path.d
         list_times = process_path.list_times
-        list_marks = process_path.list_marks
-        varpi = process_path.varpi
-        kappa = process_path.kappa
         # Precomp
-        self.is_computable_precomps(process_path)
         intensity = [np.zeros(process_path.n_events[i])
                      for i in range(d)]
         if verbose:

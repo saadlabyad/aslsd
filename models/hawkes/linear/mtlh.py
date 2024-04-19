@@ -1269,29 +1269,21 @@ class MTLH:
         varpi = process_path.varpi
         kappa = process_path.kappa
         # Precomp
-        self.is_computable_precomps(process_path)
-        intensity = [np.zeros(process_path.n_events[i])
-                     for i in range(d)]
+        intensity = [np.zeros(process_path.n_events[i]) for i in range(d)]
         if verbose:
             print('Starting Computations...')
         # Compute Intensity
         for k in range(d):
             if verbose:
                 print('Computing intensity, dimension k=', str(k), ' ...')
-            # Parameters
-            mu_param_k = mu_param[k]
-            ker_param_k = kernel_param[k]
-            imp_param_k = impact_param[k]
             # Baseline part
-            intensity[k] += self.mu[k](list_times[k], mu_param[k])
+            intensity[k] = self.mu[k](list_times[k], mu_param[k])
             # Kernel Part
             for j in range(d):
                 # Impact
-                vals_impact_kj = self.impact_matrix[k][j](list_marks[j],
-                                                          impact_param[k][j])
+                vals_impact_kj = self.impact[k][j](list_marks[j],
+                                                   impact_param[k][j])
                 # II. Kernels
-                kernel_kj = self.kernel_matrix[k][j]
-                ker_param_kj = kernel_param[k][j]
                 vals_kernel_kj = np.zeros(process_path.n_events[k])
                 for m in tqdm(range(process_path.varpi[k][j][1],
                                     process_path.n_events[k]),
@@ -1300,8 +1292,8 @@ class MTLH:
                     ix_bnd = process_path.kappa[j][k][m]+1
                     t_n = process_path.list_times[j][:ix_bnd]
                     t_diff = t_m-t_n
-                    vals_kernel_kj[m] = np.sum(self.phi[k][j](t_diff,
-                                                              kernel_param[k][j]))
+                    phi_term = self.phi[k][j](t_diff, kernel_param[k][j])
+                    vals_kernel_kj[m] = np.sum(phi_term*vals_impact_kj[:ix_bnd])
                 intensity[k] += vals_kernel_kj
         return intensity
 # =============================================================================
