@@ -1,7 +1,8 @@
 # License: BSD 3 clause
 
 import numpy as np
-from scipy.stats import wasserstein_distance
+from scipy.stats import wasserstein_distance, logistic
+from scipy.special import expit
 from tqdm import tqdm
 
 from aslsd.utilities import useful_functions as uf
@@ -125,3 +126,68 @@ def wass(f, g, x):
     y_g = g(x)
     return wasserstein_distance(x, x, y_f, y_g)
 
+
+# =============================================================================
+# Logistic
+# =============================================================================
+def logistic_function(x):
+    """
+    Logisitc function. Define for :math:`x \\geq 0` by
+
+    .. math::
+        f(x) := \\frac{1}{1+\\exp(-x)}.
+
+
+    Parameters
+    ----------
+    x : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    res : TYPE
+        Logitisc function evaluated in x.
+
+    Notes
+    ------
+    In the current version of the aslsd package, we use the implementation
+    of this function in scipy, before moving to our own
+    implementation as we have very specific applications of this function which
+    do not require the call overhead of the scipy implementation.
+
+    """
+    res = expit(x)
+    return res
+
+
+def logisitc_pdf(x):
+    """
+    Logisitc function. Define for :math:`x \\geq 0` by
+
+    .. math::
+        f(x) := \\frac{\\exp(-x)}{\\big(1+\\exp(-x)\\big)^2}.
+
+
+    Parameters
+    ----------
+    x : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    res : TYPE
+        Logitisc function evaluated in x.
+
+    Notes
+    ------
+    In the current version of the aslsd package, we use the implementation
+    of this function in scipy, before moving to our own
+    implementation as we have very specific applications of this function which
+    do not require the call overhead of the scipy implementation.
+
+    """
+    # rv = logistic()
+    # res = rv.pdf(x)
+    f = logistic_function(x)
+    res = f*(1.-f)
+    return res

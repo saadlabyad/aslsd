@@ -12,7 +12,6 @@ from tqdm import tqdm
 from aslsd.optimize.estimators.estimator import Estimator
 from aslsd.optimize.estimators.mhp_exact_estimator import MHPExactEstim
 from aslsd.optimize.estimators. mhp_stratified_estimator import MHPStratEstim
-
 from aslsd.optimize.optim_logging.optim_logger import OptimLogger
 from aslsd.optimize.solvers.solver import Solver
 from aslsd.optimize.solvers.momentum import Momentum
@@ -633,6 +632,36 @@ class MHP:
             adjacency = self.make_adjacency_matrix(kernel_param)
         bratio = np.max(np.absolute(np.linalg.eigvals(adjacency)))
         return bratio
+
+# =============================================================================
+# Exact computation of loss functions (wrappers)
+# =============================================================================
+    def get_lse_k(self, k, process_path, mu=None, kernel_param=None,
+                  verbose=False, initialize=False):
+        if verbose:
+            print('Computing partial LSE k=', k, '...')
+        # Exact LSE
+        d = self.d
+        # Prepare parameters
+        mu, kernel_param = self.load_param(mu=mu, kernel_param=kernel_param)
+        # Initialize Estimators
+        estimators = [MHPExactEstim() for k in range(d)]
+
+        for k in range(d):
+            estimators[k].initialize(k, 10, self, process_path)
+        x = self.matrix2tensor_params(mu, kernel_param)
+        lse_k = estimators[k].lse_k_estimate(x[k], verbose=verbose)
+        return lse_k
+
+    def get_lse(self, process_path, mu=None, kernel_param=None,
+                verbose=False, initialize=False):
+        # Exact lse
+        lse = 0.
+        for k in range(self.d):
+            lse += self.get_lse_k(k, process_path, mu=mu,
+                                  kernel_param=kernel_param, verbose=verbose,
+                                  initialize=initialize)
+        return lse
 
 # =============================================================================
 # First order statistics
@@ -1528,8 +1557,7 @@ class MHP:
         if logger.is_log_allocs:
             for k in range(d):
                 logger.allocs[k] = {}
-                logger.allocs[k]['phi'] = logger.estimator_logs[k]['allocs']['phi']
-                logger.allocs[k]['upsilon'] = logger.estimator_logs[k]['allocs']['upsilon']
+                logger.allocs[k] = logger.estimator_logs[k]['allocs']
 
     def clear_fit(self):
         """
@@ -1632,6 +1660,8 @@ class MHP:
             solver_args = {}
         if logger_args is None:
             logger_args = {}
+        logger_args['is_log_allocs'] = is_log_allocs
+        logger_args['is_log_ixs'] = is_log_ixs
 
         # Model bounds
         mu_lower_bnds = 10**-10*np.ones(d)
@@ -1715,7 +1745,8 @@ class MHP:
 
             for t in tqdm(range(n_iter_k), disable=not verbose):
                 # Compute LSE gradient estimate for parameters x_k
-                g_t = estimators[k].lse_k_grad_estimate(x_k, rng)
+                g_t = estimators[k].lse_k_grad_estimate(x_k, rng=rng,
+                                                        grad_alloc=is_grad_target)
                 logger.log_grad(k, t, g_t)
                 # Apply solver iteration
                 x_k = solvers[k].iterate(t, x_k, g_t)
@@ -2022,7 +2053,7 @@ class MHP:
                 kernel_param = self.fitted_ker_param
             else:
                 raise ValueError("Both mu and kernel_param must be specified.")
-        residuals = gof.get_residuals(process_path, self.psi, mu,
+        residuals = gof.get_residuals_mhp(process_path, self.psi, mu,
                                       kernel_param, sampling=sampling,
                                       sample_size=sample_size, seed=seed,
                                       verbose=verbose)

@@ -1028,16 +1028,18 @@ class MTLHExactEstim(Estimator):
 # =============================================================================
 # LSE and LSE gradient
 # =============================================================================
-    def lse_k_estimate(self, x_k, compute_diff_f_sum=False, count_iter=True):
+    def lse_k_estimate(self, x_k, compute_diff_f_sum=False, count_iter=True,
+                       verbose=False):
         # Compute the LSE estimate
         self.compute_objective(x_k, compute_f_sum=True,
                                compute_diff_f_sum=compute_diff_f_sum,
-                               count_iter=count_iter)
+                               count_iter=count_iter, verbose=verbose)
         lse_k = self.recombine_lse_k()
         self.lse_k = lse_k
         return lse_k
 
-    def lse_k_grad_estimate(self, x_k, count_iter=True, verbose=False):
+    def lse_k_grad_estimate(self, x_k, grad_alloc=True, rng=None, seed=None,
+                            count_iter=True, verbose=False):
         self.compute_objective(x_k, compute_f_sum=self.is_log_lse,
                                compute_diff_f_sum=True, verbose=verbose)
 

@@ -1,7 +1,7 @@
 # License: BSD 3 clause
 
 import numpy as np
-from scipy.special import gamma, digamma
+from scipy.special import gamma, digamma, gammainc
 
 dict_ker = {}
 dict_ker['n_vars'] = 2
@@ -10,8 +10,7 @@ dict_ker['var_lower_bounds'] = (10**-10)*np.ones(3)
 dict_ker['var_upper_bounds'] = (np.inf)*np.ones(3)
 
 def tphi_func(t, vars_):
-    alpha = vars_[0]
-    beta = vars_[1]
+    alpha, beta = vars_
     coeff = (beta**alpha)/gamma(alpha)
     return coeff*(t**(alpha-1))*np.exp(-beta*t)
 
@@ -20,8 +19,7 @@ dict_ker['tphi_func'] = tphi_func
 
 
 def diff_tphi_func(t, ix_diff, vars_):
-    alpha = vars_[0]
-    beta = vars_[1]
+    alpha, beta = vars_
     if ix_diff == 0:
         # Derivative wrt \alpha
         phi_res = tphi_func(t, vars_)
@@ -38,8 +36,7 @@ dict_ker['diff_tphi_func'] = diff_tphi_func
 
 
 def diff_log_tphi_func(t, ix_diff, vars_):
-    alpha = vars_[0]
-    beta = vars_[1]
+    alpha, beta = vars_
     if ix_diff == 0:
         # Derivative wrt \alpha
         return np.log(t)+(np.log(beta)-digamma(alpha))
@@ -49,6 +46,15 @@ def diff_log_tphi_func(t, ix_diff, vars_):
 
 
 dict_ker['diff_log_tphi_func'] = diff_log_tphi_func
+
+
+def tpsi_func(t, vars_):
+    alpha, beta = vars_
+    res = gammainc(alpha, beta*t)
+    return res
+
+
+dict_ker['tpsi_func'] = tpsi_func
 
 
 def src_simu_func(rng, vars_, size=1):

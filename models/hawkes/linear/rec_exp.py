@@ -4,6 +4,7 @@ import copy
 import itertools
 import pickle
 
+import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
@@ -1519,7 +1520,7 @@ class RecurrentExponential:
                                                           varpi, kappa,
                                                           list_times)
                     intensity[k] += S_imp_kjk_q
-            return intensity
+        return intensity
 
     def get_stationary_intensity(self, mu_param=None, adjacency=None,
                                  kernel_param=None):
@@ -1670,7 +1671,8 @@ class RecurrentExponential:
 # =============================================================================
 # LSE
 # =============================================================================
-    def get_lse_k(self, k, process_path, x_k=None):
+    def get_lse_k(self, k, process_path, x_k=None, verbose=False,
+                  initialize=False):
         # Exact LSE_k of an Exponential MHP
         d = self.d
         # Time quantities
@@ -1686,8 +1688,13 @@ class RecurrentExponential:
             x_k = self.make_xk(k)
         mu_param_k, ker_param_k, imp_param_k = self.xk2matrix_params(k, x_k)
 
-        res = 0.
+        if initialize:
+            # Precomp
+            self.is_computable_precomps(process_path)
+            # Precomp
+            self.init_precomp(k, ker_param_k, imp_param_k, process_path)
 
+        res = 0.
         # M term
         M_term = self.M[k](T_f, mu_param_k)
         res += M_term
@@ -1790,6 +1797,18 @@ class RecurrentExponential:
             res -= 2.*(phi_term_j/T_f)
 
         return res
+
+    def get_lse(self, process_path, x=None, verbose=False, initialize=False):
+        # Exact lse
+        lse = 0.
+        for k in range(self.d):
+            if x is None:
+                x_k = None
+            else:
+                x_k = x[k]
+            lse += self.get_lse_k(k, process_path, x_k=x_k, verbose=verbose,
+                                  initialize=initialize)
+        return lse
 
     # Derivatives of LSE functions
     def diff_lse_mu_kr(self, k, r, process_path, x_k=None):
@@ -2521,25 +2540,26 @@ class RecurrentExponential:
         d = self.d
         n_iter = logger.n_iter
         n_param_k = self.n_param_k
+        if logger.is_log_lse:
+            logger.lse = [np.zeros(n_iter[k]+1) for k in range(d)]
         if logger.is_log_param:
             logger.param_logs = [np.zeros((n_iter[k]+1, n_param_k[k]))
                                  for k in range(d)]
-            logger.mu = [[None for x in range(n_iter[i]+1)] for i in range(d)]
-            logger.ker = [[[None for x in range(n_iter[i]+1)] for j in range(d)]
-                          for i in range(d)]
-            logger.imp = [[[None for x in range(n_iter[i]+1)] for j in range(d)]
-                          for i in range(d)]
+            logger.mu = [[None for x in range(n_iter[i]+1)]
+                         for i in range(d)]
+            logger.ker = [[[None for x in range(n_iter[i]+1)]
+                           for j in range(d)] for i in range(d)]
+            logger.imp = [[[None for x in range(n_iter[i]+1)]
+                           for j in range(d)] for i in range(d)]
         if logger.is_log_grad:
             logger.grad_logs = [np.zeros((n_iter[k], n_param_k[k]))
                                 for k in range(d)]
-            logger.grad_mu = [[None for x in range(n_iter[i]+1)] for i in range(d)]
+            logger.grad_mu = [[None for x in range(n_iter[i]+1)]
+                              for i in range(d)]
             logger.grad_ker = [[[None for x in range(n_iter[i])]
                                 for j in range(d)] for i in range(d)]
             logger.grad_imp = [[[None for x in range(n_iter[i])]
                                 for j in range(d)] for i in range(d)]
-        if logger.is_log_lse:
-            logger.lse_k = [np.zeros(n_iter[k]+1) for k in range(d)]
-
         logger.mu_0 = None
         logger.ker_0 = None
         logger.imp_0 = None
@@ -2680,7 +2700,14 @@ class RecurrentExponential:
 
     def fit(self, process_path, x_0=None, init_method='fo_feasible',
             param_init_args=None, n_iter=1000, solvers=None, solver_args=None,
-            exact_grad=False, estimator_args=None, logger=None,
+            exact_grad=True, estimators=None, is_log_lse=False,
+            is_grad_target=False, is_log_ixs=False, is_log_allocs=False,
+            is_log_total_estimates=False, is_log_strata_estimates=False,
+            n_exact_single=None, n_samples_adaptive_single=None,
+            nonadaptive_sample_size_single=None, single_strfs=None,
+            n_samples_adaptive_double=None,
+            nonadaptive_sample_size_double=None, double_strfs=None,
+            logger=None,
             logger_args=None, rng=None, seed=1234, verbose=False, clear=True,
             write=True):
         """
@@ -2742,6 +2769,7 @@ class RecurrentExponential:
             Fitted kernel parameters.
 
         """
+        d = self.d
         rng = us.make_rng(rng=rng, seed=seed)
         # Clear saved data in case already fitted
         if clear:
@@ -2750,15 +2778,12 @@ class RecurrentExponential:
         # Initialize mappings
         if param_init_args is None:
             param_init_args = {}
-        if estimator_args is None:
-            estimator_args = {}
         if solver_args is None:
             solver_args = {}
         if logger_args is None:
             logger_args = {}
-
-        # Data
-        d = self.d
+        logger_args['is_log_allocs'] = is_log_allocs
+        logger_args['is_log_ixs'] = is_log_ixs
 
         # Model bounds
         lower_bnds = self.matrix2tensor_params(self.mu_param_lower_bounds,
@@ -2821,7 +2846,7 @@ class RecurrentExponential:
                     solvers = [ADAM(**solver_args) for k in range(d)]
 
         # Initialize logger
-        logger = OptimLogger(d, n_iter, **logger_args)
+        logger = OptimLogger(d, n_iter, is_log_lse=is_log_lse, **logger_args)
         self.init_logger(logger)
 
         # Precomp
@@ -3220,20 +3245,20 @@ class RecurrentExponential:
                 ker_vars_kj = kernel_kj.make_vars(ker_param_kj)
                 # Kappa vector
                 kappa_vec = np.zeros(N_k)
-                for m in range(varpi_kj1, N_k):
-                    kappa_vec[m] = float(kappa[j][k][m])
+                for m in range(varpi_kj1[j], N_k):
+                    kappa_vec[m] = float(kappa[j][k][m])+1
                 for q in range(r_kj):
                     omega_kjq = ker_vars_kj[2*q]
                     beta_kjq = ker_vars_kj[2*q+1]
                     S_one_kjk_q = get_exp_sum(k, j, beta_kjq, varpi, kappa,
                                               list_times, U_ones)
-                    kernel_part[varpi_kj1:] = omega_kjq*(kappa_vec[varpi_kj1:]
-                                                         - S_one_kjk_q[varpi_kj1:])
+                    diff = (kappa_vec[varpi_kj1[j]:]
+                            - S_one_kjk_q[varpi_kj1[j]:])
+                    kernel_part[j, varpi_kj1[j]:] += omega_kjq*diff
             # Group results
             kernel_residuals = (kernel_part[:, 1:]
                                 - kernel_part[:, :-1]).sum(axis=0)
             residuals[k] = poisson_residuals+kernel_residuals
-
         # Save
         if self.is_fitted and write:
             self.fitted_expected_impact_matrix = expected_impact_matrix
@@ -3484,6 +3509,124 @@ class RecurrentExponential:
                                    derivatives_zero=derivatives_zero,
                                    axs=axs, save=save, filename=filename,
                                    show=show, **kwargs)
+
+    def plot_solver_path_seq(self, true_mu_param=None, true_ker_param=None,
+                             true_imp_param=None, min_mu_param=None,
+                             min_ker_param=None, min_imp_param=None, axes=None,
+                             save=False, filename='image.png', show=False,
+                             **kwargs):
+        d = self.d
+        if not self.is_fitted:
+            raise ValueError("MHP must be fitted before plotting solver path")
+        fit_log = self.fit_log
+        n_iter = fit_log.n_iter
+        mu_param_names = self.mu_param_names
+        ker_param_names = self.ker_param_names
+
+        # Mu
+        for i in range(d):
+            for ix_param in range(self.vector_n_param_mu[i]):
+                fig, axes = plt.subplots(nrows=1, ncols=2, sharex=True,
+                                         sharey=False, **kwargs)
+                # Parameter
+                axes[0].plot([fit_log.mu[i][n][ix_param]
+                              for n in range(n_iter[i]+1)],
+                             color=gt.standard_colors[0])
+                if true_mu_param is not None:
+                    axes[0].hlines(true_mu_param[i][ix_param], 0, n_iter[i]+1,
+                                   colors=gt.standard_colors[1],
+                                   linestyles='solid')
+                if min_mu_param is not None:
+                    axes[0].hlines(min_mu_param[i][ix_param], 0, n_iter[i]+1,
+                                   colors=gt.standard_colors[2],
+                                   linestyles='solid')
+                axes[0].set(ylabel='Parameter')
+
+                # Derivative
+                axes[1].plot([fit_log.grad_mu[i][n][ix_param]
+                              for n in range(n_iter[i])],
+                             color=gt.standard_colors[0])
+                axes[1].hlines(0., 0, n_iter[i], colors='grey',
+                               linestyles='dashed')
+                axes[1].set(ylabel='Derivative')
+
+                # Legend
+                axes[0].set(xlabel='Iteration')
+                axes[1].set(xlabel='Iteration')
+                fig.suptitle('Updates of '+mu_param_names[i][ix_param])
+                fig.tight_layout()
+                fig.show()
+
+        # Kernel Parameters
+        for i, j in itertools.product(range(d), range(d)):
+            for ix_param in range(self.matrix_n_param_ker[i][j]):
+                fig, axes = plt.subplots(nrows=1, ncols=2, sharex=True,
+                                         sharey=False, **kwargs)
+                # Parameter
+                axes[0].plot([fit_log.ker[i][j][n][ix_param]
+                              for n in range(n_iter[i]+1)],
+                             color=gt.standard_colors[0])
+                if true_ker_param is not None:
+                    axes[0].hlines(true_ker_param[i][j][ix_param],
+                                   0, n_iter[i]+1,
+                                   colors=gt.standard_colors[1],
+                                   linestyles='solid')
+                if min_ker_param is not None:
+                    axes[0].hlines(min_ker_param[i][j][ix_param], 0,
+                                   n_iter[i]+1,
+                                   colors=gt.standard_colors[2],
+                                   linestyles='solid')
+                axes[0].set(ylabel='Parameter')
+
+                # Derivative
+                axes[1].plot([fit_log.grad_ker[i][j][n][ix_param]
+                              for n in range(n_iter[i])],
+                             color=gt.standard_colors[0])
+                axes[1].hlines(0., 0, n_iter[i], colors='grey',
+                               linestyles='dashed')
+                axes[1].set(ylabel='Derivative')
+                # Legend
+                axes[0].set(xlabel='Iteration')
+                axes[1].set(xlabel='Iteration')
+                fig.suptitle('Updates of '+ker_param_names[i][j][ix_param]
+                             + ' (kernel '+str(i)+'←'+str(j)+')')
+                fig.tight_layout()
+                fig.show()
+
+            # Impact Parameters
+            for ix_param in range(self.matrix_n_param_imp[i][j]):
+                fig, axes = plt.subplots(nrows=1, ncols=2, sharex=True,
+                                         sharey=False, **kwargs)
+                # Parameter
+                axes[0].plot([fit_log.imp[i][j][n][ix_param]
+                              for n in range(n_iter[i]+1)],
+                             color=gt.standard_colors[0])
+                if true_imp_param is not None:
+                    axes[0].hlines(true_imp_param[i][j][ix_param],
+                                   0, n_iter[i]+1,
+                                   colors=gt.standard_colors[1],
+                                   linestyles='solid')
+                if min_imp_param is not None:
+                    axes[0].hlines(min_imp_param[i][j][ix_param], 0,
+                                   n_iter[i]+1,
+                                   colors=gt.standard_colors[2],
+                                   linestyles='solid')
+                axes[0].set(ylabel='Parameter')
+
+                # Derivative
+                axes[1].plot([fit_log.grad_imp[i][j][n][ix_param]
+                              for n in range(n_iter[i])],
+                             color=gt.standard_colors[0])
+                axes[1].hlines(0., 0, n_iter[i], colors='grey',
+                               linestyles='dashed')
+                axes[1].set(ylabel='Derivative')
+                # Legend
+                axes[0].set(xlabel='Iteration')
+                axes[1].set(xlabel='Iteration')
+                fig.suptitle('Updates of '+self.imp_param_names[i][j][ix_param]
+                             + ' (impact '+str(i)+'←'+str(j)+')')
+                fig.tight_layout()
+                fig.show()
 
     # Serialization
     def save(self, file, **kwargs):

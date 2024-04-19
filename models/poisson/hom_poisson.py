@@ -50,8 +50,59 @@ class HomPoisson:
 
         intensity = self.make_intensity()
         self.intensity = intensity
+        
+        mu = self.make_mu()
+        self.mu = mu
+
+# =============================================================================
+# Exact computation of loss functions (wrappers)
+# =============================================================================
+    def get_lse_k(self, k, process_path, mu_param=None, verbose=False,
+                  initialize=False):
+        # Exact partial LSE
+        mu_param = self.load_param(mu_param=mu_param)
+        mu_k = mu_param[k][0]
+        eta_k = process_path.eta[k]
+        lse_k = mu_k**2-2.*eta_k*mu_k
+        return lse_k
+
+    def get_lse(self, process_path, mu_param=None, verbose=False,
+                initialize=False):
+        # Exact lse
+        lse = 0.
+        for k in range(self.d):
+            lse += self.get_lse_k(k, process_path, mu_param=mu_param,
+                                  initialize=initialize)
+        return lse
+
+    def get_intensity_at_jumps(self, process_path, mu_param=None,
+                               verbose=False):
+        d = self.d
+        # Prepare parameters
+        mu_param = self.load_param(mu_param=mu_param)
+
+        # Compute
+        intensity = [mu_param[i][0]+np.zeros(process_path.n_events[i])
+                     for i in range(d)]
+        return intensity
 
     # Intensity
+    def make_mu(self):
+        d = self.d
+        mu = [None]*d
+        for i in range(d):
+            def make_f(i):
+                def f(t, mu_param):
+                    if uf.is_array(t):
+                        return mu_param[0]*np.ones(len(t))
+                    else:
+                        return mu_param[0]
+                return f
+            f = make_f(i)
+            mu[i] = copy.deepcopy(f)
+        return mu
+
+
     def make_intensity(self):
         d = self.d
         intensity = [None]*d
@@ -205,7 +256,8 @@ class HomPoisson:
         return process_path
 
     # Evaluation
-    def get_residuals(self,  process_path=None, mu_param=None, write=True):
+    def get_residuals(self,  process_path=None, mu_param=None, write=True,
+                      verbose=False):
         """
         Compute the residuals of the model.
 

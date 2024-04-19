@@ -34,7 +34,7 @@ class Solver(ABC):
 # =============================================================================
     def make_learning_rate(self, **kwargs):
         rate_type = kwargs.get('learning_rate_type', 'constant')
-        rate_0 = kwargs.get('inital_learning_rate', 10**-2)
+        rate_0 = kwargs.get('initial_learning_rate', 10**-2)
 
         # Constant rate
         if rate_type == 'constant':
@@ -43,7 +43,7 @@ class Solver(ABC):
 
         # Exponential rate
         elif rate_type == 'exponential':
-            rate_0 = kwargs.get('inital_learning_rate', 10**-1)
+            rate_0 = kwargs.get('initial_learning_rate', 10**-1)
             divider = kwargs.get('learning_rate_divider', 2)
             period = kwargs.get('learning_rate_period', 200)
             cutoff = kwargs.get('learning_rate_cutoff', 1.*10**-3)
@@ -56,7 +56,7 @@ class Solver(ABC):
 
         # Linear rate
         elif rate_type == 'linear':
-            rate_0 = kwargs.get('inital_learning_rate', 1.)
+            rate_0 = kwargs.get('initial_learning_rate', 1.)
             offset = kwargs.get('learning_rate_offset', 1.)
             slope = kwargs.get('learning_rate_slope', .1)
 

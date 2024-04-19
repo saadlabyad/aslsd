@@ -37,6 +37,15 @@ def diff_log_tphi_func(t, ix_diff, vars_):
 dict_ker['diff_log_tphi_func'] = diff_log_tphi_func
 
 
+def tpsi_func(t, vars_):
+    beta = vars_[0]
+    res = 1.-np.exp(-0.5*(t/beta)**2)
+    return res
+
+
+dict_ker['tpsi_func'] = tpsi_func
+
+
 def src_simu_func(rng, vars_, size=1):
     beta = vars_[0]
     return rng.rayleigh(scale=beta, size=size)

@@ -14,7 +14,7 @@ def ks_test_residuals(residuals):
 
 
 def qq_plot(residuals, n_models=1, labels=None, style='exponential',
-            substract_yx=False, normalize=False, max_points=None,
+            substract_yx=False, normalize=False, max_points=None, margin=0.01,
             display_line45=True, log_scale=False, ax=None,
             save=False, filename='image.png', show=False, **kwargs):
     #   Draw Q-Q plot of the residuals of each model.
@@ -32,7 +32,8 @@ def qq_plot(residuals, n_models=1, labels=None, style='exponential',
         renorm_factor = np.sqrt(len(osr))
         if max_points is not None:
             max_points = min(max_points, len(osm))
-            margin = 0.01
+            
+            # indices_subsample = np.concatenate(([m for m in range(int(margin*len(osm)))], np.linspace(int(margin*len(osm)), int((1-margin)*len(osm)), max_points), [m for m in range(int((1-margin)*len(osm)), len(osm))]))
             indices_subsample = np.concatenate(([m for m in range(int(margin*len(osm)))], np.linspace(int(margin*len(osm)), int((1-margin)*len(osm)), max_points), [m for m in range(int((1-margin)*len(osm)), len(osm))]))
             indices_subsample = [int(x) for x in indices_subsample]
             osm = osm[indices_subsample]
@@ -42,7 +43,7 @@ def qq_plot(residuals, n_models=1, labels=None, style='exponential',
         else:
             ax.plot(osm, osr, marker="o", linestyle="None", **kwargs)
             x_45 = np.linspace(*ax.get_xlim())
-            ax.plot(x_45, x_45, c='black')
+            ax.plot(x_45, x_45, linestyle='dashed', color='grey')
     elif style == 'uniform':
         (osm, osr) = stats.probplot(1-np.exp(-residuals),
                                     dist=stats.uniform, plot=None,
@@ -74,6 +75,50 @@ def qq_plot(residuals, n_models=1, labels=None, style='exponential',
         plt.show()
     return ax
 
+
+# =============================================================================
+# Runs test
+# =============================================================================
+def get_runs(L):
+    n = len(L)
+    runs = np.zeros(n, dtype=int)
+    median = np.median(L)
+    ixs_pos = np.where(L > median)[0]
+    runs[ixs_pos] = 1
+    return runs
+
+
+def get_counts(runs):
+    n = len(runs)
+    n_pos = np.sum(runs)
+    n_neg = n-n_pos
+    diff = np.abs(runs[1:]-runs[:-1])
+    n_runs = 1+np.sum(diff)
+    return n_runs, n_pos, n_neg
+
+
+def compute_wald_wolfowitz_stat(n_runs, n_pos, n_neg):
+    n = n_pos+n_neg
+    n_prod = n_pos*n_neg
+    r_mean = 1.+2.*n_prod/n
+    r_var = 2.*(n_prod/n**2)*((2.*n_prod-n)/(n-1))
+    r_std = np.sqrt(r_var)
+    z = (n_runs-r_mean)/r_std
+    return z
+
+
+def compute_wald_wolfowitz_pvalue(z):
+    pvalue = 2.*stats.norm.sf(np.abs(z))
+    return pvalue
+
+
+def wald_wolfowitz_runstest(L):
+    runs = get_runs(L)
+    n_runs, n_pos, n_neg = get_counts(runs)
+    z = compute_wald_wolfowitz_stat(n_runs, n_pos, n_neg)
+    pvalue = compute_wald_wolfowitz_pvalue(z)
+    res = {'pvalue': pvalue, 'statistic': z}
+    return res
 
 # =============================================================================
 # Homogeneous Poisson Process
@@ -162,7 +207,6 @@ def get_residuals_k_mhp(k, process_path, psi, mu, kernel_param,
             else:
                 contrib_new = 0.
             # Compute the contribution of old events
-            
             contrib_old = np.sum(psi[k][i](t_m-list_times[i][:kappa_old+1],
                                            kernel_param[k][i]))
             # Merge results

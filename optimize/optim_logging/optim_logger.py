@@ -54,8 +54,6 @@ class OptimLogger:
         self.is_log_ixs = kwargs.get('is_log_ixs', False)
         self.is_log_allocs = kwargs.get('is_log_allocs', False)
         self.estimator_logs = [None]*d
-        if self.is_log_lse:
-            self.lse = [None for ix in range(d)]
         if self.is_log_ixs:
             self.samples = [None for ix in range(d)]
         if self.is_log_allocs:
@@ -71,4 +69,4 @@ class OptimLogger:
 
     def log_lse(self, k, t, lse_t):
         if self.is_log_lse:
-            self.lse_k[k][t] = lse_t
+            self.lse[k][t] = lse_t

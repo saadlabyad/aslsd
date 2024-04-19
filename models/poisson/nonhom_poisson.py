@@ -4,11 +4,14 @@ import copy
 import itertools
 import pickle
 
+import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
-from aslsd.optimize.estimators.general_estimator import GeneralEstimator
-from aslsd.optimize.optim_logging.general_optim_logger import GeneralOptimLogger
+from aslsd.optimize.estimators.estimator import Estimator
+from aslsd.optimize.estimators.poisson_exact_estimator import PoissonExactEstim
+from aslsd.optimize.estimators.poisson_stratified_estimator import PoissonStratEstim
+from aslsd.optimize.optim_logging.optim_logger import OptimLogger
 from aslsd.optimize.solvers.solver import Solver
 from aslsd.optimize.solvers.momentum import Momentum
 from aslsd.optimize.solvers.rmsprop import RMSprop
@@ -51,26 +54,102 @@ class NonHomPoisson:
 
     """
 
-    def __init__(self, baselines, d=None, index_from_one=False, mu_names=None,
-                 is_fitted=False, fitted_mu_param=None, fit_residuals=None):
-        if uf.is_array(baselines):
-            vec_baselines = copy.deepcopy(baselines)
-        else:
-            vec_baselines = [baselines]
-        self.baselines = vec_baselines
-        if d is None:
-            d = len(self.baselines)
-        self.d = d
-        self.vec_n_param = [self.baselines[i].n_param for i in range(d)]
-        if mu_names is None:
-            mu_names = self.get_param_names(index_from_one=index_from_one)
-        self.mu_names = mu_names
+    def __init__(self, _baselines_vec, index_from_one=False, mu_names=None):
+        self.clear_fit()
+        self.d = len(_baselines_vec)
         self.is_fitted = False
-        self.fitted_mu_param = fitted_mu_param
-        self.fit_residuals = fit_residuals
+        self.index_from_one = index_from_one
+
+        self.baselines_vec = _baselines_vec
 
         intensity = self.make_intensity()
         self.intensity = intensity
+
+    # Baselines vector
+    @property
+    def baselines_vec(self):
+        """
+        Kernel matrix of the MHP.
+        Setting the kernel matrix to a new value will automatically modify the
+        values of the other attributes that depend on it.
+
+        """
+        return self._baselines_vec
+
+    @baselines_vec.setter
+    def baselines_vec(self, L):
+        if not uf.is_array(L):
+            L = [L]
+        # Baseline attributes only
+        self._baselines_vec = copy.deepcopy(L)
+        self.d = len(L)
+        self.vector_n_param = self.get_vector_n_param()
+        # Parameters names
+        self.param_names = self.get_param_names(index_from_one=self.index_from_one)
+        # Parameters bounds
+        self.param_lower_bounds = self.get_param_lower_bounds()
+        self.param_upper_bounds = self.get_param_upper_bounds()
+
+        # General updates
+        self.make_functionals()
+        self.n_param_k = [n for n in self.vector_n_param]
+        self.n_param = sum(self.n_param_k)
+
+    @baselines_vec.deleter
+    def baselines_vec(self):
+        del self._baselines_vec
+
+# =============================================================================
+# Exact computation of loss functions (wrappers)
+# =============================================================================
+    def get_lse_k(self, k, process_path, mu_param=None, verbose=False,
+                  initialize=False):
+        if verbose:
+            print('Computing partial LSE k=', k, '...')
+        # Exact LSE
+        mu_param = self.load_param(mu_param=mu_param)
+        d = self.d
+        # Load estimators config
+        estimators = [PoissonExactEstim() for k in range(d)]
+        # Initialize Estimators with training data
+        for k in range(d):
+            estimators[k].initialize(k, 10, self, process_path)
+        lse_k = estimators[k].lse_k_estimate(mu_param[k], verbose=verbose)
+        return lse_k
+
+    def get_lse(self, process_path, mu_param=None, verbose=False,
+                initialize=False):
+        # Exact lse
+        lse = 0.
+        for k in range(self.d):
+            lse += self.get_lse_k(k, process_path, mu_param=mu_param,
+                                  verbose=verbose, initialize=initialize)
+        return lse
+
+    def get_intensity_at_jumps(self, process_path, mu_param=None,
+                               verbose=False):
+        mu_param = self.load_param(mu_param=mu_param)
+        # Path
+        d = process_path.d
+        list_times = process_path.list_times
+        list_marks = process_path.list_marks
+        varpi = process_path.varpi
+        kappa = process_path.kappa
+        # Precomp
+        self.is_computable_precomps(process_path)
+        intensity = [np.zeros(process_path.n_events[i])
+                     for i in range(d)]
+        if verbose:
+            print('Starting Computations...')
+        # Compute Intensity
+        for k in range(d):
+            if verbose:
+                print('Computing intensity, dimension k=', str(k), ' ...')
+            # Parameters
+            mu_param_k = mu_param[k]
+            # Baseline part
+            intensity[k] = self.mu[k](list_times[k], mu_param[k])
+        return intensity
 
     # Intensity
     def make_intensity(self):
@@ -80,7 +159,7 @@ class NonHomPoisson:
             def make_f(i):
                 def f(t, mu_param=None):
                     mu_param = self.load_param(mu_param=mu_param)
-                    return self.baselines[i].mu(t, mu_param[i])
+                    return self.baselines_vec[i].mu(t, mu_param[i])
                 return f
             f = make_f(i)
             intensity[i] = copy.deepcopy(f)
@@ -89,24 +168,73 @@ class NonHomPoisson:
     # Param names
     def get_param_names(self, index_from_one=False):
         """
-        Get the standard names of baseline variables.
-
-        By default, we denote the baselines by :math:`(\\mu_{i})_{i \\in[d]}`.
-
-        Parameters
-        ----------
-        index_from_one : `bool`, optional
-            Start the indexing of baselines from 1 instead of 0. The default is False.
+        Get the matrix of parameter names per kernel model.
+        If we denote by :math:`M` this matrix and by :math:`d` the
+        dimensionality of the MHP model, then :math:`M` is a :math:`d\\times d`
+        matrix which entry :math:`M_{ij}` is the number of parameters of kernel
+        :math:`\\phi_{ij}`.
 
         Returns
         -------
-        mu_names : `list` of `str`
-            List of names of baseline parameters.
+        mat_n_param : `list`
+            Matrix of number of parameters per kernel model.
 
         """
         d = self.d
-        mu_names = [self.baselines[i].get_vec_param_names() for i in range(d)]
-        return mu_names
+        mu_param_names = [None]*d
+        if d == 1:
+            mu = self._baselines_vec[0]
+            vec_names = mu.get_vec_param_names()
+            n_param = mu.n_param
+            mu_param_names[0] = [None]*n_param
+            for ix_param in range(n_param):
+                ix_basis = mu.ix_map[ix_param]['mu']
+                ix_2 = mu.ix_map[ix_param]['par']
+                if mu.n_basis_mus == 1:
+                    mu_param_names[0][ix_param] = vec_names[ix_basis][ix_2]
+                else:
+                    sub = str(ix_basis+int(index_from_one))
+                    s = vec_names[ix_basis][ix_2]
+                    mu_param_names[0][ix_param] = uf.add_subscript(s, sub)
+
+        else:
+            for i in range(d):
+                mu = self._baselines_vec[i]
+                vec_names = mu.get_vec_param_names()
+                n_param = mu.n_param
+                mu_param_names[i] = [None]*n_param
+                if mu.n_basis_mus == 1:
+                    for ix_param in range(n_param):
+                        ix_basis = mu.ix_map[ix_param]['mu']
+                        ix_2 = mu.ix_map[ix_param]['par']
+                        sub = str(i+int(index_from_one))
+                        s = vec_names[ix_basis][ix_2]
+                        mu_param_names[i][ix_param] = uf.add_subscript(s, sub)
+                else:
+                    for ix_param in range(n_param):
+                        ix_basis = mu.ix_map[ix_param]['mu']
+                        ix_2 = mu.ix_map[ix_param]['par']
+                        sub = str(i+int(index_from_one))+','+str(ix_basis+int(index_from_one))+','
+                        s = vec_names[ix_basis][ix_2]
+                        mu_param_names[i][ix_param] = uf.add_subscript(s, sub)
+        return mu_param_names
+
+    def get_vector_n_param(self):
+        d = self.d
+        vector_n_param = [self._baselines_vec[i].n_param for i in range(d)]
+        return vector_n_param
+
+    def get_param_lower_bounds(self):
+        d = self.d
+        bnds = [self._baselines_vec[i].get_param_lower_bounds()
+                for i in range(d)]
+        return bnds
+
+    def get_param_upper_bounds(self):
+        d = self.d
+        bnds = [self._baselines_vec[i].get_param_upper_bounds()
+                for i in range(d)]
+        return bnds
 
     # Parameters operations
     def load_param(self, mu_param=None):
@@ -116,44 +244,34 @@ class NonHomPoisson:
                 raise ValueError("Missing value for Mu")
         return mu_param
 
-    # Fit
-    # Exact evaluation
-    def get_exact_lse_k(self, k, list_times, T_f, base_param_k):
-        sum_term = np.sum(self.baselines.mu[k](list_times[k], base_param_k))
-        return self.baselines.M[k](T_f, base_param_k)-(2./T_f)*sum_term
+    def init_estimator(self, estimator, k):
+        # Ixs book-keeping
+        estimator.n_param_k = self.vector_n_param[k]
+        # Functionals
+        estimator.M = self.M
+        estimator.diff_M = self.diff_M
+        estimator.mu = self.mu
+        estimator.diff_mu = self.diff_mu
 
-    def get_exact_diff_lse_k(self, k, list_times, T_f, ix_diff, base_param_k):
-        sum_term = np.sum(self.baselines.diff_mu[k](list_times[k], ix_diff,
-                                                    base_param_k))
-        return self.baselines.diff_M[k](T_f, ix_diff,
-                                        base_param_k)-(2./T_f)*sum_term
+    def make_functionals(self):
+        d = self.d
 
-    def get_exact_grad_lse_k(self, k, list_times, T_f, base_param_k):
-        n_param_k = len(base_param_k)
-        grad = np.zeros(n_param_k)
-        for ix in range(n_param_k):
-            grad[ix] = self.get_exact_diff_lse_k(k, list_times, T_f, ix,
-                                                 base_param_k)
-        return grad
-
-    # Approximation
-    def get_approx_lse_k(self, k, list_times, T_f, base_param_k):
-        sum_term = np.sum(self.baselines.mu[k](list_times[k], base_param_k))
-        return self.baselines.M[k](T_f, base_param_k)-(2./T_f)*sum_term
-
-    def get_approx_diff_lse_k(self, k, list_times, T_f, ix_diff, base_param_k):
-        sum_term = np.sum(self.baselines.diff_mu[k](list_times[k], ix_diff,
-                                                    base_param_k))
-        return self.baselines.diff_M[k](T_f, ix_diff,
-                                        base_param_k)-(2./T_f)*sum_term
-
-    def get_approx_grad_lse_k(self, k, list_times, T_f, base_param_k):
-        n_param_k = len(base_param_k)
-        grad = np.zeros(n_param_k)
-        for ix in range(n_param_k):
-            grad[ix] = self.get_exact_diff_lse_k(k, list_times, T_f, ix,
-                                                 base_param_k)
-        return grad
+        # Mu
+        self.mu_compensator = [self._baselines_vec[i].compensator for i in range(d)]
+        self.mu = [None for i in range(d)]
+        self.diff_mu = [None for i in range(d)]
+        self.M = [None for i in range(d)]
+        self.diff_M = [None for i in range(d)]
+        for i in range(d):
+            baseline = self._baselines_vec[i]
+            mu = baseline.make_mu()
+            self.mu[i] = mu
+            diff_mu = baseline.make_diff_mu()
+            self.diff_mu[i] = diff_mu
+            M = baseline.make_M()
+            self.M[i] = M
+            diff_M = baseline.make_diff_M()
+            self.diff_M[i] = diff_M
 
     # Fit
     def clear_fit(self):
@@ -161,13 +279,21 @@ class NonHomPoisson:
         self.fitted_mu_param = None
         self.fit_residuals = None
         self.fit_log = None
+        self.fit_estim = None
 
-    def fit(self, process_path, x_0=None, n_iter=1000, solvers=None,
-            estimators=None, rng=None, seed=None, verbose=False, clear=True,
-            poisson_sol=False,
-            write=True, grad_alloc=False, strf_args=None, estim_args=None,
-            log_args=None,
-            **kwargs):
+    def fit(self, process_path, analytic_sol=False, x_0=None,
+            init_method='fo_feasible', param_init_args=None,
+            n_iter=1000,
+            solvers=None,
+            solver_args=None, exact_grad=False, estimators=None,
+            is_log_lse=False,
+            is_grad_target=False, is_log_ixs=False, is_log_allocs=False,
+            is_log_total_estimates=False, is_log_strata_estimates=False,
+            n_exact_single=None, n_samples_adaptive_single=None,
+            nonadaptive_sample_size_single=None, single_strfs=None,
+            logger=None,
+            logger_args=None, rng=None, seed=1234, verbose=False, clear=True,
+            write=True, **kwargs):
         """
         Fit the Non-homogeneous Poisson model to some observations.
 
@@ -213,89 +339,97 @@ class NonHomPoisson:
             Fitted baselines.
 
         """
-        if rng is None:
-            rng = np.random.default_rng(seed)
         d = self.d
+        # Random number generator
+        rng = us.make_rng(rng=rng, seed=seed)
+
+        # Clear saved data in case already fitted
+        if clear:
+            self.clear_fit()
+
         list_times = process_path.list_times
         T_f = process_path.T_f
         # Poisson Solution if activated
-        if poisson_sol:
+        if analytic_sol:
             x = [None]*d
             for i in range(d):
-                x[i] = self.baselines[i].basis_mus[0].get_events_rate(
+                x[i] = self.baselines_vec[i].basis_mus[0].get_events_rate(
                     list_times[i])
             if write:
                 self.is_fitted = True
                 self.fitted_mu_param = x
             return x
 
-        # Stratification arguments
-        if strf_args is None:
-            strf_args_ = [{} for i in range(d)]
-        elif type(strf_args) == dict:
-            strf_args_ = [copy.deepcopy(strf_args) for i in range(d)]
-        elif uf.is_array(strf_args):
-            if len(strf_args) == d:
-                strf_args_ = copy.deepcopy(strf_args)
+        # Initialize mappings
+        if param_init_args is None:
+            param_init_args = {}
+        if solver_args is None:
+            solver_args = {}
+        if logger_args is None:
+            logger_args = {}
+        logger_args['is_log_allocs'] = is_log_allocs
+        logger_args['is_log_ixs'] = is_log_ixs
 
-        # Estimation arguments
-        if estim_args is None:
-            estim_args_ = [{} for i in range(d)]
-        elif type(estim_args) == dict:
-            estim_args_ = [copy.deepcopy(estim_args) for i in range(d)]
-        elif uf.is_array(estim_args):
-            if len(estim_args) == d:
-                estim_args_ = copy.deepcopy(estim_args)
-
-        # Clear saved data in case already fitted
-        if clear:
-            self.clear_fit()
+        # Model Bounds
+        lower_bnds = self.get_param_lower_bounds()
+        upper_bnds = self.get_param_upper_bounds()
 
         # Solver
         if not isinstance(n_iter, (list, np.ndarray)):
             n_iter = [n_iter for k in range(d)]
 
-        # Bounds
-        lower_bnds = [self.baselines[i].get_param_lower_bounds()
-                      for i in range(d)]
-        upper_bnds = [self.baselines[i].get_param_upper_bounds()
-                      for i in range(d)]
-
         # Initialisation
         if x_0 is None:
             x_0 = [None]*d
             for ix in range(d):
-                x_0[ix] = self.baselines[ix].get_param_lower_bounds()+rng.uniform(low=0., high=1., size=self.vec_n_param[ix])
+                x_0[ix] = self.baselines_vec[ix].get_param_lower_bounds()+rng.uniform(low=0., high=1., size=self.vector_n_param[ix])
 
-        # Initialize Estimators
+        # Load estimators config
         if estimators is None:
-            estimators = [None]*d
-            for i in range(d):
-                estimators[i] = GeneralEstimator(**estim_args_[i])
-
-        for i in range(d):
-            estimators[i].n_iter = n_iter[i]
-            estimators[i].initialize_logs(n_param=self.vec_n_param[i])
-            estimators[i].set_stratification(**strf_args_[i])
+            if exact_grad:
+                estimators = [PoissonExactEstim(is_grad_target=is_grad_target,
+                                                is_log_ixs=is_log_ixs,
+                                                is_log_allocs=is_log_allocs,
+                                                is_log_total_estimates=is_log_total_estimates,
+                                                is_log_strata_estimates=is_log_strata_estimates,
+                                                is_log_lse=is_log_lse)
+                              for k in range(d)]
+            else:
+                estimators = [PoissonStratEstim(is_grad_target=is_grad_target,
+                                                is_log_ixs=is_log_ixs,
+                                                is_log_allocs=is_log_allocs,
+                                                is_log_total_estimates=is_log_total_estimates,
+                                                is_log_strata_estimates=is_log_strata_estimates,
+                                                is_log_lse=is_log_lse)
+                              for k in range(d)]
+        else:
+            if issubclass(type(estimators), Estimator):
+                estimators = [copy.deepcopy(estimators) for k in range(d)]
+        # Initialize Estimators with training data
+        for k in range(d):
+            estimators[k].initialize(k, n_iter[k], self, process_path,
+                                     n_exact_single=n_exact_single,
+                                     n_samples_adaptive_single=n_samples_adaptive_single,
+                                     nonadaptive_sample_size_single=nonadaptive_sample_size_single,
+                                     single_strfs=single_strfs)
 
         # Initialize Solvers
         if solvers is None:
-            solvers = [ADAM(**kwargs) for k in range(d)]
+            solvers = [ADAM(**solver_args) for k in range(d)]
         else:
             if issubclass(type(solvers), Solver):
                 solvers = [copy.deepcopy(solvers) for k in range(d)]
             elif type(solvers) == str:
                 if solvers == 'Momentum':
-                    solvers = [Momentum(**kwargs) for k in range(d)]
+                    solvers = [Momentum(**solver_args) for k in range(d)]
                 elif solvers == 'RMSprop':
-                    solvers = [RMSprop(**kwargs) for k in range(d)]
+                    solvers = [RMSprop(**solver_args) for k in range(d)]
                 elif solvers == 'ADAM':
-                    solvers = [ADAM(**kwargs) for k in range(d)]
+                    solvers = [ADAM(**solver_args) for k in range(d)]
 
         # Initialize logger
-        if log_args is None:
-            log_args = {}
-        logger = GeneralOptimLogger(d, n_iter, **log_args)
+        logger = OptimLogger(d, n_iter, is_log_lse=is_log_lse, **logger_args)
+        self.init_logger(logger)
 
         # Scheme
         x = [None]*d
@@ -305,24 +439,9 @@ class NonHomPoisson:
             lower_bounds_k = lower_bnds[k]
             upper_bounds_k = upper_bnds[k]
             n_iter_k = n_iter[k]
-
             for t in tqdm(range(n_iter_k), disable=not verbose):
                 # Compute LSE gradient estimate for parameters x_k
-                estimators[k].estimate_sum(list_times[k],
-                                           f=self.baselines[k].mu,
-                                           diff_f=self.baselines[k].diff_mu,
-                                           n_param=self.vec_n_param[k],
-                                           f_args={'params': x_k},
-                                           diff_f_args={'params': x_k},
-                                           compute_f_sum=estimators[k].is_log_sum_f,
-                                           compute_diff_f_sum=True,
-                                           grad_alloc=grad_alloc, rng=rng,
-                                           count_iter=True)
-                grad_M_k = np.array([self.baselines[k].diff_M(T_f,
-                                                              ix_diff, x_k) for ix_diff in range(self.vec_n_param[k])])
-                g_t = grad_M_k-2.*(estimators[k].sum_diff_f/T_f)
-                # g_t[1] = 0.
-                # g_t[2] = 0.
+                g_t = estimators[k].lse_k_grad_estimate(x_k, rng)
                 logger.log_grad(k, t, g_t)
                 # Apply solver iteration
                 x_k = solvers[k].iterate(t, x_k, g_t)
@@ -332,11 +451,14 @@ class NonHomPoisson:
             esimator_k_log = estimators[k].get_log()
             logger.estimator_logs[k] = esimator_k_log
             x[k] = x_k
-
+        # Update logger
+        logger.is_logged_estimators = True
+        logger.estimator_types = [type(estimators[k]) for k in range(d)]
         if write:
             self.is_fitted = True
             self.fitted_mu_param = x
-            logger.process_logs(self)
+            self.fit_estim = estimators
+            self.process_logs(logger)
             self.fit_log = logger
         return x
 
@@ -376,13 +498,14 @@ class NonHomPoisson:
         list_times = [None]*d
         rng = np.random.default_rng(seed)
         for i in range(d):
-            list_times[i] = self.baselines[i].simulate(T_f, mu_param[i],
+            list_times[i] = self.baselines_vec[i].simulate(T_f, mu_param[i],
                                                            rng=rng)
         process_path = ProcessPath(list_times, T_f)
         return process_path
 
     # Evaluation
-    def get_residuals(self,  process_path, mu_param=None, write=True):
+    def get_residuals(self,  process_path, mu_param=None, write=True,
+                      verbose=False):
         """
         Compute the residuals of the model.
 
@@ -429,7 +552,7 @@ class NonHomPoisson:
         d = self.d
         resdiuals = [None]*d
         for i in range(d):
-            residuals[i] = self.baselines[i].get_residuals(process_path.list_times[i], mu_param[i])
+            residuals[i] = self.baselines_vec[i].get_residuals(process_path.list_times[i], mu_param[i])
         if self.is_fitted and write:
             self.fit_residuals = residuals
         return residuals
@@ -459,6 +582,66 @@ class NonHomPoisson:
                            ax=ax, save=save,
                            filename=filename, show=show, **kwargs)
 
+    def plot_solver_path_seq(self, true_param=None, min_param=None,
+                             axes=None, save=False, filename='image.png',
+                             show=False, **kwargs):
+        d = self.d
+        if not self.is_fitted:
+            raise ValueError("MHP must be fitted before plotting solver path")
+        fit_log = self.fit_log
+        n_iter = fit_log.n_iter
+        param_names = self.param_names
+        for i in range(d):
+            for ix_param in range(self.vector_n_param[i]):
+                fig, axes = plt.subplots(nrows=1, ncols=2, sharex=True,
+                                         sharey=False, **kwargs)
+                # Parameter
+                axes[0].plot([fit_log.param_logs[i][n][ix_param]
+                              for n in range(n_iter[i]+1)],
+                             color='steelblue')
+                if true_param is not None:
+                    axes[0].axhline(true_param[i][ix_param],
+                                   color='steelblue',
+                                   linestyle='solid')
+                if min_param is not None:
+                    axes[0].axhline(min_param[i][ix_param],
+                                    color='steelblue',
+                                    linestyle='solid')
+                axes[0].set(ylabel='Parameter')
+
+                # Derivative
+                axes[1].plot([fit_log.grad_logs[i][n][ix_param]
+                              for n in range(n_iter[i])],
+                             color='steelblue')
+                axes[1].axhline(0., color='grey',
+                               linestyle='dashed')
+                axes[1].set(ylabel='Derivative')
+
+                # Legend
+                axes[0].set(xlabel='Iteration')
+                axes[1].set(xlabel='Iteration')
+                fig.suptitle('Updates of '+param_names[i][ix_param])
+                fig.tight_layout()
+                fig.show()
+
+    # Logging
+    def init_logger(self, logger):
+        d = self.d
+        n_iter = logger.n_iter
+        n_param_k = self.n_param_k
+        if logger.is_log_param:
+            logger.param_logs = [np.zeros((n_iter[k]+1, n_param_k[k]))
+                                 for k in range(d)]
+        if logger.is_log_grad:
+            logger.grad_logs = [np.zeros((n_iter[k], n_param_k[k]))
+                                for k in range(d)]
+
+    def process_logs(self, logger):
+        d = self.d
+        if logger.is_log_lse:
+            for k in range(d):
+                logger.lse[k] = self.fit_estim[k].logged_lse
+
     # Serialization
     def save(self, file, **kwargs):
         if file.endswith('.pickle'):
@@ -477,6 +660,26 @@ class NonHomPoisson:
         pickle_out = open(file_residuals, "wb", **kwargs)
         pickle.dump(self.fit_residuals, pickle_out)
         pickle_out.close()
+
+        if file.endswith('.pickle'):
+            file_fit_log = file+'_fit_log.pickle'
+        else:
+            file_fit_log = file+'_fit_log'
+        pickle_out = open(file_fit_log, "wb", **kwargs)
+        pickle.dump(self.fit_log, pickle_out)
+        pickle_out.close()
+
+        # Save fit estimators
+        for k in range(self.d):
+            suffix = 'estimator_'+str(k)
+            if file.endswith('.pickle'):
+                file_fit_estim_k = file[:-7]+'_'+suffix+'.pickle'
+            else:
+                file_fit_estim_k = file+'_'+suffix
+            try:
+                self.fit_estim[k].save(file_fit_estim_k)
+            except:
+                pass
 
     def load(self, file, **kwargs):
         if file.endswith('.pickle'):
@@ -498,3 +701,34 @@ class NonHomPoisson:
         self.is_fitted = True
         self.fitted_mu_param = fitted_mu_param
         self.fit_residuals = fitted_residuals
+
+        if file.endswith('.pickle'):
+            file_fit_log = file+'_fit_log.pickle'
+        else:
+            file_fit_log = file+'_fit_log'
+        try:
+            pickle_in = open(file_fit_log, "rb")
+            fit_log = pickle.load(pickle_in)
+            self.fit_log = fit_log
+        except:
+            pass
+
+    def load_fit_estimators(self, file, process_path, **kwargs):
+        # Load fit estimators
+        if (self.fit_log is not None) and (self.fit_log.is_logged_estimators):
+            estimators = [None]*self.d
+            for k in range(self.d):
+                # Create object
+                estimator_type = self.fit_log.estimator_types[k]
+                if estimator_type == PoissonStratEstim:
+                    estimators[k] = PoissonStratEstim()
+                elif estimator_type == PoissonExactEstim:
+                    estimators[k] = PoissonExactEstim()
+                # Load value
+                suffix = 'estimator_'+str(k)
+                if file.endswith('.pickle'):
+                    file_fit_estim_k = file[:-7]+'_'+suffix+'.pickle'
+                else:
+                    file_fit_estim_k = file+'_'+suffix
+                estimators[k].load(file_fit_estim_k, self, process_path)
+            self.fit_estim = estimators

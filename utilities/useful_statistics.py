@@ -5,6 +5,7 @@ from random import random
 
 import numpy as np
 from numpy.random import default_rng
+import scipy
 
 
 # =============================================================================
@@ -192,11 +193,58 @@ def batch_std(std_1, q_1, std_2, q_2, N, mean_1, mean_2,
 # KS Test
 # =============================================================================
 def get_ks_alpha(c, N_r):
-
     S = 0.
     coeff = -2*c**2
     for r in range(1, N_r+1):
         u = (-1)**(r-1)*np.exp(coeff*r**2)
         S += u
-
     return 2*S
+
+
+# =============================================================================
+# Wald-Wolofwitz test
+# =============================================================================
+def get_runs(L):
+    n = len(L)
+    runs = np.zeros(n, dtype=int)
+    median = np.median(L)
+    ixs_pos = np.where(L > median)[0]
+    runs[ixs_pos] = 1
+    return runs
+
+
+def get_counts(runs):
+    n = len(runs)
+    n_pos = np.sum(runs)
+    n_neg = n-n_pos
+    diff = np.abs(runs[1:]-runs[:-1])
+    n_runs = 1+np.sum(diff)
+    return n_runs, n_pos, n_neg
+
+
+def compute_wald_wolfowitz_stat(n_runs, n_pos, n_neg):
+    n = n_pos+n_neg
+    # n_prod = n_pos*n_neg
+    # r_mean = 1.+2.*n_prod/n
+    # r_var = 2.*(n_prod/n**2)*((2.*n_prod-n)/(n-1))
+    root_n = np.sqrt(n)
+    n_prod_div_n = (n_pos/root_n)*(n_neg/root_n)
+    r_mean = 1.+2.*n_prod_div_n
+    r_var = 2.*n_prod_div_n*((2.*n_prod_div_n-1.)/(n-1))
+    r_std = np.sqrt(r_var)
+    z = (n_runs-r_mean)/r_std
+    return z
+
+
+def compute_wald_wolfowitz_pvalue(z):
+    pvalue = 2.*scipy.stats.norm.sf(np.abs(z))
+    return pvalue
+
+
+def wald_wolfowitz_runstest(L):
+    runs = get_runs(L)
+    n_runs, n_pos, n_neg = get_counts(runs)
+    z = compute_wald_wolfowitz_stat(n_runs, n_pos, n_neg)
+    pvalue = compute_wald_wolfowitz_pvalue(z)
+    res = {'pvalue': pvalue, 'statistic': z}
+    return res

@@ -574,6 +574,7 @@ class MTLH:
 # Parameters vectorization
 # =============================================================================
     def load_param(self, mu_param=None, kernel_param=None, impact_param=None):
+        d = self.d
         if mu_param is None:
             mu_param = self.fitted_mu_param
             if mu_param is None:
@@ -583,7 +584,10 @@ class MTLH:
             if kernel_param is None:
                 raise ValueError("Missing value for Kernel parameters")
         if impact_param is None:
-            impact_param = self.fitted_imp_param
+            if self.is_fitted:
+                impact_param = self.fitted_imp_param
+            else:
+                impact_param = np.zeros((d, d, 0))
             if impact_param is None:
                 raise ValueError("Missing value for Impact parameters")
         return mu_param, kernel_param, impact_param
@@ -1084,7 +1088,7 @@ class MTLH:
 # =============================================================================
 # Branching representation
 # =============================================================================
-    def make_l1_kernel_matrix(self, kernel_param=None):
+    def make_kernel_l1norm_matrix(self, kernel_param=None):
         """
         Compute the adjacency matrix of the MHP.
 
@@ -1122,11 +1126,13 @@ class MTLH:
             else:
                 raise ValueError("kernel_param must be specified.")
         d = self.d
-        adjacency = [[self._kernel_matrix[i][j].l1_norm(kernel_param[i][j])
-                      for j in range(d)] for i in range(d)]
-        return adjacency
+        kernel_l1norm_matrix = np.zeros((d, d))
+        for i, j in itertools.product(range(d), range(d)):
+            kernel_l1norm_matrix[i, j] = self._kernel_matrix[i][j].l1_norm(kernel_param[i][j])
+        return kernel_l1norm_matrix
 
-    def make_adjacency_matrix(self, kernel_param=None):
+    def make_adjacency_matrix(self, kernel_param=None, impact_param=None,
+                              expected_impact_matrix=None):
         """
         Compute the adjacency matrix of the MHP.
 
@@ -1165,14 +1171,17 @@ class MTLH:
                 log_fitted_adjacency = True
             else:
                 raise ValueError("kernel_param must be specified.")
+        kernel_l1norm_matrix = self.make_kernel_l1norm_matrix(kernel_param=kernel_param)
+        if expected_impact_matrix is None:
+            expected_impact_matrix = self.make_expected_impact(impact_param=impact_param)
         d = self.d
-        adjacency = [[self._kernel_matrix[i][j].l1_norm(kernel_param[i][j])
-                      for j in range(d)] for i in range(d)]
+        adjacency = expected_impact_matrix*kernel_l1norm_matrix
         if log_fitted_adjacency:
             self.fitted_adjacency = adjacency
         return adjacency
 
-    def get_branching_ratio(self, adjacency=None, kernel_param=None):
+    def get_branching_ratio(self, adjacency=None, kernel_param=None,
+                            impact_param=None, expected_impact_matrix=None):
         """
         Compute the branching ratio of the MHP.
 
@@ -1206,15 +1215,44 @@ class MTLH:
 
         """
         if adjacency is None:
-            if kernel_param is None:
-                if self.is_fitted:
-                    kernel_param = self.fitted_ker_param
-                else:
-                    raise ValueError("kernel_param must be specified.")
-            adjacency = self.make_adjacency_matrix(kernel_param)
+            adjacency = self.make_adjacency_matrix(kernel_param=kernel_param,
+                                                   impact_param=impact_param,
+                                                   expected_impact_matrix=expected_impact_matrix)
         bratio = np.max(np.absolute(np.linalg.eigvals(adjacency)))
         return bratio
 
+# =============================================================================
+# Exact computation of loss functions (wrappers)
+# =============================================================================
+    def get_lse_k(self, k, process_path, mu_param=None, kernel_param=None,
+                  impact_param=None, verbose=False, initialize=False):
+        if verbose:
+            print('Computing partial LSE k=', k, '...')
+        # Exact LSE
+        d = self.d
+        # Prepare parameters
+        mu_param, kernel_param, impact_param = self.load_param(mu_param=mu_param,
+                                                               kernel_param=kernel_param,
+                                                               impact_param=impact_param)
+        # Initialize Estimators
+        estimators = [MTLHExactEstim() for k in range(d)]
+
+        for k in range(d):
+            estimators[k].initialize(k, 10, self, process_path)
+        x = self.matrix2tensor_params(mu_param, kernel_param, impact_param)
+        lse_k = estimators[k].lse_k_estimate(x[k], verbose=verbose)
+        return lse_k
+
+    def get_lse(self, process_path, mu_param=None, kernel_param=None,
+                impact_param=None, verbose=False, initialize=False):
+        # Exact lse
+        lse = 0.
+        for k in range(self.d):
+            lse += self.get_lse_k(k, process_path, mu_param=mu_param,
+                                  kernel_param=kernel_param,
+                                  impact_param=impact_param, verbose=verbose,
+                                  initialize=False)
+        return lse
 # =============================================================================
 # First order statistics
 # =============================================================================
@@ -1265,7 +1303,7 @@ class MTLH:
                     vals_kernel_kj[m] = np.sum(self.phi[k][j](t_diff,
                                                               kernel_param[k][j]))
                 intensity[k] += vals_kernel_kj
-            return intensity
+        return intensity
 # =============================================================================
 # Simulation
 # =============================================================================
@@ -1312,7 +1350,8 @@ class MTLH:
                                                                kernel_param=kernel_param,
                                                                impact_param=impact_param)
         # Compute adjacency matrix and branching ratio
-        adjacency = self.make_adjacency_matrix(kernel_param)
+        adjacency = self.make_adjacency_matrix(kernel_param=kernel_param,
+                                               impact_param=impact_param)
         branching_ratio = self.get_branching_ratio(adjacency=adjacency)
         # Do not simulate if the specified model is unstable
         if branching_ratio >= 1:
@@ -1503,8 +1542,9 @@ class MTLH:
                     if self.matrix_n_param_imp[i][j] > 0:
                         logger.grad_imp[i][j][ix] = logger.grad_logs[i][ix][self.interval_map_imp[i][j][0]:self.interval_map_imp[i][j][1]]
         if logger.is_log_lse:
+            logger.lse = [None]*d
             for k in range(d):
-                self.lse[k] = self.estimator_logs[k]['lse']
+                logger.lse[k] = self.fit_estim[k].logged_lse
         if logger.is_log_ixs:
             for k in range(d):
                 logger.samples[k] = {}
@@ -1569,57 +1609,6 @@ class MTLH:
                                               high=upper_mu_params[i][ix],
                                               size=1)[0]
 
-        # Kernels
-        kernel_param = np.array([[None for j in range(d)]
-                                 for i in range(d)], dtype=object)
-        if ref_ker_param is None:
-            if not isinstance(max_ker_param, (list, np.ndarray)):
-                float_max = copy.deepcopy(max_ker_param)
-                max_ker_param = [[[None for x
-                                   in range(self.matrix_n_param_ker[i][j])]
-                                  for j in range(d)] for i in range(d)]
-                for i, j in itertools.product(range(d), range(d)):
-                    n_param = self.matrix_n_param_ker[i][j]
-                    vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
-                    for x in range(n_param):
-                        if x in vec_ix_omega:
-                            max_ker_param[i][j][x] = max_omega
-                        else:
-                            max_ker_param[i][j][x] = max(float_max,
-                                                         ker_lower_bnds[i][j][x])
-
-            for i, j in itertools.product(range(d), range(d)):
-                n_param = self.matrix_n_param_ker[i][j]
-                kernel_param[i][j] = np.zeros(n_param)
-                for ix in range(n_param):
-                    val = rng.uniform(low=ker_lower_bnds[i][j][ix],
-                                      high=max_ker_param[i][j][ix],
-                                      size=1)[0]
-                    kernel_param[i][j][ix] = val
-        else:
-            dist_ker_bnds = [[ref_ker_param[i][j]-ker_lower_bnds[i][j] for j in range(d)] for i in range(d)]
-            lower_ker_params = [[ref_ker_param[i][j]-range_ref_ker*dist_ker_bnds[i][j] for j in range(d)] for i in range(d)]
-            upper_ker_params = [[ref_ker_param[i][j]+range_ref_ker*dist_ker_bnds[i][j] for j in range(d)] for i in range(d)]
-            for i, j in itertools.product(range(d), range(d)):
-                n_param = self.matrix_n_param_ker[i][j]
-                kernel_param[i][j] = np.zeros(n_param)
-                for ix in range(n_param):
-                    val = rng.uniform(low=lower_ker_params[i][j][ix],
-                                      high=upper_ker_params[i][j][ix],
-                                      size=1)[0]
-                    kernel_param[i][j][ix] = val
-        # Rescaling
-        branching_ratio = self.get_branching_ratio(kernel_param=kernel_param)
-        if branching_ratio > 0.:
-            scaling = target_bratio/branching_ratio
-        for i, j in itertools.product(range(d), range(d)):
-            kernel_param[i][j] = np.array(kernel_param[i][j])
-            if branching_ratio > 0.:
-                vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
-                if len(vec_ix_omega) > 0:
-                    kernel_param[i][j][vec_ix_omega] = (scaling
-                                                        * kernel_param[i][j][vec_ix_omega])
-
         # Impacts
         impact_param = np.array([[None for j in range(d)]
                                  for i in range(d)], dtype=object)
@@ -1660,6 +1649,58 @@ class MTLH:
                     val = rng.uniform(low=lo_lim, high=hi_lim, size=1)[0]
                     impact_param[i][j][ix] = val
 
+        # Kernels
+        kernel_param = np.array([[None for j in range(d)]
+                                 for i in range(d)], dtype=object)
+        if ref_ker_param is None:
+            if not isinstance(max_ker_param, (list, np.ndarray)):
+                float_max = copy.deepcopy(max_ker_param)
+                max_ker_param = [[[None for x
+                                   in range(self.matrix_n_param_ker[i][j])]
+                                  for j in range(d)] for i in range(d)]
+                for i, j in itertools.product(range(d), range(d)):
+                    n_param = self.matrix_n_param_ker[i][j]
+                    vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
+                    for x in range(n_param):
+                        if x in vec_ix_omega:
+                            max_ker_param[i][j][x] = max_omega
+                        else:
+                            max_ker_param[i][j][x] = max(float_max,
+                                                         ker_lower_bnds[i][j][x])
+
+            for i, j in itertools.product(range(d), range(d)):
+                n_param = self.matrix_n_param_ker[i][j]
+                kernel_param[i][j] = np.zeros(n_param)
+                for ix in range(n_param):
+                    val = rng.uniform(low=ker_lower_bnds[i][j][ix],
+                                      high=max_ker_param[i][j][ix],
+                                      size=1)[0]
+                    kernel_param[i][j][ix] = val
+        else:
+            dist_ker_bnds = [[ref_ker_param[i][j]-ker_lower_bnds[i][j] for j in range(d)] for i in range(d)]
+            lower_ker_params = [[ref_ker_param[i][j]-range_ref_ker*dist_ker_bnds[i][j] for j in range(d)] for i in range(d)]
+            upper_ker_params = [[ref_ker_param[i][j]+range_ref_ker*dist_ker_bnds[i][j] for j in range(d)] for i in range(d)]
+            for i, j in itertools.product(range(d), range(d)):
+                n_param = self.matrix_n_param_ker[i][j]
+                kernel_param[i][j] = np.zeros(n_param)
+                for ix in range(n_param):
+                    val = rng.uniform(low=lower_ker_params[i][j][ix],
+                                      high=upper_ker_params[i][j][ix],
+                                      size=1)[0]
+                    kernel_param[i][j][ix] = val
+        # Rescaling
+        branching_ratio = self.get_branching_ratio(kernel_param=kernel_param,
+                                                   impact_param=impact_param)
+        if branching_ratio > 0.:
+            scaling = target_bratio/branching_ratio
+        for i, j in itertools.product(range(d), range(d)):
+            kernel_param[i][j] = np.array(kernel_param[i][j])
+            if branching_ratio > 0.:
+                vec_ix_omega = self._kernel_matrix[i][j].ix_omegas()
+                if len(vec_ix_omega) > 0:
+                    kernel_param[i][j][vec_ix_omega] = (scaling
+                                                        * kernel_param[i][j][vec_ix_omega])
+
         # Flatten
         if flatten:
             return self.matrix2tensor_params(mu_param, kernel_param,
@@ -1680,11 +1721,18 @@ class MTLH:
         self.fit_residuals = None
         self.fitted_adjacency = None
         self.fit_log = None
+        self.fit_estim = None
 
     def fit(self, process_path, x_0=None, init_method='fo_feasible',
             param_init_args=None, n_iter=1000, solvers=None, solver_args=None,
-            exact_grad=False,
-            estimators=None, estimator_args=None, logger=None,
+            exact_grad=False, estimators=None, is_log_lse=False,
+            is_grad_target=False, is_log_ixs=False, is_log_allocs=False,
+            is_log_total_estimates=False, is_log_strata_estimates=False,
+            n_exact_single=None, n_samples_adaptive_single=None,
+            nonadaptive_sample_size_single=None, single_strfs=None,
+            n_samples_adaptive_double=None,
+            nonadaptive_sample_size_double=None, double_strfs=None,
+            logger=None,
             logger_args=None, rng=None, seed=1234, verbose=False, clear=True,
             write=True):
         """
@@ -1746,6 +1794,7 @@ class MTLH:
             Fitted kernel parameters.
 
         """
+        d = self.d
         rng = us.make_rng(rng=rng, seed=seed)
 
         # Clear saved data in case already fitted
@@ -1755,17 +1804,12 @@ class MTLH:
         # Initialize mappings
         if param_init_args is None:
             param_init_args = {}
-        if estimator_args is None:
-            estimator_args = {}
         if solver_args is None:
             solver_args = {}
         if logger_args is None:
             logger_args = {}
-
-        # Data
-        d = self.d
-        list_times = process_path.list_times
-        T_f = process_path.T_f
+        logger_args['is_log_allocs'] = is_log_allocs
+        logger_args['is_log_ixs'] = is_log_ixs
 
         # Model bounds
         lower_bnds = self.matrix2tensor_params(self.mu_param_lower_bounds,
@@ -1776,7 +1820,7 @@ class MTLH:
                                                self.imp_param_upper_bounds)
 
         # Solver
-        if not isinstance(n_iter, (list, np.ndarray)):
+        if not uf.is_array(n_iter):
             n_iter = [n_iter for k in range(d)]
 
         # Initialisation
@@ -1816,20 +1860,33 @@ class MTLH:
         # Initialize Estimators
         if estimators is None:
             if exact_grad:
-                estimators = [MTLHExactEstim(**estimator_args)
+                estimators = [MTLHExactEstim(is_grad_target=is_grad_target,
+                                             is_log_ixs=is_log_ixs,
+                                             is_log_allocs=is_log_allocs,
+                                             is_log_total_estimates=is_log_total_estimates,
+                                             is_log_strata_estimates=is_log_strata_estimates,
+                                             is_log_lse=is_log_lse)
                               for k in range(d)]
             else:
-                estimators = [MTLHStratEstim(**estimator_args)
+                estimators = [MTLHStratEstim(is_grad_target=is_grad_target,
+                                             is_log_ixs=is_log_ixs,
+                                             is_log_allocs=is_log_allocs,
+                                             is_log_total_estimates=is_log_total_estimates,
+                                             is_log_strata_estimates=is_log_strata_estimates,
+                                             is_log_lse=is_log_lse)
                               for k in range(d)]
         else:
             if issubclass(type(estimators), Estimator):
                 estimators = [copy.deepcopy(estimators) for k in range(d)]
         for k in range(d):
-            estimators[k].k = k
-            estimators[k].n_iter = n_iter[k]
-            estimators[k].initialize_model_data(self, process_path)
-            estimators[k].set_stratification(**estimator_args)
-            estimators[k].initialize_logs()
+            estimators[k].initialize(k, n_iter[k], self, process_path,
+                                     n_exact_single=n_exact_single,
+                                     n_samples_adaptive_single=n_samples_adaptive_single,
+                                     nonadaptive_sample_size_single=nonadaptive_sample_size_single,
+                                     single_strfs=single_strfs,
+                                     n_samples_adaptive_double=n_samples_adaptive_double,
+                                     nonadaptive_sample_size_double=nonadaptive_sample_size_double,
+                                     double_strfs=double_strfs)
 
         # Initialize Solvers
         if solvers is None:
@@ -1846,7 +1903,7 @@ class MTLH:
                     solvers = [ADAM(**solver_args) for k in range(d)]
 
         # Initialize logger
-        logger = OptimLogger(d, n_iter, **logger_args)
+        logger = OptimLogger(d, n_iter, is_log_lse=is_log_lse, **logger_args)
         self.init_logger(logger)
 
         # Scheme
@@ -1860,8 +1917,8 @@ class MTLH:
 
             for t in tqdm(range(n_iter_k), disable=not verbose):
                 # Compute LSE gradient estimate for parameters x_k
-                g_t = estimators[k].lse_k_grad_estimate(x_k, grad_alloc=True,
-                                                        rng=rng)
+                g_t = estimators[k].lse_k_grad_estimate(x_k, rng=rng,
+                                                        grad_alloc=is_grad_target)
                 logger.log_grad(k, t, g_t)
                 # Apply solver iteration
                 x_k = solvers[k].iterate(t, x_k, g_t)
@@ -1877,6 +1934,7 @@ class MTLH:
             self.fitted_mu_param = fitted_mu_param
             self.fitted_ker_param = fitted_ker_param
             self.fitted_imp_param = fitted_imp_param
+            self.fit_estim = estimators
             self.process_logs(logger)
             logger.mu_0 = mu_0
             logger.ker_0 = ker_0
@@ -2084,6 +2142,7 @@ class MTLH:
                                **kwargs)
 
     def plot_adjacency_matrix(self, adjacency=None, kernel_param=None,
+                              impact_param=None,
                               event_names=None,
                               index_from_one=False, annotate=False,
                               cmap="Blues", save=False,
@@ -2099,7 +2158,8 @@ class MTLH:
                     adjacency = self.fitted_adjacency
             else:
                 if kernel_param is not None:
-                    adjacency = self.make_adjacency_matrix(kernel_param)
+                    adjacency = self.make_adjacency_matrix(kernel_param=kernel_param,
+                                                           impact_param=impact_param)
                 else:
                     raise ValueError("adjacency must be specified.")
 
@@ -2139,13 +2199,12 @@ class MTLH:
             raise ValueError("MHP must be fitted before plotting solver path")
         fit_log = self.fit_log
         n_iter = fit_log.n_iter
-        matrix_n_param = self.matrix_n_param
         mu_param_names = self.mu_param_names
         ker_param_names = self.ker_param_names
 
         # Mu
         for i in range(d):
-            for ix_param in range(self.vector_n_param_mu):
+            for ix_param in range(self.vector_n_param_mu[i]):
                 fig, axes = plt.subplots(nrows=1, ncols=2, sharex=True,
                                          sharey=False, **kwargs)
                 # Parameter
@@ -2173,13 +2232,13 @@ class MTLH:
                 # Legend
                 axes[0].set(xlabel='Iteration')
                 axes[1].set(xlabel='Iteration')
-                fig.suptitle('Updates of '+mu_param_names[i])
+                fig.suptitle('Updates of '+mu_param_names[i][ix_param])
                 fig.tight_layout()
                 fig.show()
 
         # Kernel Parameters
         for i, j in itertools.product(range(d), range(d)):
-            for ix_param in range(matrix_n_param[i][j]):
+            for ix_param in range(self.matrix_n_param_ker[i][j]):
                 fig, axes = plt.subplots(nrows=1, ncols=2, sharex=True,
                                          sharey=False, **kwargs)
                 # Parameter
@@ -2302,6 +2361,18 @@ class MTLH:
         pickle.dump(self.fit_log, pickle_out)
         pickle_out.close()
 
+        # Save fit estimators
+        for k in range(self.d):
+            suffix = 'estimator_'+str(k)
+            if file.endswith('.pickle'):
+                file_fit_estim_k = file[:-7]+'_'+suffix+'.pickle'
+            else:
+                file_fit_estim_k = file+'_'+suffix
+            try:
+                self.fit_estim[k].save(file_fit_estim_k)
+            except:
+                pass
+
     def load(self, file, **kwargs):
         # Parameters
         if file.endswith('.pickle'):
@@ -2342,13 +2413,6 @@ class MTLH:
         pickle_in = open(file_adjacency, "rb")
         fitted_adjacency = pickle.load(pickle_in)
 
-        if file.endswith('.pickle'):
-            file_fit_log = file+'_fit_log.pickle'
-        else:
-            file_fit_log = file+'_fit_log'
-        pickle_in = open(file_fit_log, "rb")
-        fit_log = pickle.load(pickle_in)
-
         self.clear_fit()
 
         self.is_fitted = True
@@ -2357,4 +2421,34 @@ class MTLH:
         self.fitted_imp_param = fitted_imp_param
         self.fit_residuals = fitted_residuals
         self.fitted_adjacency = fitted_adjacency
-        self.fit_log = fit_log
+
+        if file.endswith('.pickle'):
+            file_fit_log = file+'_fit_log.pickle'
+        else:
+            file_fit_log = file+'_fit_log'
+        try:
+            pickle_in = open(file_fit_log, "rb")
+            fit_log = pickle.load(pickle_in)
+            self.fit_log = fit_log
+        except:
+            pass
+
+    def load_fit_estimators(self, file, process_path, **kwargs):
+        # Load fit estimators
+        if (self.fit_log is not None) and (self.fit_log.is_logged_estimators):
+            estimators = [None]*self.d
+            for k in range(self.d):
+                # Create object
+                estimator_type = self.fit_log.estimator_types[k]
+                if estimator_type == MTLHStratEstim:
+                    estimators[k] = MTLHStratEstim()
+                elif estimator_type == MTLHExactEstim:
+                    estimators[k] = MTLHExactEstim()
+                # Load value
+                suffix = 'estimator_'+str(k)
+                if file.endswith('.pickle'):
+                    file_fit_estim_k = file[:-7]+'_'+suffix+'.pickle'
+                else:
+                    file_fit_estim_k = file+'_'+suffix
+                estimators[k].load(file_fit_estim_k, self, process_path)
+            self.fit_estim = estimators

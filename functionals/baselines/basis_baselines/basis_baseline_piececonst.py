@@ -187,7 +187,7 @@ class PieceConstBaseline(BasisBaseline):
             # initial term
             init_psi_diff = psi(self.beta[g_s[ixs_diff_bin]+1]-s[ixs_diff_bin],
                                 vars_ker)
-            init_term = vars_mu[g_s[ixs_same_bin]]*init_psi_diff
+            init_term = vars_mu[g_s[ixs_diff_bin]]*init_psi_diff
             # final term
             fin_psi_diff = (psi(t[ixs_diff_bin], vars_ker)
                             - psi(self.beta[g_ts[ixs_diff_bin]], vars_ker))
@@ -195,12 +195,12 @@ class PieceConstBaseline(BasisBaseline):
             # Sum them
             res[ixs_diff_bin] = init_term+fin_term
             # Middle term
-            ixs_middle = np.where((g_s <= g_ts-2))
+            ixs_middle = np.where((g_s <= g_ts-2))[0]
             b_ixdiffs = g_ts[ixs_middle]-g_s[ixs_middle]-2
             for ix in ixs_middle:
-                for j in range(g_s[ix]+1, g_ts):
-                    res[ix] += vars_mu[j]*(psi(self.beta[j+1]-s[ix])
-                                           - psi(self.beta[j]-s[ix]))
+                for j in range(g_s[ix]+1, g_ts[ix]):
+                    res[ix] += vars_mu[j]*(psi(self.beta[j+1]-s[ix], vars_ker)
+                                           - psi(self.beta[j]-s[ix], vars_ker))
             return res
         else:
             res = self.make_K(basis_kernel, np.array([t]), np.array([s]),
@@ -229,21 +229,23 @@ class PieceConstBaseline(BasisBaseline):
                 # Different bins
                 # initial term
                 init_psi_diff = diff_psi(self.beta[g_s[ixs_diff_bin]+1]-s[ixs_diff_bin],
-                                         vars_ker)
-                init_term = vars_mu[g_s[ixs_same_bin]]*init_psi_diff
+                                         ix_diff, vars_ker)
+                init_term = vars_mu[g_s[ixs_diff_bin]]*init_psi_diff
                 # final term
-                fin_psi_diff = (diff_psi(t[ixs_diff_bin], vars_ker)
+                fin_psi_diff = (diff_psi(t[ixs_diff_bin], ix_diff, vars_ker)
                                 - diff_psi(self.beta[g_ts[ixs_diff_bin]],
-                                           vars_ker))
+                                           ix_diff, vars_ker))
                 fin_term = vars_mu[g_ts[ixs_diff_bin]]*fin_psi_diff
                 # Sum them
                 res[ixs_diff_bin] = init_term+fin_term
                 # Middle term
-                ixs_middle = np.where((g_s <= g_ts-2))
+                ixs_middle = np.where((g_s <= g_ts-2))[0]
                 for ix in ixs_middle:
-                    for j in range(g_s[ix]+1, g_ts):
-                        res[ix] += vars_mu[j]*(diff_psi(self.beta[j+1]-s[ix])
-                                               - diff_psi(self.beta[j]-s[ix]))
+                    for j in range(g_s[ix]+1, g_ts[ix]):
+                        res[ix] += vars_mu[j]*(diff_psi(self.beta[j+1]-s[ix],
+                                                        ix_diff, vars_ker)
+                                               - diff_psi(self.beta[j]-s[ix],
+                                                          ix_diff, vars_ker))
                 return res
             elif ix_func == 2:
                 # Derivative wrt baseline

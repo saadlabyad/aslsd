@@ -3,6 +3,7 @@
 import numpy as np
 
 from aslsd.functionals.impact_functions.basis_impact import BasisImpact
+from aslsd.utilities.useful_numerics import logistic_function, logisitc_pdf
 
 
 def get_impact_exp(beta, delta):
@@ -10,35 +11,34 @@ def get_impact_exp(beta, delta):
     return res
 
 
-def logistic_func(x, omega, beta, delta):
+def sigmoid_func(x, omega, beta, delta):
     impact_ratio = (x-delta)/(1.-(2.*x-1.)**2)
     impact_exp = get_impact_exp(beta, delta)
-    return omega/(1.+np.exp(-impact_exp*impact_ratio))
+    logit_res = logistic_function(impact_exp*impact_ratio)
+    res = omega*logit_res
+    return res
 
 
-def diff_beta_logistic_func(x, omega, beta, delta):
+def diff_beta_sigmoid_func(x, omega, beta, delta):
     impact_ratio = (x-delta)/(1.-(2.*x-1.)**2)
     delta_term = 4.*(1.-(2.*delta-1.)**2)
-    A = np.exp(-delta_term*beta*impact_ratio)
-    diff_A = -delta_term*impact_ratio*A
-    res = -omega*diff_A/(1.+A)**2
+    impact_exp = delta_term*beta
+    logsitic_pdf_term = logisitc_pdf(impact_exp*impact_ratio)
+    res = omega*delta_term*impact_ratio*logsitic_pdf_term
     return res
 
 
-def diff_delta_logistic_func(x, omega, beta, delta):
+def diff_delta_sigmoid_func(x, omega, beta, delta):
     x_sq_term = 1./(1.-(2.*x-1.)**2)
     impact_ratio = (x-delta)*x_sq_term
-    delta_term = 4.*(1.-(2.*delta-1.)**2)
-    A = np.exp(-delta_term*beta*impact_ratio)
-    offset = 1-1.5*delta
-    x_lin_term = (2.*delta-1)*(x+offset)+1.
-    diff_A = (16.*beta*x_sq_term)*x_lin_term*A
-    res = -omega*diff_A/(1.+A)**2
+    x_lin_term = 1.+(2.*delta-1)*(4*x-6*delta+1.)
+    impact_exp = get_impact_exp(beta, delta)
+    logsitic_pdf_term = logisitc_pdf(impact_exp*impact_ratio)
+    res = -4.*omega*beta*x_sq_term*x_lin_term*logsitic_pdf_term
     return res
 
 
-class LogisticImpact(BasisImpact):
-
+class SigmoidImpact(BasisImpact):
     # Input dimension
     def get_mark_dim(self):
         return 1
@@ -70,15 +70,15 @@ class LogisticImpact(BasisImpact):
             elif xi[0] == 1.:
                 return 1.+omega
             else:
-                return 1.+logistic_func(xi[0], omega, beta, delta)
+                return 1.+sigmoid_func(xi[0], omega, beta, delta)
         elif xi.ndim == 2:
             res = np.ones(len(xi))
             ixs_1 = np.where(xi == 1)[0]
             res[ixs_1] = 1.+omega
             ixs_else = np.where((xi > 0.) & (xi < 1.))
             if len(ixs_else) > 0:
-                res[ixs_else[0]] = 1.+logistic_func(xi[ixs_else], omega, beta,
-                                                    delta)
+                res[ixs_else[0]] = 1.+sigmoid_func(xi[ixs_else], omega, beta,
+                                                   delta)
         else:
             raise ValueError('xi does not have the right dimension.')
         return res
@@ -93,19 +93,19 @@ class LogisticImpact(BasisImpact):
                 elif xi[0] == 1.:
                     return 1.
                 else:
-                    return logistic_func(xi[0], 1., beta, delta)
+                    return sigmoid_func(xi[0], 1., beta, delta)
             elif ix_diff == 1:
                 # Derivative wrt beta
-                if (xi[0] == 0) or (xi[0] == 1):
+                if (xi[0] == 0.) or (xi[0] == 1.):
                     return 0.
                 else:
-                    return diff_beta_logistic_func(xi[0], omega, beta, delta)
+                    return diff_beta_sigmoid_func(xi[0], omega, beta, delta)
             elif ix_diff == 2:
                 # Derivative wrt delta
-                if (xi[0] == 0) or (xi[0] == 1):
+                if (xi[0] == 0.) or (xi[0] == 1.):
                     return 0.
                 else:
-                    return diff_delta_logistic_func(xi[0], omega, beta, delta)
+                    return diff_delta_sigmoid_func(xi[0], omega, beta, delta)
         elif xi.ndim == 2:
             res = np.zeros(len(xi))
             ixs_1 = np.where(xi == 1)[0]
@@ -114,17 +114,17 @@ class LogisticImpact(BasisImpact):
                 # Derivative wrt omega
                 res[ixs_1] = 1.
                 if len(ixs_else) > 0:
-                    res[ixs_else[0]] = logistic_func(xi[ixs_else], 1., beta,
+                    res[ixs_else[0]] = sigmoid_func(xi[ixs_else], 1., beta,
                                                      delta)
                     return res
             elif ix_diff == 1:
                 # Derivative wrt beta
-                res[ixs_else[0]] = diff_beta_logistic_func(xi[ixs_else], omega,
+                res[ixs_else[0]] = diff_beta_sigmoid_func(xi[ixs_else], omega,
                                                            beta, delta)
                 return res
             elif ix_diff == 2:
                 # Derivative wrt delta
-                res[ixs_else[0]] = diff_delta_logistic_func(xi[ixs_else],
+                res[ixs_else[0]] = diff_delta_sigmoid_func(xi[ixs_else],
                                                             omega, beta, delta)
                 return res
         else:
