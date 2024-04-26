@@ -252,18 +252,19 @@ class BaselineModel():
         self.intensity_bound = self.make_intensity_bound()
 
     # Simulation
-    def simulate_inverse_cdf(self, T_f, params, rng=None, seed=1234):
+    def simulate_inverse_cdf(self, T_f, params, T_i=0., rng=None, seed=1234):
         if rng is None:
             rng = np.random.default_rng(seed)
         # Get the compensator transformed terminal time
-        T_hom = self.compensator(T_f, params)
-        Nim = rng.poisson(T_hom)
-        times_hom = rng.uniform(low=0.0, high=T_hom, size=Nim)
+        T_f_hom = self.compensator(T_f, params)
+        T_i_hom = self.compensator(T_i, params)
+        Nim = rng.poisson(T_f_hom-T_i_hom)
+        times_hom = rng.uniform(low=T_i_hom, high=T_f_hom, size=Nim)
         times_hom.sort()
         times = self.inverse_compensator(times_hom, params)
         return times
 
-    def simulate_thinning(self, T_f, params, rng=None, seed=1234):
+    def simulate_thinning(self, T_f, params, T_i=0., rng=None, seed=1234):
         if rng is None:
             rng = np.random.default_rng(seed)
         upper_base = self.intensity_bound(params)
@@ -276,11 +277,13 @@ class BaselineModel():
         ixs_accepted = np.where(rejection_probas <= ratios)[0]
         return times_upper[ixs_accepted]
 
-    def simulate(self, T_f, params, rng=None, seed=1234):
+    def simulate(self, T_f, params, T_i=0., rng=None, seed=1234):
         if self.default_simu_method == 'inverse_cdf':
-            times = self.simulate_inverse_cdf(T_f, params, rng=rng, seed=seed)
+            times = self.simulate_inverse_cdf(T_f, params, T_i=T_i, rng=rng,
+                                              seed=seed)
         elif self.default_simu_method == 'thinning':
-            times = self.simulate_thinning(T_f, params, rng=rng, seed=seed)
+            times = self.simulate_thinning(T_f, params, T_i=T_i, rng=rng,
+                                           seed=seed)
         return times
 
     # Residuals

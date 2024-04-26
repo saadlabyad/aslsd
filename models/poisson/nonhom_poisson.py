@@ -126,6 +126,24 @@ class NonHomPoisson:
                                   verbose=verbose, initialize=initialize)
         return lse
 
+    def get_loglik(self, process_path, intensity=None, mu_param=None,
+                   verbose=False,
+                   initialize=False):
+        # Exact Log-likelihood
+        mu_param = self.load_param(mu_param=mu_param)
+        if intensity is None:
+            intensity = self.get_intensity_at_jumps(process_path,
+                                                    mu_param=mu_param,
+                                                    verbose=verbose)
+        d = self.d
+        T_f = process_path.T_f
+        loglik = 0.
+        for k in range(d):
+            sum_log_term = np.sum(np.log(intensity[k]))
+            comp_term = self.mu_compensator[k](T_f, mu_param[k])
+            loglik += sum_log_term-comp_term
+        return loglik
+
     def get_intensity_at_jumps(self, process_path, mu_param=None,
                                verbose=False):
         mu_param = self.load_param(mu_param=mu_param)

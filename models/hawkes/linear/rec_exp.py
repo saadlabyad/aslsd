@@ -16,6 +16,7 @@ from aslsd.functionals.impact_functions.basis_impacts.basis_impact_constant impo
 from aslsd.functionals.kernels.basis_kernels.\
     basis_kernel_exponential import ExponentialKernel
 from aslsd.stats.residual_analysis import goodness_of_fit as gof
+from aslsd.stats.events.path_event import PathEvent
 from aslsd.stats.events.process_path import ProcessPath
 from aslsd.optimize.optim_logging.optim_logger import OptimLogger
 from aslsd.optimize.solvers.solver import Solver
@@ -1497,16 +1498,13 @@ class RecurrentExponential:
             ker_param_k = kernel_param[k]
             imp_param_k = impact_param[k]
             # Data
-            N_k = process_path.n_events[k]
-            varpi_kj1 = np.array([process_path.varpi[k][j][1]
-                                  for j in range(d)], dtype=int)
-            kernel_part = np.zeros((d, N_k))
             self.init_precomp(k, ker_param_k, imp_param_k, process_path)
             # Baseline part
             intensity[k] = self.mu[k](list_times[k], mu_param[k])
             for j in range(d):
                 # Impact
-                impact_kj = self.assign_impact_ki(k, j, imp_param_k, list_marks)
+                impact_kj = self.assign_impact_ki(k, j, imp_param_k,
+                                                  list_marks)
                 # II. Kernels
                 kernel_kj = self.kernel_matrix[k][j]
                 r_kj = kernel_kj.n_basis_ker
@@ -1517,8 +1515,9 @@ class RecurrentExponential:
                     beta_kjq = ker_vars_kj[2*q+1]
                     S_imp_kjk_q = self.assign_S_imp_ijk_q(k, j, q, beta_kjq,
                                                           varpi, kappa,
-                                                          list_times)
-                    intensity[k] += S_imp_kjk_q
+                                                          list_times,
+                                                          impact_kj=impact_kj)
+                    intensity[k] += omega_kjq*beta_kjq*S_imp_kjk_q
         return intensity
 
     def get_stationary_intensity(self, mu_param=None, adjacency=None,
@@ -1670,6 +1669,25 @@ class RecurrentExponential:
 # =============================================================================
 # LSE
 # =============================================================================
+    def get_loglik(self, process_path, intensity=None, mu_param=None,
+                   kernel_param=None, impact_param=None,
+                   verbose=False, initialize=False):
+        # Exact LSE
+        if intensity is None:
+            intensity = self.get_intensity_at_jumps(process_path,
+                                                    mu_param=mu_param,
+                                                    kernel_param=kernel_param,
+                                                    impact_param=impact_param,
+                                                    verbose=verbose)
+        d = self.d
+        T_f = process_path.T_f
+        loglik = 0.
+        for k in range(d):
+            sum_log_term = np.sum(np.log(intensity[k]))
+            comp_term = self.mu_compensator[k](T_f, mu_param[k])
+            loglik += sum_log_term-comp_term
+        return loglik
+
     def get_lse_k(self, k, process_path, x_k=None, verbose=False,
                   initialize=False):
         # Exact LSE_k of an Exponential MHP
@@ -3288,9 +3306,12 @@ class RecurrentExponential:
                            ax=ax, save=save, filename=filename, show=show,
                            **kwargs)
 
+# =============================================================================
+# Simulation
+# =============================================================================
     # Simulation
-    def simulate(self, T_f, mu_param=None, kernel_param=None,
-                 impact_param=None, rng=None, seed=1234,
+    def simulate(self, T_f, T_i=0., history=None, mu_param=None,
+                 kernel_param=None, impact_param=None, rng=None, seed=1234,
                  verbose=False):
         """
         Simulate a path of the MHP.
@@ -3330,30 +3351,60 @@ class RecurrentExponential:
         mu_param, kernel_param, impact_param = self.load_param(mu_param=mu_param,
                                                                kernel_param=kernel_param,
                                                                impact_param=impact_param)
-        # Compute adjacency matrix and branching ratio       
-        adjacency = self.make_adjacency_matrix(kernel_param)
+        # Compute adjacency matrix and branching ratio
+        adjacency = self.make_adjacency_matrix(kernel_param=kernel_param,
+                                               impact_param=impact_param)
         branching_ratio = self.get_branching_ratio(adjacency=adjacency)
-        # We do not allow simulation of unstable models
+        # Do not simulate if the specified model is unstable
         if branching_ratio >= 1:
-            raise ValueError("Cannot simulate from unstable\
-                             RecurrentExponential model: The branching ratio\
-                                 of this model is ", branching_ratio, " > 1.")
-        if verbose:
-            print('Simulating events...')
-        # Load offset generators from the kernel matrix
+            raise ValueError("Cannot simulate from unstable MTLH:\
+                             The branching ratio of this MTLH is ",
+                             branching_ratio, " > 1.")
+
+        # Load offset generators
         offset_gens = [[None for j in range(d)] for i in range(d)]
         for i, j in itertools.product(range(d), range(d)):
             offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
                 kernel_param[i][j])
-        # Step 1. Generate immigrants
-        # Location of immigrants
-        generations = [[self._baselines_vec[i].simulate(T_f, mu_param[i],
-                                                        rng=rng)] for i in range(d)]
-        raw_marks = [[self.vec_marks[i].simulate(size=len(generations[i][0]),
-                                                 rng=rng)] for i in range(d)]
+
+        if verbose:
+            print('Simulating events...')
+
+        # Step 0. Intialise Generations
         # generations is a list such that generations[i][ix_gen] contains
         # the times of events of type i of generation ix_gen
+        generations = [None]*d
+        raw_marks = [None]*d
+        for i in range(d):
+            if history is not None and len(history.list_times[i]) > 0:
+                generations[i] = [history.list_times[i]+0.]
+                raw_marks[i] = [history.list_marks[i]+0.]
+            else:
+                generations[i] = [[]]
+                raw_marks[i] = [[]]
 
+        # Step 1: Generate immigrants
+        # Location of immigrants
+        immigrants = [None]*d
+        immigrant_marks = [None]*d
+        for i in range(d):
+            immigrants[i] = self._baselines_vec[i].simulate(T_f, mu_param[i],
+                                                            T_i=T_i,
+                                                            rng=rng)
+            n_exo_i = len(immigrants[i])
+            immigrant_marks[i] = self.vec_marks[i].simulate(size=n_exo_i,
+                                                            rng=rng)
+            if len(generations[i][0]) == 0:
+                generations[i][0] = immigrants[i]+0.
+                raw_marks[i][0] = immigrant_marks[i]+0.
+            else:
+                generations[i][0] = np.concatenate((generations[i][0],
+                                                    immigrants[i]))
+                raw_marks[i][0] = np.concatenate((raw_marks[i][0],
+                                                  immigrant_marks[i]))
+
+        # generations is a list such that generations[i][ix_gen] contains
+        # the times of events of type i of generation ix_gen
         def sum_generation(L, index):
             return sum([len(L[i][index]) for i in range(d)])
 
@@ -3388,7 +3439,6 @@ class RecurrentExponential:
                             else:
                                 raw_marks[i][ix_gen] = self.vec_marks[i].simulate(size=n_valid_kids,
                                                                                             rng=rng)
-
             ix_gen += 1
 
         if verbose:
@@ -3401,13 +3451,111 @@ class RecurrentExponential:
         list_marks = [np.array([x for _, x in sorted(zip(list_times_[i], list_marks_[i]))]) for i in range(d)]
         list_times = [np.array(sorted(list_times_[i])) for i in range(d)]
         for i in range(d):
+            mark_dim_i = self.vec_marks[i].get_mark_dim()
             list_marks[i] = list_marks[i].reshape((len(list_times[i]),
-                                                   self.vec_marks[i].get_mark_dim()))
+                                                   mark_dim_i))
+        # Filter w.r.t T_i
+        for i in range(d):
+            valid_ixs = np.where(list_times[i] > T_i)[0]
+            list_times[i] = list_times[i][valid_ixs]
+            list_marks[i] = list_marks[i][valid_ixs]
+
+        # Finish
         if verbose:
             n_tot = sum([len(L) for L in list_times])
             print('Simulation Complete, ', n_tot, ' events simulated.')
-        process_path = ProcessPath(list_times, T_f, list_marks=list_marks)
+        process_path = ProcessPath(list_times, T_f, T_i=T_i,
+                                   list_marks=list_marks)
         return process_path
+
+    # Simulation
+    def get_baseline_events(self, T_f, T_i=0., history=None, mu_param=None,
+                            kernel_param=None, impact_param=None, rng=None,
+                            seed=1234, verbose=False):
+        """
+        Simulate a path of the MHP.
+
+        Parameters
+        ----------
+        T_f : `float`
+            Terminal time.
+        mu : `numpy.ndarray`, optional
+            Vector of baseline parameters. The default is None, in that case
+            fitted baseline parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        kernel_param : `numpy.ndarray`, optional
+            Matrix of kernel parameters. The default is None, in that case
+            fitted kernel parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        seed : `int`, optional
+            Seed for the random number generator. The default is 1234.
+        verbose : `bool`, optional
+            If True, print progression information. The default is False.
+
+        Raises
+        ------
+        ValueError
+            Raise an error if the baseline or the kernel parameters are not
+            specified and there is no fitted baseline or kernel parameters
+            saved as an atrribute.
+
+        Returns
+        -------
+        list_times : `list` of `numpy.ndarray`
+            List of simulated jump times for each dimension.
+
+        """
+        rng = us.make_rng(rng=rng, seed=seed)
+        d = self.d
+        mu_param, kernel_param, impact_param = self.load_param(mu_param=mu_param,
+                                                               kernel_param=kernel_param,
+                                                               impact_param=impact_param)
+        # Compute adjacency matrix and branching ratio
+        adjacency = self.make_adjacency_matrix(kernel_param=kernel_param,
+                                               impact_param=impact_param)
+        branching_ratio = self.get_branching_ratio(adjacency=adjacency)
+        # Do not simulate if the specified model is unstable
+        if branching_ratio >= 1:
+            raise ValueError("Cannot simulate from unstable MTLH:\
+                             The branching ratio of this MTLH is ",
+                             branching_ratio, " > 1.")
+
+        # Load offset generators
+        offset_gens = [[None for j in range(d)] for i in range(d)]
+        for i, j in itertools.product(range(d), range(d)):
+            offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
+                kernel_param[i][j])
+
+        if verbose:
+            print('Simulating events...')
+
+        # Step 0. Intialise Generations
+        # generations is a list such that generations[i][ix_gen] contains
+        # the times of events of type i of generation ix_gen
+        generations = [None]*d
+        raw_marks = [None]*d
+        for i in range(d):
+            if history is not None and len(history.list_times[i]) > 0:
+                generations[i] = [history.list_times[i]+0.]
+                raw_marks[i] = [history.list_marks[i]+0.]
+            else:
+                generations[i] = [[]]
+
+        # Step 1: Generate immigrants
+        # Location of immigrants
+        immigrants = [None]*d
+        immigrant_marks = [None]*d
+        for i in range(d):
+            immigrants[i] = self._baselines_vec[i].simulate(T_f, mu_param[i],
+                                                            T_i=T_i,
+                                                            rng=rng)
+            n_exo_i = len(immigrants[i])
+            immigrant_marks[i] = self.vec_marks[i].simulate(size=n_exo_i,
+                                                            rng=rng)
+        # Immigrants
+        immigrants = [sorted(immigrants[i]) for i in range(d)]
+        immigrants = [np.array(immigrants[i]) for i in range(d)]
+        return immigrants
 
     def simu_multipath(self, path_res, t_res, x_min, x_max, mu=None,
                        kernel_param=None, seed=1234, verbose=False,
@@ -3435,6 +3583,388 @@ class RecurrentExponential:
                                     for index_dim in range(d)]
         return list_Tf, list_paths
 
+# =============================================================================
+# Simulate descendants
+# =============================================================================
+    def simulate_descendants(self, event, T_f,
+                             kernel_param=None, impact_param=None,
+                             book_keeping=False, rng=None, seed=1234,
+                             verbose=False):
+        """
+        Simulate descendant of a source event.
+
+        Parameters
+        ----------
+        event : `aslsd.PathEvent`
+            Source event.
+        T_f : `float`
+            Terminal time.
+        mu : `numpy.ndarray`, optional
+            Vector of baseline parameters. The default is None, in that case
+            fitted baseline parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        kernel_param : `numpy.ndarray`, optional
+            Matrix of kernel parameters. The default is None, in that case
+            fitted kernel parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        seed : `int`, optional
+            Seed for the random number generator. The default is 1234.
+        verbose : `bool`, optional
+            If True, print progression information. The default is False.
+
+        Raises
+        ------
+        ValueError
+            Raise an error if the baseline or the kernel parameters are not
+            specified and there is no fitted baseline or kernel parameters
+            saved as an atrribute.
+
+        Returns
+        -------
+        list_times : `list` of `numpy.ndarray`
+            List of simulated jump times for each dimension.
+
+        """
+        rng = us.make_rng(rng=rng, seed=seed)
+        d = self.d
+        mu_param, kernel_param, impact_param = self.load_param(mu_param=None,
+                                                               kernel_param=kernel_param,
+                                                               impact_param=impact_param)
+        # Compute adjacency matrix and branching ratio
+        adjacency = self.make_adjacency_matrix(kernel_param=kernel_param,
+                                               impact_param=impact_param)
+        branching_ratio = self.get_branching_ratio(adjacency=adjacency)
+        # Do not simulate if the specified model is unstable
+        if branching_ratio >= 1:
+            raise ValueError("Cannot simulate from unstable MTLH:\
+                             The branching ratio of this MTLH is ",
+                             branching_ratio, " > 1.")
+
+        # Load offset generators
+        offset_gens = [[None for j in range(d)] for i in range(d)]
+        for i, j in itertools.product(range(d), range(d)):
+            offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
+                kernel_param[i][j])
+
+        if verbose:
+            print('Simulating events...')
+
+        # Source event
+        dim_src = event.dim
+        t_src = event.time
+        mark_src = event.mark
+
+        # Assert parent event is admissible
+        if t_src > T_f:
+            raise ValueError("Parent event cannot be posterior to terminal\
+                             time")
+
+        # Step 0. Intialise Generations
+        # generations is a list such that generations[i][ix_gen] contains
+        # the times of events of type i of generation ix_gen
+        generations = [None]*d
+        raw_marks = [None]*d
+        for i in range(d):
+            if i == dim_src:
+                generations[i] = [np.array([t_src])]
+                raw_marks[i] = [np.array([mark_src])]
+            else:
+                generations[i] = [[]]
+                raw_marks[i] = [[]]
+
+        # generations is a list such that generations[i][ix_gen] contains
+        # the times of events of type i of generation ix_gen
+        def sum_generation(L, index):
+            return sum([len(L[i][index]) for i in range(d)])
+
+        ix_gen = 1
+        #   Step 2. Fill via repeated generations
+        while sum_generation(generations, ix_gen-1):
+            for k in range(d):
+                generations[k].append(np.array([]))
+                raw_marks[k].append(np.array([]))
+            for j in range(d):
+                # Simulate the offspring of the "ix_gen-1"th generation of
+                # events of type j
+                if len(generations[j][ix_gen-1]) > 0:
+                    for i in range(d):
+                        # Set number of offspring
+                        parent_marks = raw_marks[j][ix_gen-1]
+                        parent_impacts = self._impact_matrix[i][j].impact(parent_marks,
+                                                                          impact_param[i][j])
+                        Noff = rng.poisson(adjacency[i][j]*parent_impacts,
+                                           size=len(generations[j][ix_gen-1]))
+                        parenttimes = generations[j][ix_gen-1].repeat(Noff)
+                        offsets = offset_gens[i][j](rng, N=Noff.sum())
+                        offspringtime = parenttimes + offsets
+                        generations[i][ix_gen] = np.append(generations[i][ix_gen], np.array([x for x in offspringtime if x < T_f]))
+                        n_valid_kids = len(np.array([x for x in offspringtime if x < T_f]))
+                        if n_valid_kids > 0:
+                            if len(raw_marks[i][ix_gen]) > 0:
+                                raw_marks[i][ix_gen] = np.append(raw_marks[i][ix_gen],
+                                                                 self.vec_marks[i].simulate(size=n_valid_kids,
+                                                                                            rng=rng),
+                                                                 axis=0)
+                            else:
+                                raw_marks[i][ix_gen] = self.vec_marks[i].simulate(size=n_valid_kids,
+                                                                                            rng=rng)
+            ix_gen += 1
+
+        if verbose:
+            print('Sorting results ...')
+        list_times_ = [[x for sublist in generations[i]
+                        for x in sublist] for i in range(d)]
+        list_marks_ = [[x for sublist in raw_marks[i]
+                   for x in sublist] for i in range(d)]
+
+        list_marks = [np.array([x for _, x in sorted(zip(list_times_[i], list_marks_[i]))]) for i in range(d)]
+        list_times = [np.array(sorted(list_times_[i])) for i in range(d)]
+        for i in range(d):
+            mark_dim_i = self.vec_marks[i].get_mark_dim()
+            if mark_dim_i > 0:
+                list_marks[i] = list_marks[i].reshape((len(list_times[i]),
+                                                       mark_dim_i))
+            else:
+                list_marks[i] = np.zeros((len(list_times[i]), 0))
+        # Filtering w.r.t t_src
+        valid_ixs = np.where(list_times[dim_src] > t_src)[0]
+        list_marks[dim_src] = list_marks[dim_src][valid_ixs]
+        list_times[dim_src] = list_times[dim_src][valid_ixs]
+
+        # Finish
+        if verbose:
+            n_tot = sum([len(L) for L in list_times])
+            print('Simulation Complete, ', n_tot, ' events simulated.')
+        process_path = ProcessPath(list_times, T_f, T_i=t_src,
+                                   list_marks=list_marks,
+                                   book_keeping=book_keeping)
+        return process_path
+
+    def simulate_descendants_multi(self, n_paths, event,
+                                   T_f, kernel_param=None, impact_param=None,
+                                   book_keeping=False, rng=None,
+                                   base_seed=1234, verbose=False):
+        """
+        Simulate descendants of an event that happened in t_src.
+
+        Parameters
+        ----------
+        T_f : `float`
+            Terminal time.
+        mu : `numpy.ndarray`, optional
+            Vector of baseline parameters. The default is None, in that case
+            fitted baseline parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        kernel_param : `numpy.ndarray`, optional
+            Matrix of kernel parameters. The default is None, in that case
+            fitted kernel parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        seed : `int`, optional
+            Seed for the random number generator. The default is 1234.
+        verbose : `bool`, optional
+            If True, print progression information. The default is False.
+
+        Raises
+        ------
+        ValueError
+            Raise an error if the baseline or the kernel parameters are not
+            specified and there is no fitted baseline or kernel parameters
+            saved as an atrribute.
+
+        Returns
+        -------
+        list_times : `list` of `numpy.ndarray`
+            List of simulated jump times for each dimension.
+
+        """
+        # RNG
+        rng = us.make_rng(rng=rng, seed=base_seed)
+        vec_seeds = rng.choice(max(10**5, 10*n_paths), size=n_paths,
+                               replace=False)
+        desc_multi = [None]*n_paths
+        # Prepare parameters
+        for ix_path in tqdm(range(n_paths), disable=not verbose):
+            seed = vec_seeds[ix_path]
+            process_path = self.simulate_descendants(event, T_f,
+                                                     kernel_param=kernel_param,
+                                                     impact_param=impact_param,
+                                                     book_keeping=book_keeping,
+                                                     rng=rng, seed=seed,
+                                                     verbose=False)
+            desc_multi[ix_path] = copy.deepcopy(process_path)
+        return desc_multi
+
+# =============================================================================
+# Simulate one step ahead
+# =============================================================================
+    # Simulation
+    def simulate_one_step(self, T_f, T_i=0., history=None, mu_param=None,
+                          kernel_param=None, impact_param=None, rng=None,
+                          seed=1234,
+                          verbose=False):
+        """
+        Simulate a path of the MHP.
+
+        Parameters
+        ----------
+        T_f : `float`
+            Terminal time.
+        mu : `numpy.ndarray`, optional
+            Vector of baseline parameters. The default is None, in that case
+            fitted baseline parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        kernel_param : `numpy.ndarray`, optional
+            Matrix of kernel parameters. The default is None, in that case
+            fitted kernel parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        seed : `int`, optional
+            Seed for the random number generator. The default is 1234.
+        verbose : `bool`, optional
+            If True, print progression information. The default is False.
+
+        Raises
+        ------
+        ValueError
+            Raise an error if the baseline or the kernel parameters are not
+            specified and there is no fitted baseline or kernel parameters
+            saved as an atrribute.
+
+        Returns
+        -------
+        list_times : `list` of `numpy.ndarray`
+            List of simulated jump times for each dimension.
+
+        """
+        rng = us.make_rng(rng=rng, seed=seed)
+        d = self.d
+        mu_param, kernel_param, impact_param = self.load_param(mu_param=mu_param,
+                                                               kernel_param=kernel_param,
+                                                               impact_param=impact_param)
+        # Compute adjacency matrix and branching ratio
+        adjacency = self.make_adjacency_matrix(kernel_param=kernel_param,
+                                               impact_param=impact_param)
+        branching_ratio = self.get_branching_ratio(adjacency=adjacency)
+        # Do not simulate if the specified model is unstable
+        if branching_ratio >= 1:
+            raise ValueError("Cannot simulate from unstable MTLH:\
+                             The branching ratio of this MTLH is ",
+                             branching_ratio, " > 1.")
+
+        # Load offset generators
+        offset_gens = [[None for j in range(d)] for i in range(d)]
+        for i, j in itertools.product(range(d), range(d)):
+            offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
+                kernel_param[i][j])
+
+        if verbose:
+            print('Simulating events...')
+
+        # Step 0. Intialise Generations
+        # generations is a list such that generations[i][ix_gen] contains
+        # the times of events of type i of generation ix_gen
+        generations = [None]*d
+        raw_marks = [None]*d
+        for i in range(d):
+            if history is not None and len(history.list_times[i]) > 0:
+                generations[i] = [history.list_times[i]+0.]
+                raw_marks[i] = [history.list_marks[i]+0.]
+            else:
+                generations[i] = [[]]
+                raw_marks[i] = [[]]
+
+        # Step 1: Generate immigrants
+        # Location of immigrants
+        immigrants = [None]*d
+        immigrant_marks = [None]*d
+        for i in range(d):
+            immigrants[i] = self._baselines_vec[i].simulate(T_f, mu_param[i],
+                                                            T_i=T_i,
+                                                            rng=rng)
+            n_exo_i = len(immigrants[i])
+            immigrant_marks[i] = self.vec_marks[i].simulate(size=n_exo_i,
+                                                            rng=rng)
+            if len(generations[i][0]) == 0:
+                generations[i][0] = immigrants[i]+0.
+                raw_marks[i][0] = immigrant_marks[i]+0.
+            else:
+                generations[i][0] = np.concatenate((generations[i][0],
+                                                    immigrants[i]))
+                raw_marks[i][0] = np.concatenate((raw_marks[i][0],
+                                                  immigrant_marks[i]))
+
+        # generations is a list such that generations[i][ix_gen] contains
+        # the times of events of type i of generation ix_gen
+
+        #   Step 2. Fill for one generation
+        for k in range(d):
+            generations[k].append(np.array([]))
+            raw_marks[k].append(np.array([]))
+        for j in range(d):
+            # Simulate the offspring of the "ix_gen-1"th generation of
+            # events of type j
+            if len(generations[j][0]) > 0:
+                for i in range(d):
+                    # Set number of offspring
+                    parent_marks = raw_marks[j][0]
+                    parent_impacts = self._impact_matrix[i][j].impact(parent_marks,
+                                                                      impact_param[i][j])
+                    Noff = rng.poisson(adjacency[i][j]*parent_impacts,
+                                       size=len(generations[j][0]))
+                    parenttimes = generations[j][0].repeat(Noff)
+                    offsets = offset_gens[i][j](rng, N=Noff.sum())
+                    offspringtime = parenttimes + offsets
+                    generations[i][1] = np.append(generations[i][1],
+                                                  np.array([x for x in offspringtime
+                                                            if x < T_f]))
+                    n_valid_kids = len(np.array([x for x in offspringtime
+                                                 if x < T_f]))
+                    if n_valid_kids > 0:
+                        if len(raw_marks[i][1]) > 0:
+                            raw_marks[i][1] = np.append(raw_marks[i][1],
+                                                        self.vec_marks[i].simulate(size=n_valid_kids,
+                                                                                   rng=rng),
+                                                        axis=0)
+                        else:
+                            raw_marks[i][1] = self.vec_marks[i].simulate(size=n_valid_kids,
+                                                                         rng=rng)
+
+        if verbose:
+            print('Sorting results ...')
+        list_times_ = [[x for sublist in generations[i]
+                        for x in sublist] for i in range(d)]
+        list_marks_ = [[x for sublist in raw_marks[i]
+                   for x in sublist] for i in range(d)]
+
+        list_marks = [np.array([x for _, x in sorted(zip(list_times_[i], list_marks_[i]))]) for i in range(d)]
+        list_times = [np.array(sorted(list_times_[i])) for i in range(d)]
+        for i in range(d):
+            mark_dim_i = self.vec_marks[i].get_mark_dim()
+            list_marks[i] = list_marks[i].reshape((len(list_times[i]),
+                                                   mark_dim_i))
+        # Filter w.r.t T_i
+        for i in range(d):
+            valid_ixs = np.where(list_times[i] > T_i)[0]
+            list_times[i] = list_times[i][valid_ixs]
+            list_marks[i] = list_marks[i][valid_ixs]
+        # Pick comparison candidate
+        t_next = np.inf
+        dim_next = 0
+        mark_next = None
+        for i in range(d):
+            if len(list_times[i]) > 0:
+                if list_times[i][0] < t_next:
+                    t_next = list_times[i][0]
+                    mark_next = list_marks[i][0]
+                    dim_next = i
+        # Wrap as PathEvent object
+        next_event = PathEvent(time=t_next, dim=dim_next, mark=mark_next)
+        if verbose:
+            print('Simulation Complete.')
+        return next_event
+
+# =============================================================================
+# Metrics
+# =============================================================================
     # Metrics
     # L2 projection
     def get_l2_projection(self, mhp_2, param_2, n_iter=1000,

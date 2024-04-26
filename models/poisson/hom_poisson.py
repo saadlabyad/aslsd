@@ -75,6 +75,18 @@ class HomPoisson:
                                   initialize=initialize)
         return lse
 
+    def get_loglik(self, k, process_path, intensity=None, mu_param=None,
+                   verbose=False, initialize=False):
+        # Exact partial LSE
+        mu_param = self.load_param(mu_param=mu_param)
+        loglik = 0.
+        for k in range(self.d):
+            mu_k = mu_param[k][0]
+            sum_log_term = process_path.n_events*np.log(mu_k)
+            comp_term = mu_k*process_path.T_f
+            loglik += sum_log_term-comp_term
+        return loglik
+
     def get_intensity_at_jumps(self, process_path, mu_param=None,
                                verbose=False):
         d = self.d

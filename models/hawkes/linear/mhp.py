@@ -1,6 +1,5 @@
 # License: BSD 3 clause
 
-import bisect
 import copy
 import itertools
 import pickle
@@ -25,6 +24,7 @@ from aslsd.utilities import useful_statistics as us
 from aslsd.functionals.baselines.baseline import BaselineModel
 from aslsd.functionals.baselines.\
     basis_baselines.basis_baseline_constant import ConstantBaseline
+from aslsd.stats.events.path_event import PathEvent
 from aslsd.stats.events.process_path import ProcessPath
 from aslsd.stats.events.episodes import Episodes
 
@@ -730,158 +730,6 @@ class MHP:
 # =============================================================================
 # Simulation
 # =============================================================================
-    # Simulation
-    def simulate_descendants(self, dim_src, t_src, T_f, T_i=0.,
-                             kernel_param=None, rng=None, seed=1234,
-                             verbose=False):
-        """
-        Simulate descendants of an event that happened in t_src.
-
-        Parameters
-        ----------
-        T_f : `float`
-            Terminal time.
-        mu : `numpy.ndarray`, optional
-            Vector of baseline parameters. The default is None, in that case
-            fitted baseline parameters will be used if they are stored in the
-            corresponding attribute of the MHP object.
-        kernel_param : `numpy.ndarray`, optional
-            Matrix of kernel parameters. The default is None, in that case
-            fitted kernel parameters will be used if they are stored in the
-            corresponding attribute of the MHP object.
-        seed : `int`, optional
-            Seed for the random number generator. The default is 1234.
-        verbose : `bool`, optional
-            If True, print progression information. The default is False.
-
-        Raises
-        ------
-        ValueError
-            Raise an error if the baseline or the kernel parameters are not
-            specified and there is no fitted baseline or kernel parameters
-            saved as an atrribute.
-
-        Returns
-        -------
-        list_times : `list` of `numpy.ndarray`
-            List of simulated jump times for each dimension.
-
-        """
-        d = self.d
-        # RNG
-        rng = us.make_rng(rng=rng, seed=seed)
-        # Prepare parameters
-        mu, kernel_param = self.load_param(mu=None, kernel_param=kernel_param)
-        # Adjacency matrix
-        adjacency = self.make_adjacency_matrix(kernel_param)
-        branching_ratio = self.get_branching_ratio(adjacency=adjacency)
-        if branching_ratio >= 1:
-            raise ValueError("Cannot simulate from unstable MHP: ",
-                             "The branching ratio of this MHP is ",
-                             branching_ratio, " > 1.")
-        # Offset generators
-        offset_gens = [[None for j in range(d)] for i in range(d)]
-        for i, j in itertools.product(range(d), range(d)):
-            offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
-                kernel_param[i][j])
-
-        # Start simulation
-        if verbose:
-            print('Simulating events...')
-        # Step 0. Intialise Generations
-        # generations is a list such that generations[i][ix_gen] contains
-        # the times of events of type i of generation ix_gen
-        generations = [None]*d
-        for i in range(d):
-            if i == dim_src:
-                generations[i] = [np.array([t_src])]
-            else:
-                generations[i] = [[]]
-
-        #   Step 2. Fill via repeated generations
-        def sum_generation(L, index):
-            return sum([len(L[i][index]) for i in range(d)])
-
-        ix_gen = 1
-        while sum_generation(generations, ix_gen-1):
-            for k in range(d):
-                generations[k].append(np.array([]))
-            for j in range(d):
-                # Simulate the offspring of the "ix_gen-1"th generation of
-                # events of type j
-                if len(generations[j][ix_gen-1]) > 0:
-                    for i in range(d):
-                        # Set number of offspring
-                        Noff = rng.poisson(adjacency[i][j],
-                                           size=len(generations[j][ix_gen-1]))
-                        parenttimes = generations[j][ix_gen-1].repeat(Noff)
-                        offsets = offset_gens[i][j](rng, N=Noff.sum())
-                        offspringtime = parenttimes + offsets
-                        generations[i][ix_gen] = np.append(generations[i][ix_gen], np.array([x for x in offspringtime if (x < T_f) and (x > T_i)]))
-            ix_gen += 1
-        list_times = [np.array(sorted([x for sublist in generations[i]
-                                       for x in sublist])) for i in range(d)]
-        # Filtering
-        for i in range(d):
-            list_times[i] = list_times[i][list_times[i] > T_i]
-        list_times[dim_src] = list_times[dim_src][list_times[dim_src] > t_src]
-        # Simulation complete
-        if verbose:
-            n_tot = sum([len(L) for L in list_times])
-            print('Simulation Complete, ', n_tot, ' events simulated.')
-        return list_times
-
-    def simulate_descendants_multi(self, n_paths, dim_src, t_src, T_f, T_i=0.,
-                                   kernel_param=None,
-                                   rng=None, base_seed=1234, verbose=False):
-        """
-        Simulate descendants of an event that happened in t_src.
-
-        Parameters
-        ----------
-        T_f : `float`
-            Terminal time.
-        mu : `numpy.ndarray`, optional
-            Vector of baseline parameters. The default is None, in that case
-            fitted baseline parameters will be used if they are stored in the
-            corresponding attribute of the MHP object.
-        kernel_param : `numpy.ndarray`, optional
-            Matrix of kernel parameters. The default is None, in that case
-            fitted kernel parameters will be used if they are stored in the
-            corresponding attribute of the MHP object.
-        seed : `int`, optional
-            Seed for the random number generator. The default is 1234.
-        verbose : `bool`, optional
-            If True, print progression information. The default is False.
-
-        Raises
-        ------
-        ValueError
-            Raise an error if the baseline or the kernel parameters are not
-            specified and there is no fitted baseline or kernel parameters
-            saved as an atrribute.
-
-        Returns
-        -------
-        list_times : `list` of `numpy.ndarray`
-            List of simulated jump times for each dimension.
-
-        """
-        # RNG
-        rng = us.make_rng(rng=rng, seed=base_seed)
-        vec_seeds = rng.choice(max(10**5, 10*n_paths), size=n_paths,
-                               replace=False)
-        desc_times_multi = [None]*n_paths
-        # Prepare parameters
-        for ix_path in tqdm(range(n_paths), disable=not verbose):
-            seed = vec_seeds[ix_path]
-            list_times = self.simulate_descendants(dim_src, t_src, T_f,
-                                                   T_i=T_i,
-                                                   kernel_param=kernel_param,
-                                                   seed=seed, verbose=False)
-            desc_times_multi[ix_path] = copy.deepcopy(list_times)
-        return desc_times_multi
-
     def simulate(self, T_f, T_i=0., history=None, mu=None, kernel_param=None,
                  check_stability=True, adjacency=None, rng=None, seed=1234,
                  verbose=False):
@@ -941,10 +789,6 @@ class MHP:
             offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
                 kernel_param[i][j])
 
-        # Adjust history
-        if history is None:
-            history = [[] for i in range(d)]
-
         # Start simulation
         if verbose:
             print('Simulating events...')
@@ -953,8 +797,8 @@ class MHP:
         # the times of events of type i of generation ix_gen
         generations = [None]*d
         for i in range(d):
-            if len(history[i]) > 0:
-                generations[i] = [copy.deepcopy(np.array(history[i]))]
+            if history is not None and len(history.list_times[i]) > 0:
+                generations[i] = [copy.deepcopy(np.array(history.list_times[i]))]
             else:
                 generations[i] = [[]]
 
@@ -1004,6 +848,58 @@ class MHP:
             print('Simulation Complete, ', n_tot, ' events simulated.')
         process_path = ProcessPath(list_times, T_f)
         return process_path
+
+    def get_baseline_events(self, T_f, T_i=0., history=None, mu=None,
+                            kernel_param=None,
+                            check_stability=True, adjacency=None, rng=None,
+                            seed=1234,
+                            verbose=False):
+        d = self.d
+        # RNG
+        rng = us.make_rng(rng=rng, seed=seed)
+        # Prepare parameters
+        mu, kernel_param = self.load_param(mu=mu, kernel_param=kernel_param)
+        # Adjacency matrix
+        if adjacency is None:
+            adjacency = self.make_adjacency_matrix(kernel_param)
+        if check_stability:
+            branching_ratio = self.get_branching_ratio(adjacency=adjacency)
+            if branching_ratio >= 1:
+                raise ValueError("Cannot simulate from unstable MHP: ",
+                                 "The branching ratio of this MHP is ",
+                                 branching_ratio, " > 1.")
+        # Offset generators
+        offset_gens = [[None for j in range(d)] for i in range(d)]
+        for i, j in itertools.product(range(d), range(d)):
+            offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
+                kernel_param[i][j])
+
+        # Start simulation
+        if verbose:
+            print('Simulating events...')
+        # Step 0. Intialise Generations
+        # generations is a list such that generations[i][ix_gen] contains
+        # the times of events of type i of generation ix_gen
+        generations = [None]*d
+        for i in range(d):
+            if history is not None and len(history.list_times[i]) > 0:
+                generations[i] = [copy.deepcopy(np.array(history.list_times[i]))]
+            else:
+                generations[i] = [[]]
+
+        # Step 1. Generate immigrants
+        # Number of immigrants
+        Nim = rng.poisson(mu*(T_f-T_i))
+
+        # Location of immigrants
+        immigrants = [None]*d
+        for i in range(d):
+            immigrants[i] = rng.uniform(low=T_i, high=T_f, size=Nim[i])
+
+        # Immigrants
+        immigrants = [sorted(immigrants[i]) for i in range(d)]
+        immigrants = [np.array(immigrants[i]) for i in range(d)]
+        return immigrants
 
     def simulate_episodes(self, T_f, T_i=0., history=None, n_episodes=1,
                           mu=None,
@@ -1062,6 +958,180 @@ class MHP:
                 list_paths[ix_t][ix_path] = trunc_path
         return list_Tf, list_paths
 
+# =============================================================================
+# Simulate descendants
+# =============================================================================
+    # Simulation
+    def simulate_descendants(self, event, T_f,
+                             kernel_param=None, book_keeping=False,
+                             rng=None, seed=1234,
+                             verbose=False):
+        """
+        Simulate descendants of an event that happened in t_src.
+
+        Parameters
+        ----------
+        event : `aslsd.PathEvent`
+            Source event.
+        T_f : `float`
+            Terminal time.
+        mu : `numpy.ndarray`, optional
+            Vector of baseline parameters. The default is None, in that case
+            fitted baseline parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        kernel_param : `numpy.ndarray`, optional
+            Matrix of kernel parameters. The default is None, in that case
+            fitted kernel parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        seed : `int`, optional
+            Seed for the random number generator. The default is 1234.
+        verbose : `bool`, optional
+            If True, print progression information. The default is False.
+
+        Raises
+        ------
+        ValueError
+            Raise an error if the baseline or the kernel parameters are not
+            specified and there is no fitted baseline or kernel parameters
+            saved as an atrribute.
+
+        Returns
+        -------
+        list_times : `list` of `numpy.ndarray`
+            List of simulated jump times for each dimension.
+
+        """
+        d = self.d
+        # RNG
+        rng = us.make_rng(rng=rng, seed=seed)
+        # Prepare parameters
+        mu, kernel_param = self.load_param(mu=None, kernel_param=kernel_param)
+        # Adjacency matrix
+        adjacency = self.make_adjacency_matrix(kernel_param)
+        branching_ratio = self.get_branching_ratio(adjacency=adjacency)
+        if branching_ratio >= 1:
+            raise ValueError("Cannot simulate from unstable MHP: ",
+                             "The branching ratio of this MHP is ",
+                             branching_ratio, " > 1.")
+        # Offset generators
+        offset_gens = [[None for j in range(d)] for i in range(d)]
+        for i, j in itertools.product(range(d), range(d)):
+            offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
+                kernel_param[i][j])
+
+        # Source event
+        dim_src = event.dim
+        t_src = event.time
+
+        # Assert parent event is admissible
+        if t_src > T_f:
+            raise ValueError("Parent event cannot be posterior to terminal\
+                             time")
+
+        # Start simulation
+        if verbose:
+            print('Simulating events...')
+        # Step 0. Intialise Generations
+        # generations is a list such that generations[i][ix_gen] contains
+        # the times of events of type i of generation ix_gen
+        generations = [None]*d
+        for i in range(d):
+            if i == dim_src:
+                generations[i] = [np.array([t_src])]
+            else:
+                generations[i] = [[]]
+
+        #   Step 2. Fill via repeated generations
+        def sum_generation(L, index):
+            return sum([len(L[i][index]) for i in range(d)])
+
+        ix_gen = 1
+        while sum_generation(generations, ix_gen-1):
+            for k in range(d):
+                generations[k].append(np.array([]))
+            for j in range(d):
+                # Simulate the offspring of the "ix_gen-1"th generation of
+                # events of type j
+                if len(generations[j][ix_gen-1]) > 0:
+                    for i in range(d):
+                        # Set number of offspring
+                        Noff = rng.poisson(adjacency[i][j],
+                                           size=len(generations[j][ix_gen-1]))
+                        parenttimes = generations[j][ix_gen-1].repeat(Noff)
+                        offsets = offset_gens[i][j](rng, N=Noff.sum())
+                        offspringtime = parenttimes + offsets
+                        generations[i][ix_gen] = np.append(generations[i][ix_gen], np.array([x for x in offspringtime if (x < T_f)]))
+            ix_gen += 1
+        list_times = [np.array(sorted([x for sublist in generations[i]
+                                       for x in sublist])) for i in range(d)]
+        # Filtering w.r.t t_src
+        valid_ixs = np.where(list_times[dim_src] > t_src)[0]
+        list_times[dim_src] = list_times[dim_src][valid_ixs]
+
+        # Simulation complete
+        if verbose:
+            n_tot = sum([len(L) for L in list_times])
+            print('Simulation Complete, ', n_tot, ' events simulated.')
+        process_path = ProcessPath(list_times, T_f, T_i=t_src,
+                                   book_keeping=book_keeping)
+        return process_path
+
+    def simulate_descendants_multi(self, n_paths, event, T_f, T_i=0.,
+                                   kernel_param=None, book_keeping=False,
+                                   rng=None, base_seed=1234, verbose=False):
+        """
+        Simulate descendants of an event that happened in t_src.
+
+        Parameters
+        ----------
+        event : `aslsd.PathEvent`
+            Source event.
+        T_f : `float`
+            Terminal time.
+        mu : `numpy.ndarray`, optional
+            Vector of baseline parameters. The default is None, in that case
+            fitted baseline parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        kernel_param : `numpy.ndarray`, optional
+            Matrix of kernel parameters. The default is None, in that case
+            fitted kernel parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        seed : `int`, optional
+            Seed for the random number generator. The default is 1234.
+        verbose : `bool`, optional
+            If True, print progression information. The default is False.
+
+        Raises
+        ------
+        ValueError
+            Raise an error if the baseline or the kernel parameters are not
+            specified and there is no fitted baseline or kernel parameters
+            saved as an atrribute.
+
+        Returns
+        -------
+        list_times : `list` of `numpy.ndarray`
+            List of simulated jump times for each dimension.
+
+        """
+        # RNG
+        rng = us.make_rng(rng=rng, seed=base_seed)
+        vec_seeds = rng.choice(max(10**5, 10*n_paths), size=n_paths,
+                               replace=False)
+        desc_multi = [None]*n_paths
+        # Prepare parameters
+        for ix_path in tqdm(range(n_paths), disable=not verbose):
+            seed = vec_seeds[ix_path]
+            process_path = self.simulate_descendants(event, T_f,
+                                                     kernel_param=kernel_param,
+                                                     book_keeping=book_keeping,
+                                                     seed=seed, verbose=False)
+            desc_multi[ix_path] = copy.deepcopy(process_path)
+        return desc_multi
+
+# =============================================================================
+# Simulate one step ahead
+# =============================================================================
     def simulate_one_step(self, T_f, T_i=0., history=None, mu=None,
                           kernel_param=None, rng=None, seed=1234,
                           verbose=False):
@@ -1116,10 +1186,6 @@ class MHP:
             offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
                 kernel_param[i][j])
 
-        # Adjust history
-        if history is None:
-            history = [[] for i in range(d)]
-
         # Start simulation
         if verbose:
             print('Simulating events...')
@@ -1128,8 +1194,8 @@ class MHP:
         # the times of events of type i of generation ix_gen
         generations = [None]*d
         for i in range(d):
-            if len(history[i]) > 0:
-                generations[i] = [copy.deepcopy(np.array(history[i]))]
+            if history is not None and len(history.list_times[i]) > 0:
+                generations[i] = [copy.deepcopy(np.array(history.list_times[i]))]
             else:
                 generations[i] = [[]]
 
@@ -1148,7 +1214,6 @@ class MHP:
                                                     immigrants[i]))
 
         #   Step 2. Fill for one generation
-
         for k in range(d):
             generations[k].append(np.array([]))
         for j in range(d):
@@ -1162,11 +1227,14 @@ class MHP:
                     parenttimes = generations[j][0].repeat(Noff)
                     offsets = offset_gens[i][j](rng, N=Noff.sum())
                     offspringtime = parenttimes + offsets
-                    generations[i][1] = np.append(generations[i][1], np.array([x for x in offspringtime if (x < T_f) and (x > T_i)]))
+                    generations[i][1] = np.append(generations[i][1],
+                                                  np.array([x for x in offspringtime
+                                                            if (x < T_f)
+                                                            and (x > T_i)]))
 
         list_times = [np.array(sorted([x for sublist in generations[i]
                                        for x in sublist])) for i in range(d)]
-        # Filtering
+        # Filtering w.r.t. T_i
         for i in range(d):
             list_times[i] = list_times[i][list_times[i] > T_i]
         # Pick comparison candidate
@@ -1177,48 +1245,11 @@ class MHP:
                 if list_times[i][0] < t_next:
                     t_next = list_times[i][0]
                     dim_next = i
-
-        # Simulation complete
+        # Wrap as PathEvent object
+        next_event = PathEvent(time=t_next, dim=dim_next)
         if verbose:
             print('Simulation Complete.')
-        return dim_next, t_next
-
-    def get_baseline_events(self, T_f, mu=None, kernel_param=None,
-                            rng=None, seed=1234):
-        if mu is None:
-            mu = self.fitted_mu
-            if mu is None:
-                raise ValueError("Missing value for Mu")
-        if kernel_param is None:
-            kernel_param = self.fitted_ker_param
-            if kernel_param is None:
-                raise ValueError("Missing value for Kernel parameters")
-        mu = np.array(mu)
-        d = self.d
-        offset_gens = [[None for j in range(d)] for i in range(d)]
-        for i, j in itertools.product(range(d), range(d)):
-            offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
-                kernel_param[i][j])
-
-        adjacency = self.make_adjacency_matrix(kernel_param)
-        if rng is None:
-            rng = np.random.default_rng(seed)
-
-        branching_ratio = self.get_branching_ratio(adjacency=adjacency)
-        if branching_ratio >= 1:
-            raise ValueError("Cannot simulate from unstable MHP: ",
-                             "The branching ratio of this MHP is ",
-                             branching_ratio, " > 1.")
-
-        # Step 1. Generate immigrants
-        # Number of immigrants
-        Nim = rng.poisson(mu*T_f)
-
-        # Immigrants
-        immigrants = [sorted(list(rng.uniform(low=0.0, high=T_f, size=Nim[i])))
-                      for i in range(d)]
-        immigrants = [np.array(immigrants[i]) for i in range(d)]
-        return immigrants
+        return next_event
 
 # =============================================================================
 # Fully random sampling of parameters

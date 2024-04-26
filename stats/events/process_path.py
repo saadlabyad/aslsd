@@ -3,9 +3,11 @@
 import bisect
 import copy
 import pickle
+import itertools
 
 import numpy as np
 from scipy.interpolate import interp1d
+from tqdm import tqdm
 
 from aslsd.stats.events import time_ordering
 
@@ -56,13 +58,14 @@ class ProcessPath():
 
     """
 
-    def __init__(self, list_times=None, T_f=1., list_marks=None,
+    def __init__(self, list_times=None, T_f=1., T_i=0., list_marks=None,
                  n_events=None, eta=None,
                  list_times2end=None, kappa=None, varpi=None, lag_sizes=None,
                  book_keeping=True):
         if list_times is None:
             list_times = []
         self.T_f = T_f
+        self.T_i = T_i
         self.d = len(list_times)
         # Event data
         self.list_times = [0.+np.array(list_times[i]) for i in range(self.d)]
@@ -208,6 +211,57 @@ class ProcessPath():
             rate[i] = np.histogram(self.times[i],
                                    interval_bounds[i])[0]/interval_sizes
         return rate
+
+    def get_sample_grid(self, sample_period):
+        n_bins = int(self.T_f/sample_period)
+        grid = sample_period*np.arange(n_bins+1)
+        return grid
+
+    def get_sample_hist(self, sample_period, grid=None):
+        d = self.d
+        if grid is None:
+            grid = self. get_sample_grid(sample_period)
+        # Compute
+        sample_hist = np.array([np.histogram(self.list_times[i],
+                                             bins=grid)[0]
+                                for i in range(d)])
+        return sample_hist
+
+    def get_empirical_intensity(self, sample_period, grid=None,
+                                sample_hist=None):
+        d = self.d
+        if sample_hist is None:
+            # Compute
+            sample_hist = self.get_sample_hist(sample_period, grid=grid)
+        emp_int = [None]*d
+        for i in range(d):
+            emp_int[i] = sample_hist[i]/sample_period
+        return emp_int
+
+    def get_empirical_covariance(self, sample_period, grid=None, max_tau=None,
+                                 sample_hist=None,
+                                 verbose=False):
+        d = self.d
+        n_bins = int(self.T_f/sample_period)
+        if sample_hist is None:
+            # Compute
+            sample_hist = self.get_sample_hist(sample_period, grid=grid)
+        if max_tau is None:
+            max_lag = n_bins-1
+        else:
+            max_lag = int(max_tau/sample_period)
+        max_time = (max_lag+1)*sample_period
+
+        # Compute cov
+        sample_cov = np.zeros((d, d, max_lag+1))
+        for lag in tqdm(range(max_lag+1), disable=not verbose):
+            for i, j in itertools.product(range(d), range(d)):
+                n_j = sample_hist[j, :n_bins-lag]
+                n_i = sample_hist[i, lag:]
+                sample_cov[i, j, lag] = (np.mean(n_j*n_i)
+                                         - np.mean(n_j)*np.mean(n_i))
+        sample_cov /= sample_period
+        return sample_cov
 
 # =============================================================================
 # Serialization

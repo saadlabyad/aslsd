@@ -5,7 +5,7 @@ import numpy as np
 from scipy import stats
 from tqdm import tqdm
 
-
+import aslsd.utilities.useful_statistics as us
 # =============================================================================
 # Tests and plots
 # =============================================================================
@@ -15,7 +15,8 @@ def ks_test_residuals(residuals):
 
 def qq_plot(residuals, n_models=1, labels=None, style='exponential',
             substract_yx=False, normalize=False, max_points=None, margin=0.01,
-            display_line45=True, log_scale=False, ax=None,
+            display_line45=True, log_scale=False, plot_ks_alpha=False,
+            ks_c=0.99, ax=None,
             save=False, filename='image.png', show=False, **kwargs):
     #   Draw Q-Q plot of the residuals of each model.
     if ax is None:
@@ -59,6 +60,13 @@ def qq_plot(residuals, n_models=1, labels=None, style='exponential',
         if substract_yx:
             if normalize:
                 ax.plot(osm, renorm_factor*(osr-osm), **kwargs)
+                if plot_ks_alpha:
+                    ks_critical = us.get_ks_alpha(ks_c, len(residuals))
+                    for ix in range(2):
+                        mul = (-1)**ix
+                        ax.axhline(mul*ks_critical, linestyle='dashed',
+                                   linewidth=0.5,
+                                   color='darkred')
             else:
                 ax.plot(osm, osr-osm, **kwargs)
             ax.axhline(y=0., linestyle='dashed', color='grey')
@@ -173,6 +181,8 @@ def get_residuals_k_mhp(k, process_path, psi, mu, kernel_param,
 
     # Prepare output
     kernel_part = np.zeros((d, N_k))  # Kernel part of compensator times
+    if verbose:
+        print('Computing residuals k=', k, '...')
 
     # I. Computations for Poisson part
     poisson_residuals = get_residuals_k_hompoisson(k, process_path, mu)
@@ -248,6 +258,8 @@ def get_residuals_k_mtlh(k, process_path, mu_primitive, psi,
 
     # Prepare output
     kernel_part = np.zeros((d, N_k))  # Kernel part of compensator times
+    if verbose:
+        print('Computing residuals k=', k, '...')
 
     # I. Computations for Poisson part
     poisson_residuals = get_residuals_k_nonhompoisson(k, process_path,
