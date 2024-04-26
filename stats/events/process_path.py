@@ -10,6 +10,8 @@ from scipy.interpolate import interp1d
 from tqdm import tqdm
 
 from aslsd.stats.events import time_ordering
+from aslsd.stats.events.path_event import PathEvent
+import aslsd.utilities.useful_functions as uf
 
 
 class ProcessPath():
@@ -115,7 +117,6 @@ class ProcessPath():
         self.lag_sizes = lag_sizes
 
     def clone(self):
-        list_times = self.list_times
         process_path = ProcessPath(self.list_times, self.T_f, d=self.d,
                                    list_marks=self.list_marks,
                                    n_events=self.n_events,
@@ -200,6 +201,33 @@ class ProcessPath():
         for i in range(self.d):
             ia_times[i] = list_times[i][1:]-list_times[i][:-1]
         return ia_times
+
+    def get_next_event(self, t_ref):
+        if uf.is_array(t_ref):
+            times = np.concatenate(self.list_times)
+            event_types = np.concatenate([i*np.ones(len(self.list_times[i]))
+                                          for i in range(self.d)])
+            ixs_sort = np.argsort(times)+0
+            times = times[ixs_sort]
+            event_types = event_types[ixs_sort]
+            if self.list_marks is not None:
+                marks = np.concatenate(self.list_marks)
+                marks = marks[ixs_sort]
+            ixs_next = np.searchsorted(times, t_ref, side='right')
+            res = [None]*len(ixs_next)
+            for ix in range(len(ixs_next)):
+                t_next = times[ixs_next[ix]]
+                dim_next = event_types[ixs_next[ix]]
+                mark_next = None
+                if self.list_marks is not None:
+                    mark_next = marks[ixs_next[ix]]
+                next_event = PathEvent(time=t_next, dim=dim_next,
+                                       mark=mark_next)
+                res[ix] = next_event
+            return res
+        else:
+            res = self.get_next_event(np.array([t_ref]))
+            return res[0]
 
 # =============================================================================
 # Statistics
