@@ -8,6 +8,7 @@ from aslsd.stats.residual_analysis import goodness_of_fit as gof
 import aslsd.utilities.useful_functions as uf
 from aslsd.utilities import useful_statistics as us
 from aslsd.stats.events.process_path import ProcessPath
+from aslsd.stats.events.path_event import PathEvent
 
 
 class HomPoisson:
@@ -227,7 +228,8 @@ class HomPoisson:
         return fitted_mu_param
 
     # Simulation
-    def simulate(self, T_f, mu_param=None, rng=None, seed=1234):
+    def simulate(self, T_f, T_i=0., history=None, mu_param=None, rng=None,
+                 seed=1234, verbose=False):
         """
         Simulate a path of the homogeneous Poisson model.
 
@@ -255,17 +257,92 @@ class HomPoisson:
         """
         mu_param = self.load_param(mu_param=mu_param)
         d = self.d
+        if history is not None:
+            T_i = history.T_f
         list_times = [None]*d
         # RNG
         rng = us.make_rng(rng=rng, seed=seed)
         for i in range(d):
             # Number of immigrants
-            Nim = rng.poisson(mu_param[i][0]*T_f)
-            generations = rng.uniform(low=0., high=T_f, size=Nim)
+            Nim = rng.poisson(mu_param[i][0]*(T_f-T_i))
+            generations = rng.uniform(low=T_i, high=T_f, size=Nim)
             generations.sort()
             list_times[i] = generations
-        process_path = ProcessPath(list_times, T_f)
+        process_path = ProcessPath(list_times, T_f, T_i=T_i)
         return process_path
+
+# =============================================================================
+# Simulate one step ahead
+# =============================================================================
+    def simulate_one_step_ahead(self, T_f, history, mu_param=None,
+                                rng=None, seed=1234, verbose=False):
+        """
+        Simulate a path of the MHP up to the first jump.
+
+        Parameters
+        ----------
+        T_f : `float`
+            Terminal time.
+        mu : `numpy.ndarray`, optional
+            Vector of baseline parameters. The default is None, in that case
+            fitted baseline parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        kernel_param : `numpy.ndarray`, optional
+            Matrix of kernel parameters. The default is None, in that case
+            fitted kernel parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        seed : `int`, optional
+            Seed for the random number generator. The default is 1234.
+        verbose : `bool`, optional
+            If True, print progression information. The default is False.
+
+        Raises
+        ------
+        ValueError
+            Raise an error if the baseline or the kernel parameters are not
+            specified and there is no fitted baseline or kernel parameters
+            saved as an atrribute.
+
+        Returns
+        -------
+        list_times : `list` of `numpy.ndarray`
+            List of simulated jump times for each dimension.
+
+        """
+        d = self.d
+        # RNG
+        rng = us.make_rng(rng=rng, seed=seed)
+        # Prepare parameters
+        mu_param = self.load_param(mu_param=mu_param)
+
+        # Adjust T_i
+        T_i = history.T_f
+
+        # Start simulation
+        if verbose:
+            print('Simulating events...')
+
+        # Step 1. Generate immigrants
+        list_times = [None]*d
+        for i in range(d):
+            # Number of immigrants
+            Nim = rng.poisson(mu_param[i][0]*(T_f-T_i))
+            generations = rng.uniform(low=T_i, high=T_f, size=Nim)
+            generations.sort()
+            list_times[i] = generations
+        # Pick comparison candidate
+        t_next = np.inf
+        dim_next = 0
+        for i in range(d):
+            if len(list_times[i]) > 0:
+                if list_times[i][0] < t_next:
+                    t_next = list_times[i][0]
+                    dim_next = i
+        # Wrap as PathEvent object
+        next_event = PathEvent(time=t_next, dim=dim_next)
+        if verbose:
+            print('Simulation Complete.')
+        return next_event
 
     # Evaluation
     def get_residuals(self,  process_path=None, mu_param=None, write=True,

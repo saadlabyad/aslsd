@@ -78,7 +78,10 @@ class ProcessPath():
                                for i in range(self.d)]
         # Basic statistics
         self.n_events = np.array([len(L) for L in self.list_times])
-        self.eta = self.n_events/T_f
+        if T_f == 0.:
+            self.eta = 0.
+        else:
+            self.eta = self.n_events/T_f
         # Book-keeping
         self.book_keeping = book_keeping
         if book_keeping:
@@ -129,8 +132,13 @@ class ProcessPath():
 
     def truncate(self, T_trunc):
         d = self.d
+        # Trivial cases
+        if T_trunc == 0:
+            list_times = [np.array([]) for i in range(d)]
+            return ProcessPath(list_times, T_trunc)
         if T_trunc >= self.T_f:
-            self.clone()
+            return self.clone()
+        # General cases
         list_n_f = [bisect.bisect_left(self.list_times[i], T_trunc)-1
                     for i in range(self.d)]
 
@@ -153,7 +161,7 @@ class ProcessPath():
                             for j in range(d)] for i in range(d)]
 
         # Return
-        trunc_path = ProcessPath(trunc_times, T_trunc, d=self.d,
+        trunc_path = ProcessPath(trunc_times, T_trunc,
                                  list_marks=trunc_marks,
                                  n_events=None,
                                  eta=None,

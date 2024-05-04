@@ -1358,6 +1358,10 @@ class MTLH:
             offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
                 kernel_param[i][j])
 
+        # Adjust T_i
+        if history is not None:
+            T_i = history.T_f
+
         if verbose:
             print('Simulating events...')
 
@@ -1516,6 +1520,10 @@ class MTLH:
         for i, j in itertools.product(range(d), range(d)):
             offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
                 kernel_param[i][j])
+
+        # Adjust T_i
+        if history is not None:
+            T_i = history.T_f
 
         if verbose:
             print('Simulating events...')
@@ -1789,10 +1797,10 @@ class MTLH:
 # Simulate one step ahead
 # =============================================================================
     # Simulation
-    def simulate_one_step(self, T_f, T_i=0., history=None, mu_param=None,
-                          kernel_param=None, impact_param=None, rng=None,
-                          seed=1234,
-                          verbose=False):
+    def simulate_one_step_ahead(self, T_f, history, mu_param=None,
+                                kernel_param=None, impact_param=None, rng=None,
+                                seed=1234,
+                                verbose=False):
         """
         Simulate a path of the MHP.
 
@@ -1846,6 +1854,9 @@ class MTLH:
         for i, j in itertools.product(range(d), range(d)):
             offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
                 kernel_param[i][j])
+
+        # Adjust T_i
+        T_i = history.T_f
 
         if verbose:
             print('Simulating events...')

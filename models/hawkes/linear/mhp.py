@@ -789,6 +789,10 @@ class MHP:
             offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
                 kernel_param[i][j])
 
+        # Adjust T_i
+        if history is not None:
+            T_i = history.T_f
+
         # Start simulation
         if verbose:
             print('Simulating events...')
@@ -798,7 +802,7 @@ class MHP:
         generations = [None]*d
         for i in range(d):
             if history is not None and len(history.list_times[i]) > 0:
-                generations[i] = [copy.deepcopy(np.array(history.list_times[i]))]
+                generations[i] = [np.array(history.list_times[i])+0.]
             else:
                 generations[i] = [[]]
 
@@ -811,7 +815,7 @@ class MHP:
         for i in range(d):
             immigrants[i] = rng.uniform(low=T_i, high=T_f, size=Nim[i])
             if len(generations[i][0]) == 0:
-                generations[i][0] = copy.deepcopy(immigrants[i])
+                generations[i][0] = immigrants[i]+0.
             else:
                 generations[i][0] = np.concatenate((generations[i][0],
                                                     immigrants[i]))
@@ -874,18 +878,13 @@ class MHP:
             offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
                 kernel_param[i][j])
 
+        # Adjust T_i
+        if history is not None:
+            T_i = history.T_f
+
         # Start simulation
         if verbose:
             print('Simulating events...')
-        # Step 0. Intialise Generations
-        # generations is a list such that generations[i][ix_gen] contains
-        # the times of events of type i of generation ix_gen
-        generations = [None]*d
-        for i in range(d):
-            if history is not None and len(history.list_times[i]) > 0:
-                generations[i] = [copy.deepcopy(np.array(history.list_times[i]))]
-            else:
-                generations[i] = [[]]
 
         # Step 1. Generate immigrants
         # Number of immigrants
@@ -1076,7 +1075,7 @@ class MHP:
                                    book_keeping=book_keeping)
         return process_path
 
-    def simulate_descendants_multi(self, n_paths, event, T_f, T_i=0.,
+    def simulate_descendants_multi(self, n_paths, event, T_f,
                                    kernel_param=None, book_keeping=False,
                                    rng=None, base_seed=1234, verbose=False):
         """
@@ -1132,9 +1131,9 @@ class MHP:
 # =============================================================================
 # Simulate one step ahead
 # =============================================================================
-    def simulate_one_step(self, T_f, T_i=0., history=None, mu=None,
-                          kernel_param=None, rng=None, seed=1234,
-                          verbose=False):
+    def simulate_one_step_ahead(self, T_f, history, mu=None,
+                                kernel_param=None, rng=None, seed=1234,
+                                verbose=False):
         """
         Simulate a path of the MHP up to the first jump.
 
@@ -1186,6 +1185,9 @@ class MHP:
             offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
                 kernel_param[i][j])
 
+        # Adjust T_i
+        T_i = history.T_f
+
         # Start simulation
         if verbose:
             print('Simulating events...')
@@ -1195,7 +1197,7 @@ class MHP:
         generations = [None]*d
         for i in range(d):
             if history is not None and len(history.list_times[i]) > 0:
-                generations[i] = [copy.deepcopy(np.array(history.list_times[i]))]
+                generations[i] = [np.array(history.list_times[i])+0.]
             else:
                 generations[i] = [[]]
 
@@ -1208,7 +1210,7 @@ class MHP:
         for i in range(d):
             immigrants[i] = rng.uniform(low=T_i, high=T_f, size=Nim[i])
             if len(generations[i][0]) == 0:
-                generations[i][0] = copy.deepcopy(immigrants[i])
+                generations[i][0] = immigrants[i]+0.
             else:
                 generations[i][0] = np.concatenate((generations[i][0],
                                                     immigrants[i]))
@@ -1746,7 +1748,6 @@ class MHP:
                                      n_samples_adaptive_double=n_samples_adaptive_double,
                                      nonadaptive_sample_size_double=nonadaptive_sample_size_double,
                                      double_strfs=double_strfs)
-
         # Initialize Solvers
         if solvers is None:
             solvers = [ADAM(**solver_args) for k in range(d)]

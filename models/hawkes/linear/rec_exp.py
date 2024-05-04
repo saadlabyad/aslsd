@@ -1,5 +1,6 @@
 # License: BSD 3 clause
 
+import bisect
 import copy
 import itertools
 import pickle
@@ -2916,7 +2917,54 @@ class RecurrentExponential:
             self.fit_log = logger
         return fitted_mu_param, fitted_ker_param, fitted_imp_param
 
-    def make_adjacency_matrix(self, kernel_param=None):
+# =============================================================================
+# Branching representation
+# =============================================================================
+    def make_kernel_l1norm_matrix(self, kernel_param=None):
+        """
+        Compute the adjacency matrix of the MHP.
+
+        The adjacency matrix :math:`A` of an MHP is the :math:`d\\times d`
+        matrix of :math:`L_{1}` norms of kernels; that is, for all
+        :math:`i,j \\in [d]` the corresponding entry of this matrix is given by
+
+        .. math::
+            A_{ij} := \\int_{[0,+\\infty]} |\\phi_{ij}(u)|du..
+
+
+        Parameters
+        ----------
+        kernel_param : `numpy.ndarray`, optional
+            Matrix of kernel parameters at which to evaluate the adjacency
+            matrix. The default is None, in that case fitted kernel
+            parameters will be used if they are stored in the corresponding
+            attribute of the MHP object.
+
+        Raises
+        ------
+        ValueError
+            Raise an error if the kernel parameters not specified and there
+            are no kernel parameters saved as an atrribute.
+
+        Returns
+        -------
+        adjacency : `numpy.ndarray`
+            Adjacency matrix of the MHP.
+
+        """
+        if kernel_param is None:
+            if self.is_fitted:
+                kernel_param = self.fitted_ker_param
+            else:
+                raise ValueError("kernel_param must be specified.")
+        d = self.d
+        kernel_l1norm_matrix = np.zeros((d, d))
+        for i, j in itertools.product(range(d), range(d)):
+            kernel_l1norm_matrix[i, j] = self._kernel_matrix[i][j].l1_norm(kernel_param[i][j])
+        return kernel_l1norm_matrix
+
+    def make_adjacency_matrix(self, kernel_param=None, impact_param=None,
+                              expected_impact_matrix=None):
         """
         Compute the adjacency matrix of the MHP.
 
@@ -2955,14 +3003,17 @@ class RecurrentExponential:
                 log_fitted_adjacency = True
             else:
                 raise ValueError("kernel_param must be specified.")
+        kernel_l1norm_matrix = self.make_kernel_l1norm_matrix(kernel_param=kernel_param)
+        if expected_impact_matrix is None:
+            expected_impact_matrix = self.make_expected_impact(impact_param=impact_param)
         d = self.d
-        adjacency = [[self._kernel_matrix[i][j].l1_norm(kernel_param[i][j])
-                      for j in range(d)] for i in range(d)]
+        adjacency = expected_impact_matrix*kernel_l1norm_matrix
         if log_fitted_adjacency:
             self.fitted_adjacency = adjacency
         return adjacency
 
-    def get_branching_ratio(self, adjacency=None, kernel_param=None):
+    def get_branching_ratio(self, adjacency=None, kernel_param=None,
+                            impact_param=None, expected_impact_matrix=None):
         """
         Compute the branching ratio of the MHP.
 
@@ -2996,12 +3047,9 @@ class RecurrentExponential:
 
         """
         if adjacency is None:
-            if kernel_param is None:
-                if self.is_fitted:
-                    kernel_param = self.fitted_ker_param
-                else:
-                    raise ValueError("kernel_param must be specified.")
-            adjacency = self.make_adjacency_matrix(kernel_param)
+            adjacency = self.make_adjacency_matrix(kernel_param=kernel_param,
+                                                   impact_param=impact_param,
+                                                   expected_impact_matrix=expected_impact_matrix)
         bratio = np.max(np.absolute(np.linalg.eigvals(adjacency)))
         return bratio
 
@@ -3056,6 +3104,46 @@ class RecurrentExponential:
                                               high=upper_mu_params[i][ix],
                                               size=1)[0]
 
+        # Impacts
+        impact_param = np.array([[None for j in range(d)]
+                                 for i in range(d)], dtype=object)
+        if ref_imp_param is None:
+            if not uf.is_array(max_imp_param):
+                float_max = copy.deepcopy(max_imp_param)
+                max_imp_param = [[[None for x
+                                   in range(self.matrix_n_param_imp[i][j])]
+                                  for j in range(d)] for i in range(d)]
+                for i, j in itertools.product(range(d), range(d)):
+                    n_param = self.matrix_n_param_imp[i][j]
+                    for ix in range(n_param):
+                        max_imp_param[i][j][ix] = max(float_max,
+                                                      imp_lower_bnds[i][j][ix])
+
+            for i, j in itertools.product(range(d), range(d)):
+                n_param = self.matrix_n_param_imp[i][j]
+                impact_param[i][j] = np.zeros(n_param)
+                for ix in range(n_param):
+                    lo_lim = imp_lower_bnds[i][j][ix]
+                    hi_lim = min(max_imp_param[i][j][ix],
+                                 imp_upper_bnds[i][j][ix])
+                    hi_lim = max(hi_lim, lo_lim)
+                    val = rng.uniform(low=lo_lim, high=hi_lim, size=1)[0]
+                    impact_param[i][j][ix] = val
+        else:
+            dist_imp_bnds = [[ref_imp_param[i][j]-imp_lower_bnds[i][j] for j in range(d)] for i in range(d)]
+            lower_imp_params = [[ref_imp_param[i][j]-range_ref_imp*dist_imp_bnds[i][j] for j in range(d)] for i in range(d)]
+            upper_imp_params = [[ref_imp_param[i][j]+range_ref_imp*dist_imp_bnds[i][j] for j in range(d)] for i in range(d)]
+            for i, j in itertools.product(range(d), range(d)):
+                n_param = self.matrix_n_param_imp[i][j]
+                impact_param[i][j] = np.zeros(n_param)
+                for ix in range(n_param):
+                    lo_lim = lower_imp_params[i][j][ix]
+                    hi_lim = min(upper_imp_params[i][j][ix],
+                                 imp_upper_bnds[i][j][ix])
+                    hi_lim = max(hi_lim, lo_lim)
+                    val = rng.uniform(low=lo_lim, high=hi_lim, size=1)[0]
+                    impact_param[i][j][ix] = val
+
         # Kernels
         kernel_param = np.array([[None for j in range(d)]
                                  for i in range(d)], dtype=object)
@@ -3096,7 +3184,8 @@ class RecurrentExponential:
                                       size=1)[0]
                     kernel_param[i][j][ix] = val
         # Rescaling
-        branching_ratio = self.get_branching_ratio(kernel_param=kernel_param)
+        branching_ratio = self.get_branching_ratio(kernel_param=kernel_param,
+                                                   impact_param=impact_param)
         if branching_ratio > 0.:
             scaling = target_bratio/branching_ratio
         for i, j in itertools.product(range(d), range(d)):
@@ -3106,46 +3195,6 @@ class RecurrentExponential:
                 if len(vec_ix_omega) > 0:
                     kernel_param[i][j][vec_ix_omega] = (scaling
                                                         * kernel_param[i][j][vec_ix_omega])
-
-        # Impacts
-        impact_param = np.array([[None for j in range(d)]
-                                 for i in range(d)], dtype=object)
-        if ref_imp_param is None:
-            if not uf.is_array(max_imp_param):
-                float_max = copy.deepcopy(max_imp_param)
-                max_imp_param = [[[None for x
-                                   in range(self.matrix_n_param_imp[i][j])]
-                                  for j in range(d)] for i in range(d)]
-                for i, j in itertools.product(range(d), range(d)):
-                    n_param = self.matrix_n_param_imp[i][j]
-                    for ix in range(n_param):
-                        max_imp_param[i][j][ix] = max(float_max,
-                                                      imp_lower_bnds[i][j][ix])
-
-            for i, j in itertools.product(range(d), range(d)):
-                n_param = self.matrix_n_param_imp[i][j]
-                impact_param[i][j] = np.zeros(n_param)
-                for ix in range(n_param):
-                    lo_lim = imp_lower_bnds[i][j][ix]
-                    hi_lim = min(max_imp_param[i][j][ix],
-                                 imp_upper_bnds[i][j][ix])
-                    hi_lim = max(hi_lim, lo_lim)
-                    val = rng.uniform(low=lo_lim, high=hi_lim, size=1)[0]
-                    impact_param[i][j][ix] = val
-        else:
-            dist_imp_bnds = [[ref_imp_param[i][j]-imp_lower_bnds[i][j] for j in range(d)] for i in range(d)]
-            lower_imp_params = [[ref_imp_param[i][j]-range_ref_imp*dist_imp_bnds[i][j] for j in range(d)] for i in range(d)]
-            upper_imp_params = [[ref_imp_param[i][j]+range_ref_imp*dist_imp_bnds[i][j] for j in range(d)] for i in range(d)]
-            for i, j in itertools.product(range(d), range(d)):
-                n_param = self.matrix_n_param_imp[i][j]
-                impact_param[i][j] = np.zeros(n_param)
-                for ix in range(n_param):
-                    lo_lim = lower_imp_params[i][j][ix]
-                    hi_lim = min(upper_imp_params[i][j][ix],
-                                 imp_upper_bnds[i][j][ix])
-                    hi_lim = max(hi_lim, lo_lim)
-                    val = rng.uniform(low=lo_lim, high=hi_lim, size=1)[0]
-                    impact_param[i][j][ix] = val
 
         # Flatten
         if flatten:
@@ -3367,6 +3416,10 @@ class RecurrentExponential:
             offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
                 kernel_param[i][j])
 
+        # Adjust T_i
+        if history is not None:
+            T_i = history.T_f
+
         if verbose:
             print('Simulating events...')
 
@@ -3525,6 +3578,10 @@ class RecurrentExponential:
         for i, j in itertools.product(range(d), range(d)):
             offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
                 kernel_param[i][j])
+
+        # Adjust T_i
+        if history is not None:
+            T_i = history.T_f
 
         if verbose:
             print('Simulating events...')
@@ -3798,10 +3855,10 @@ class RecurrentExponential:
 # Simulate one step ahead
 # =============================================================================
     # Simulation
-    def simulate_one_step(self, T_f, T_i=0., history=None, mu_param=None,
-                          kernel_param=None, impact_param=None, rng=None,
-                          seed=1234,
-                          verbose=False):
+    def simulate_one_step_ahead(self, T_f, history=None, mu_param=None,
+                                kernel_param=None, impact_param=None, rng=None,
+                                seed=1234,
+                                verbose=False):
         """
         Simulate a path of the MHP.
 
@@ -3855,6 +3912,9 @@ class RecurrentExponential:
         for i, j in itertools.product(range(d), range(d)):
             offset_gens[i][j] = self._kernel_matrix[i][j].make_offset_gen(
                 kernel_param[i][j])
+
+        # Adjust T_i
+        T_i = history.T_f
 
         if verbose:
             print('Simulating events...')

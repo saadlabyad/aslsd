@@ -114,7 +114,7 @@ class MHPStratEstim(Estimator):
                 phi_stratif[i] = DoubleIxStratification(h_max=h_max,
                                                         **local_kwargs)
                 phi_stratif[i].get_stratification_size(self.lag_sizes, k, i)
-        self.stratif[log_name] = phi_stratif[i]
+            self.stratif[log_name] = phi_stratif[i]
 
     def get_list_log_names(self):
         d = self.d

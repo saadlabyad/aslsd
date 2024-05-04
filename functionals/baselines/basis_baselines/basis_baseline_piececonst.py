@@ -326,5 +326,14 @@ class PieceConstBaseline(BasisBaseline):
         pass
 
     # Data Processing
-    def get_events_rate(self, times):
-        return np.histogram(times, self.beta)[0]/self.interval_sizes
+    def get_horizon_beta(self, T_f):
+        L = self.beta+0.
+        L = np.minimum(L, T_f)
+        b = np.array(list(set(L)))
+        b.sort()
+        return b
+
+    def get_events_rate(self, times, T_f):
+        b = self.get_horizon_beta(T_f)
+        sizes = b[1:]-b[:-1]
+        return np.histogram(times, b)[0]/sizes

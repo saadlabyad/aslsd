@@ -149,7 +149,8 @@ def get_diff_M(t, ix_diff, T_p, f, F_q, F=None, vars_=None, pos_min_f=0.,
         res = 2.*alpha*div_coeff*(k*F_q(T_p)+F_q(theta)-F_q(b))
         if intercept:
             delta = vars_[3]
-            res += 2*pos_min_f*c+2.*div_coeff*(delta+2.*alpha*pos_min_f)*(k*F(T_p)+F(theta)-F(b))
+            res += 2*pos_min_f*c+2.*div_coeff*((delta+2.*alpha*pos_min_f)
+                                               * (k*F(T_p)+F(theta)-F(b)))
     elif ix_diff == 1:
         # Derivative wrt a
         mul_coeff = 1./div_coeff

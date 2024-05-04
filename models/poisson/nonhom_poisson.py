@@ -20,6 +20,7 @@ from aslsd.stats.residual_analysis import goodness_of_fit as gof
 import aslsd.utilities.useful_functions as uf
 import aslsd.utilities.useful_statistics as us
 from aslsd.stats.events.process_path import ProcessPath
+from aslsd.stats.events.path_event import PathEvent
 
 
 class NonHomPoisson:
@@ -368,7 +369,7 @@ class NonHomPoisson:
             x = [None]*d
             for i in range(d):
                 x[i] = self.baselines_vec[i].basis_mus[0].get_events_rate(
-                    list_times[i])
+                    list_times[i], T_f)
             if write:
                 self.is_fitted = True
                 self.fitted_mu_param = x
@@ -477,7 +478,8 @@ class NonHomPoisson:
         return x
 
     # Simulation
-    def simulate(self, T_f, mu_param=None, rng=None, seed=1234):
+    def simulate(self, T_f, T_i=0., history=None, mu_param=None, rng=None,
+                 seed=1234, verbose=False):
         """
         Simulate a path of the homogeneous Poisson model.
 
@@ -504,18 +506,91 @@ class NonHomPoisson:
 
         """
         rng = us.make_rng(rng=rng, seed=seed)
+        if history is not None:
+            T_i = history.T_f
         if mu_param is None:
             mu_param = self.fitted_mu_param
             if mu_param is None:
                 raise ValueError("Missing value for mu_param")
+        if verbose:
+            print('Simulating events...')
         d = self.d
-        list_times = [None]*d
         rng = np.random.default_rng(seed)
+        list_times = [None]*d
         for i in range(d):
             list_times[i] = self.baselines_vec[i].simulate(T_f, mu_param[i],
+                                                           T_i=T_i,
                                                            rng=rng)
-        process_path = ProcessPath(list_times, T_f)
+        process_path = ProcessPath(list_times, T_f, T_i=T_i)
         return process_path
+
+    def simulate_one_step_ahead(self, T_f, history, mu_param=None, rng=None,
+                                seed=1234, verbose=False):
+        """
+        Simulate a path of the MHP.
+
+        Parameters
+        ----------
+        T_f : `float`
+            Terminal time.
+        mu : `numpy.ndarray`, optional
+            Vector of baseline parameters. The default is None, in that case
+            fitted baseline parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        kernel_param : `numpy.ndarray`, optional
+            Matrix of kernel parameters. The default is None, in that case
+            fitted kernel parameters will be used if they are stored in the
+            corresponding attribute of the MHP object.
+        seed : `int`, optional
+            Seed for the random number generator. The default is 1234.
+        verbose : `bool`, optional
+            If True, print progression information. The default is False.
+
+        Raises
+        ------
+        ValueError
+            Raise an error if the baseline or the kernel parameters are not
+            specified and there is no fitted baseline or kernel parameters
+            saved as an atrribute.
+
+        Returns
+        -------
+        list_times : `list` of `numpy.ndarray`
+            List of simulated jump times for each dimension.
+
+        """
+        rng = us.make_rng(rng=rng, seed=seed)
+        d = self.d
+        if history is not None:
+            T_i = history.T_f
+        if mu_param is None:
+            mu_param = self.fitted_mu_param
+            if mu_param is None:
+                raise ValueError("Missing value for mu_param")
+
+        if verbose:
+            print('Simulating events...')
+
+        # Step 1: Generate immigrants
+        # Location of immigrants
+        list_times = [None]*d
+        for i in range(d):
+            list_times[i] = self.baselines_vec[i].simulate(T_f, mu_param[i],
+                                                           T_i=T_i,
+                                                           rng=rng)
+        # Pick comparison candidate
+        t_next = np.inf
+        dim_next = 0
+        for i in range(d):
+            if len(list_times[i]) > 0:
+                if list_times[i][0] < t_next:
+                    t_next = list_times[i][0]
+                    dim_next = i
+        # Wrap as PathEvent object
+        next_event = PathEvent(time=t_next, dim=dim_next)
+        if verbose:
+            print('Simulation Complete.')
+        return next_event
 
     # Evaluation
     def get_residuals(self,  process_path, mu_param=None, write=True,
@@ -653,6 +728,7 @@ class NonHomPoisson:
     def process_logs(self, logger):
         d = self.d
         if logger.is_log_lse:
+            logger.lse = [None]*d
             for k in range(d):
                 logger.lse[k] = self.fit_estim[k].logged_lse
 
