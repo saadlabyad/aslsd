@@ -8,20 +8,28 @@ This code is under active development, and is part of our paper `Gradient-based 
 Description
 -----------
 
-Linear multivariate Hawkes processes (MHP) are a fundamental class of point processes with self-excitation. When estimating parameters for these processes, a difficulty is that the two main error functionals, the log-likelihood and the least squares error (LSE), as well as the evaluation of their
-gradients, have a quadratic complexity in the number of observed events. In practice, this prohibits
-the use of exact gradient-based algorithms for parameter estimation. 
+Multivariate Hawkes processes (MHP) are a fundamental class of point processes
+with self-excitation. When estimating parameters for these processes, a
+difficulty is that the two main error functionals, the log-likelihood and the least
+squares error (LSE), as well as the evaluation of their gradients, have a quadratic
+complexity in the number of observed events. In practice, this prohibits the use
+of exact gradient-based algorithms for parameter estimation in many settings.
+Furthermore, MHP models are not designed for non-stationary training data,
+and they cannot incorporate event information besides their timestamps: we introduce
+the marked time-dependent linear Hawkes (MTLH) model to overcome
+these limitations. 
 
-We propose a stochastic optimization algorithm for parametric MHP estimation that does not directly evaluate the conditional intensity of the MHP; we
-call this the ASLSD algorithm (Adaptively Stratified Least Squares Descent). This results in a fast parametric estimation
-method for MHP with general kernels, applicable to large datasets, which compares favourably with
-existing methods.
+We construct an adaptive stratified sampling estimator of the
+gradient of the LSE of Hawkes models. This results in the ASLSD algorithm, a
+fast parametric estimation method for MHP and MTLH with general kernels,
+applicable to large datasets, which compares favourably with existing methods.
+We evaluate our algorithm on synthetic and real-world data.
 
 This code implements
 
-* the ASLSD algorithm for the estimation of MHP;
-* exact cluster based simulation of MHP;
-* goodness-of-fit tests.
+* the ASLSD algorithm for the estimation of MHP and MTLH models;
+* exact cluster based simulation of MHP and MTLH models;
+* residual analysis and other evaluation metrics for MHP and MTLH models.
 
 Dependencies
 ------------
