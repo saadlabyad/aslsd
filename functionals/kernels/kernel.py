@@ -456,6 +456,9 @@ class KernelModel():
                         # Generate additional random times, corresponds to
                         # the expected number that will be needed+100.
                         N_target = int((N+1-len(times))/(1-branching_ratio)+100)
+                        if N_target <= 0:
+                            # Only possible if adjacency matrix has component > 1
+                            N_target = 100
                         simtimes = basis_kernels[0].simu_func(rng, params,
                                                               size=N_target)
                         times += [x for x in simtimes if x > 0]
@@ -463,6 +466,9 @@ class KernelModel():
                     vec_probas = vec_branching/branching_ratio
                     while (len(times) <= N):
                         N_target = int((N+1-len(times))/(1-branching_ratio)+100)
+                        if N_target <= 0:
+                            # Only possible if adjacency matrix has component > 1
+                            N_target = 100
                         N_basisfunc_list = rng.binomial(n=N_target, p=vec_probas)
                         simtimes_basisfunc = [None]*n_basis_ker
                         for ix_ker in range(n_basis_ker):
